@@ -1900,10 +1900,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   // recomputed it anyway if we ever insert the nodes back into a document.
   if (IsStyledByServo()) {
     ClearServoData();
-  } else {
-#ifdef MOZ_STYLO
-    MOZ_ASSERT(!HasServoData());
-#endif
   }
 
   // Editable descendant count only counts descendants that
