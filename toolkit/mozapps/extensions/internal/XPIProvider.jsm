@@ -6133,9 +6133,9 @@ function UpdateChecker(aAddon, aListener, aReason, aAppVersion, aPlatformVersion
   // updateURL is empty. UpdateParser should detect this and fail early.
 
   if (!updateURL) {
-  this._parser = AddonUpdateChecker.checkForUpdates(aAddon.id, aAddon.updateKey,
-                                                    "", this);
-  return;
+    this._parser = AddonUpdateChecker.checkForUpdates(aAddon.id, aAddon.updateKey,
+                                                      "", this);
+    return;
   }
 
   let url = escapeAddonURI(aAddon, updateURL, aReason, aAppVersion);
