@@ -261,6 +261,11 @@ public:
                         aOther.mMozAutoGainControl, advanced, aList) {}
 };
 
+// FIXME (Issue #1956): 32-bit MSVC 2022 needed this code to be moved here,
+// and the 64-bit version seems fine with it as well. But other compilers
+// are not.
+
+#if _MSC_VER > 1900
 // The Range code works surprisingly well for bool, except when averaging ideals.
 template<>
 bool
@@ -304,7 +309,12 @@ NormalizedConstraintSet::Range<bool>::FinalizeMerge()
     mMergeDenominator = 0;
   }
 }
+#endif
 
+#if _MSC_VER <= 1900 || !defined(_MSC_VER)
+template<> bool NormalizedConstraintSet::Range<bool>::Merge(const Range& aOther);
+template<> void NormalizedConstraintSet::Range<bool>::FinalizeMerge();
+#endif
 
 // Used instead of MediaTrackConstraints in lower-level code.
 struct NormalizedConstraints : public NormalizedConstraintSet

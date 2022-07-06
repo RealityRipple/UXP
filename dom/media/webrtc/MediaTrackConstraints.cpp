@@ -34,6 +34,56 @@ NormalizedConstraintSet::Range<ValueType>::SetFrom(const ConstrainRange& aOther)
   }
 }
 
+// FIXME(Issue #1956): 32-bit MSVC 2022 does not like these functions being
+// defined here. The 64-bit version accepts my workaround for the 32-bit
+// version as valid code, but every other compiler dislikes them being defined
+// elsewhere. 
+
+#if _MSC_VER <= 1900 || !defined(_MSC_VER)
+// The Range code works surprisingly well for bool, except when averaging ideals.
+template<>
+bool
+NormalizedConstraintSet::Range<bool>::Merge(const Range& aOther) {
+  if (!Intersects(aOther)) {
+    return false;
+  }
+  Intersect(aOther);
+
+  // To avoid "unsafe use of type 'bool'", we keep counter in mMergeDenominator
+  uint32_t counter = mMergeDenominator >> 16;
+  uint32_t denominator = mMergeDenominator & 0xffff;
+
+  if (aOther.mIdeal.isSome()) {
+    if (mIdeal.isNothing()) {
+      mIdeal.emplace(aOther.Get(false));
+      counter = aOther.Get(false);
+      denominator = 1;
+    } else {
+      if (!denominator) {
+        counter = Get(false);
+        denominator = 1;
+      }
+      counter += aOther.Get(false);
+      denominator++;
+    }
+  }
+  mMergeDenominator = ((counter & 0xffff) << 16) + (denominator & 0xffff);
+  return true;
+}
+
+template<>
+void
+NormalizedConstraintSet::Range<bool>::FinalizeMerge()
+{
+  if (mMergeDenominator) {
+    uint32_t counter = mMergeDenominator >> 16;
+    uint32_t denominator = mMergeDenominator & 0xffff;
+
+    *mIdeal = !!(counter / denominator);
+    mMergeDenominator = 0;
+  }
+}
+#endif
 
 NormalizedConstraintSet::LongRange::LongRange(
     LongPtrType aMemberPtr,
