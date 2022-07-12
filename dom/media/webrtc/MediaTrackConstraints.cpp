@@ -6,6 +6,7 @@
 #include "MediaTrackConstraints.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/Unused.h"
+#include "mozilla/Types.h"
 
 #include <limits>
 #include <algorithm>
@@ -34,15 +35,9 @@ NormalizedConstraintSet::Range<ValueType>::SetFrom(const ConstrainRange& aOther)
   }
 }
 
-// FIXME(Issue #1956): 32-bit MSVC 2022 does not like these functions being
-// defined here. The 64-bit version accepts my workaround for the 32-bit
-// version as valid code, but every other compiler dislikes them being defined
-// elsewhere. 
-
-#if _MSC_VER <= 1900 || !defined(_MSC_VER)
 // The Range code works surprisingly well for bool, except when averaging ideals.
 template<>
-bool
+bool MOZ_EXPORT
 NormalizedConstraintSet::Range<bool>::Merge(const Range& aOther) {
   if (!Intersects(aOther)) {
     return false;
@@ -83,7 +78,6 @@ NormalizedConstraintSet::Range<bool>::FinalizeMerge()
     mMergeDenominator = 0;
   }
 }
-#endif
 
 NormalizedConstraintSet::LongRange::LongRange(
     LongPtrType aMemberPtr,
