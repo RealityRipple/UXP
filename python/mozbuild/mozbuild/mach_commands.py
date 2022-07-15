@@ -1245,6 +1245,11 @@ class RunProgram(MachCommandBase):
         if debug or debugger or debugparams:
             if 'INSIDE_EMACS' in os.environ:
                 self.log_manager.terminal_handler.setLevel(logging.WARNING)
+            # vswhere tells us the exact path of the "devenv.exe" debug executable, but our build machinery 
+            # insists on searching the PATH for it regardless. Just work around it rather than overhauling mozdebug.
+            if sys.platform.startswith('win'):
+                tempvar = subprocess.check_output(['vswhere', '-property', 'installationPath'])
+                os.environ["PATH"] += os.pathsep + tempvar.replace("\\", "\\").strip() + "\\Common7\\IDE"
 
             import mozdebug
             if not debugger:
