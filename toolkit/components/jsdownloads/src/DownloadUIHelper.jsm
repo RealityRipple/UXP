@@ -129,7 +129,7 @@ this.DownloadPrompter.prototype = {
    *
    * @resolves Boolean indicating whether the launch operation can continue.
    */
-  async confirmLaunchExecutable: function (aPath)
+  async confirmLaunchExecutable(aPath)
   {
     const kPrefConfirmOpenExe = "browser.download.confirmOpenExecutable";
 
