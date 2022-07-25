@@ -95,12 +95,6 @@ case "$target" in
     ;;
 esac
 
-case "$target" in
-*-apple-darwin*)
-    MOZ_IOS_SDK
-    ;;
-esac
-
 AC_SUBST(OBJCOPY)
 
 dnl ========================================================
@@ -264,35 +258,8 @@ case "$target" in
 
         unset _MSVC_VER_FILTER
 
-        AC_CACHE_CHECK(for overridable _RAISE,
-                       ac_cv_have__RAISE,
-            [
-                AC_LANG_SAVE
-                AC_LANG_CPLUSPLUS
-                _SAVE_CXXFLAGS="$CXXFLAGS"
-                CXXFLAGS="${CXXFLAGS} -D_HAS_EXCEPTIONS=0"
-                AC_TRY_COMPILE([#include <xstddef>
-                                #undef _RAISE
-                                #define _RAISE(x) externallyDefinedFunction((x).what())
-                                #include <vector>
-                               ],
-                               [std::vector<int> v; return v.at(1);],
-                               ac_cv_have__RAISE="no",
-                               ac_cv_have__RAISE="yes")
-                CXXFLAGS="$_SAVE_CXXFLAGS"
-                AC_LANG_RESTORE
-            ])
-        if test "$ac_cv_have__RAISE" = "yes"; then
-            WRAP_STL_INCLUDES=1
-            MOZ_MSVC_STL_WRAP_RAISE=1
-            AC_DEFINE(MOZ_MSVC_STL_WRAP_RAISE)
-        else
-            AC_MSG_ERROR([Gecko exception wrapping doesn't understand your your MSVC/SDK.  Please file a bug describing this error and your build configuration.])
-        fi
-
-        if test "$WRAP_STL_INCLUDES" = "1"; then
-            STL_FLAGS="-I${DIST}/stl_wrappers"
-        fi
+        WRAP_STL_INCLUDES=1
+        STL_FLAGS="-I${DIST}/stl_wrappers"
         CFLAGS="$CFLAGS -D_HAS_EXCEPTIONS=0"
         CXXFLAGS="$CXXFLAGS -D_HAS_EXCEPTIONS=0"
     else
@@ -379,7 +346,6 @@ AC_SUBST(GNU_CXX)
 
 AC_SUBST(STL_FLAGS)
 AC_SUBST(WRAP_STL_INCLUDES)
-AC_SUBST(MOZ_MSVC_STL_WRAP_RAISE)
 
 dnl ========================================================
 dnl Checks for programs.
@@ -775,27 +741,11 @@ case "$target" in
     DLL_SUFFIX=".dylib"
     DSO_LDOPTS=''
     STRIP_FLAGS="$STRIP_FLAGS -x -S"
-    # Ensure that if we're targeting iOS an SDK was provided.
-    AC_CACHE_CHECK(for iOS target,
-                   ac_cv_ios_target,
-                   [AC_TRY_COMPILE([#include <TargetConditionals.h>
-#if !(TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR)
-#error not iOS
-#endif],
-                                   [],
-                                   ac_cv_ios_target="yes",
-                                   ac_cv_ios_target="no")])
-    if test "$ac_cv_ios_target" = "yes" -a -z $MOZ_IOS; then
-       AC_MSG_ERROR([targeting iOS but not using an iOS SDK?])
-    fi
-    if test -n "$MOZ_IOS"; then
-        direct_nspr_config=1
-    else
-        # The ExceptionHandling framework is needed for Objective-C exception
-        # logging code in nsObjCExceptions.h. Currently we only use that in debug
-        # builds.
-        MOZ_DEBUG_LDFLAGS="$MOZ_DEBUG_LDFLAGS -framework ExceptionHandling";
-    fi
+
+    # The ExceptionHandling framework is needed for Objective-C exception
+    # logging code in nsObjCExceptions.h. Currently we only use that in debug
+    # builds.
+    MOZ_DEBUG_LDFLAGS="$MOZ_DEBUG_LDFLAGS -framework ExceptionHandling";
 
     if test "x$lto_is_enabled" = "xyes"; then
         echo "Skipping -dead_strip because lto is enabled."
@@ -2027,9 +1977,6 @@ MOZ_OFFICIAL_BRANDING=
 MC_OFFICIAL=
 MOZ_FEEDS=1
 MOZ_AUTH_EXTENSION=1
-if test "$MOZ_IOS"; then
-   MOZ_AUTH_EXTENSION=
-fi
 MOZ_RAW=
 MOZ_AV1=
 MOZ_VORBIS=
@@ -3015,10 +2962,6 @@ MOZ_ARG_DISABLE_BOOL(negotiateauth,
     MOZ_AUTH_EXTENSION=,
     MOZ_AUTH_EXTENSION=1 )
 
-if test -n "$MOZ_IOS" -a -n "$MOZ_AUTH_EXTENSION"; then
-   AC_MSG_ERROR([negotiateauth is not supported on iOS.])
-fi
-
 dnl ========================================================
 dnl Pref extensions (autoconfig)
 dnl ========================================================
@@ -3171,9 +3114,7 @@ MOZ_ARG_ENABLE_BOOL(gamepad,
 if test "$MOZ_GAMEPAD"; then
     case "$OS_TARGET" in
     Darwin)
-        if test -z "$MOZ_IOS"; then
-            MOZ_GAMEPAD_BACKEND=cocoa
-        fi
+        MOZ_GAMEPAD_BACKEND=cocoa
         ;;
     WINNT)
         MOZ_GAMEPAD_BACKEND=windows
@@ -3486,10 +3427,6 @@ fi
 dnl ========================================================
 dnl Updater
 dnl ========================================================
-
-if test "$MOZ_IOS"; then
-  MOZ_UPDATER=
-fi
 
 MOZ_ARG_ENABLE_BOOL(updater,
 [  --enable-updater       Enable building of internal updater],
@@ -4638,9 +4575,7 @@ MOZ_ARG_DISABLE_BOOL(necko-wifi,
 if test "$MOZ_NECKO_WIFI"; then
   case "$OS_TARGET" in
     Darwin)
-      if test -z "$MOZ_IOS"; then
-        NECKO_WIFI=1
-      fi
+      NECKO_WIFI=1
       ;;
     DragonFly|FreeBSD|WINNT)
       NECKO_WIFI=1
@@ -5026,7 +4961,6 @@ AC_SUBST_LIST(VPX_ASFLAGS)
 AC_SUBST(VPX_AS_CONVERSION)
 AC_SUBST(VPX_X86_ASM)
 AC_SUBST(VPX_ARM_ASM)
-AC_SUBST(MOZ_CODE_COVERAGE)
 AC_SUBST(LIBJPEG_TURBO_USE_YASM)
 AC_SUBST_LIST(LIBJPEG_TURBO_ASFLAGS)
 AC_SUBST(MOZ_LIBAV_FFT)

@@ -830,7 +830,7 @@ nsHttpHandler::InitUserAgentComponents()
 #elif defined (XP_MACOSX)
 #if defined(__ppc__)
     mOscpu.AssignLiteral("PPC Mac OS X");
-#elif defined(__i386__) || defined(__x86_64__)
+#else
     mOscpu.AssignLiteral("Intel Mac OS X");
 #endif
     SInt32 majorVersion = nsCocoaFeatures::macOSVersionMajor();

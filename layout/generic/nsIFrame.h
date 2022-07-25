@@ -12,7 +12,23 @@
 #error This header/class should only be used within Mozilla code. It should not be used by extensions.
 #endif
 
-#define MAX_REFLOW_DEPTH 200
+#if (defined(XP_WIN) && !defined(HAVE_64BIT_BUILD))
+// Using the same number as Blink's depth limit for 32-bit Windows for consistency.
+// Note: This depth of 513 doesn't fit in the default stack of 1 MB, but it
+// depth fits when the default is grown by a mere 192 KB.
+//
+// 32-bit Windows has a different limit compared to 64-bit desktop, because the
+// default stack size affects all threads and consumes address space.
+//
+// Ideally, we'd get rid of this smaller limit and make 32-bit Windows
+// capable of working with the Linux/Mac/Win64 number below.
+#define MAX_REFLOW_DEPTH 513
+#else
+// Blink's depth limit from its HTML parser times two. This just about fits
+// the system default runtime stack limit of 8 MB on 64-bit Mac and Linux with
+// display: table-cell.
+#define MAX_REFLOW_DEPTH 1026
+#endif
 
 /* nsIFrame is in the process of being deCOMtaminated, i.e., this file is eventually
    going to be eliminated, and all callers will use nsFrame instead.  At the moment
@@ -2239,6 +2255,24 @@ public:
                       const ReflowInput& aReflowInput,
                       nsReflowStatus&          aStatus) = 0;
 
+  // Option flags for ReflowChild() and FinishReflowChild()
+  // member functions
+  enum class ReflowChildFlags : uint32_t {
+    Default = 0,
+    NoMoveView = 1 << 0,
+    NoMoveFrame = (1 << 1) | NoMoveView,
+    NoSizeView = 1 << 2,
+    NoVisibility = 1 << 3,
+
+    // Only applies to ReflowChild; if true, don't delete the next-in-flow, even
+    // if the reflow is fully complete.
+    NoDeleteNextInFlowChild = 1 << 4,
+
+    // Only applies to FinishReflowChild.  Tell it to call
+    // ApplyRelativePositioning.
+    ApplyRelativePositioning = 1 << 5
+  };
+
   /**
    * Post-reflow hook. After a frame is reflowed this method will be called
    * informing the frame that this reflow process is complete, and telling the
@@ -3213,8 +3247,9 @@ size_t SizeOfFramePropertiesForTree(mozilla::MallocSizeOf aMallocSizeOf) const;
   virtual nsBoxLayout* GetXULLayoutManager() { return nullptr; }
   nsresult GetXULClientRect(nsRect& aContentRect);
 
-  virtual uint32_t GetXULLayoutFlags()
-  { return 0; }
+  virtual ReflowChildFlags GetXULLayoutFlags() {
+    return ReflowChildFlags::Default;
+  }
 
   // For nsSprocketLayout
   virtual Valignment GetXULVAlign() const = 0;
@@ -3775,6 +3810,8 @@ public:
                                        FILE* out, int32_t aIndent) = 0;
 #endif
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIFrame::ReflowChildFlags)
 
 //----------------------------------------------------------------------
 

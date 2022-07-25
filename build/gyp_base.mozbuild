@@ -16,7 +16,7 @@ if os == 'WINNT':
 flavors = {
     'WINNT': 'win',
     'Linux': 'linux',
-    'Darwin': 'mac' if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa' else 'ios',
+    'Darwin': 'mac',
     'SunOS': 'solaris',
     'GNU/kFreeBSD': 'freebsd',
     'DragonFly': 'dragonfly',

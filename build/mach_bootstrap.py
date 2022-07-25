@@ -100,7 +100,6 @@ MACH_MODULES = [
     'python/mach/mach/commands/settings.py',
     'python/compare-locales/mach_commands.py',
     'python/mozbuild/mozbuild/mach_commands.py',
-    'python/mozbuild/mozbuild/backend/mach_commands.py',
     'python/mozbuild/mozbuild/compilation/codecomplete.py',
     'python/mozbuild/mozbuild/frontend/mach_commands.py',
     'services/common/tests/mach_commands.py',

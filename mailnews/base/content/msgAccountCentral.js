@@ -287,9 +287,11 @@ function CreateNewAccount()
 function CreateNewAccountTB(type)
 {
   if (type == "mail") {
+#ifndef ATH_EPYRUS
     if (Services.prefs.getBoolPref("mail.provider.enabled"))
         NewMailAccountProvisioner(null);
     else
+#endif
         AddMailAccount();
     return;
   }
