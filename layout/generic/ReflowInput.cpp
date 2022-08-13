@@ -2799,9 +2799,11 @@ ComputeLineHeight(nsStyleContext* aStyleContext,
 }
 
 nscoord ReflowInput::GetLineHeight() const {
+#ifdef XP_WIN
   if (mLineHeight != NS_AUTOHEIGHT) {
     return mLineHeight;
   }
+#endif
 
   nscoord blockBSize =
     nsLayoutUtils::IsNonWrapperBlock(mFrame) ? ComputedBSize() :
