@@ -62,12 +62,6 @@ CSS::Supports(const GlobalObject& aGlobal,
     return false;
   }
 
-  if (info.mStyleBackendType == StyleBackendType::Servo) {
-    NS_ConvertUTF16toUTF8 property(aProperty);
-    NS_ConvertUTF16toUTF8 value(aValue);
-    return Servo_CSSSupports(&property, &value);
-  }
-
   nsCSSParser parser;
   return parser.EvaluateSupportsDeclaration(aProperty, aValue, info.mDocURI,
                                             info.mBaseURI, info.mPrincipal);
@@ -86,13 +80,10 @@ CSS::Supports(const GlobalObject& aGlobal,
     return false;
   }
 
-  if (info.mStyleBackendType == StyleBackendType::Servo) {
-    MOZ_CRASH("stylo: CSS.supports() with arguments is not yet implemented");
-  }
-
   nsCSSParser parser;
   return parser.EvaluateSupportsCondition(aCondition, info.mDocURI,
-                                          info.mBaseURI, info.mPrincipal);
+                                          info.mBaseURI, info.mPrincipal,
+                                          css::SupportsParsingSettings::ImpliedParentheses);
 }
 
 /* static */ void
