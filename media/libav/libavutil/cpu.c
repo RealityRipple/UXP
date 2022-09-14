@@ -51,14 +51,15 @@ int av_get_cpu_flags(void)
     if (checked)
         return flags;
 
-    if (ARCH_AARCH64)
+    #if ARCH_AARCH64 == 1
         flags = ff_get_cpu_flags_aarch64();
-    if (ARCH_ARM)
+    #elif ARCH_ARM == 1
         flags = ff_get_cpu_flags_arm();
-    if (ARCH_PPC)
+    #elif ARCH_PPC == 1
         flags = ff_get_cpu_flags_ppc();
-    if (ARCH_X86)
+    #elif ARCH_X86 == 1
         flags = ff_get_cpu_flags_x86();
+    #endif
 
     flags  &= cpuflags_mask;
     checked = 1;
