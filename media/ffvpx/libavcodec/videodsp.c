@@ -44,14 +44,15 @@ av_cold void ff_videodsp_init(VideoDSPContext *ctx, int bpc)
         ctx->emulated_edge_mc = ff_emulated_edge_mc_16;
     }
 
-    if (ARCH_AARCH64)
+    #if ARCH_AARCH64 == 1
         ff_videodsp_init_aarch64(ctx, bpc);
-    if (ARCH_ARM)
+    #elif ARCH_ARM == 1
         ff_videodsp_init_arm(ctx, bpc);
-    if (ARCH_PPC)
+    #elif ARCH_PPC == 1
         ff_videodsp_init_ppc(ctx, bpc);
-    if (ARCH_X86)
+    #elif ARCH_X86 == 1
         ff_videodsp_init_x86(ctx, bpc);
-    if (ARCH_MIPS)
+    #elif ARCH_MIPS == 1
         ff_videodsp_init_mips(ctx, bpc);
+    #endif
 }

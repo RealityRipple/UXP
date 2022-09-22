@@ -225,7 +225,7 @@ ReflowInput::ReflowInput(
     CheckNextInFlowParenthood(aFrame, aParentReflowInput.mFrame);
   mFlags.mAssumingHScrollbar = mFlags.mAssumingVScrollbar = false;
   mFlags.mIsColumnBalancing = false;
-  mFlags.mIsFlexContainerMeasuringHeight = false;
+  mFlags.mIsFlexContainerMeasuringBSize = false;
   mFlags.mDummyParentReflowInput = false;
   mFlags.mShrinkWrap = !!(aFlags & COMPUTE_SIZE_SHRINK_WRAP);
   mFlags.mUseAutoBSize = !!(aFlags & COMPUTE_SIZE_USE_AUTO_BSIZE);
@@ -2403,15 +2403,15 @@ ReflowInput::InitConstraints(nsPresContext*     aPresContext,
             ComputeSizeFlags(computeSizeFlags | ComputeSizeFlags::eShrinkWrap);
 
           // If we're inside of a flex container that needs to measure our
-          // auto height, pass that information along to ComputeSize().
-          if (mFlags.mIsFlexContainerMeasuringHeight) {
+          // auto BSize, pass that information along to ComputeSize().
+          if (mFlags.mIsFlexContainerMeasuringBSize) {
             computeSizeFlags =
               ComputeSizeFlags(computeSizeFlags | ComputeSizeFlags::eUseAutoBSize);
           }
         } else {
-          MOZ_ASSERT(!mFlags.mIsFlexContainerMeasuringHeight,
+          MOZ_ASSERT(!mFlags.mIsFlexContainerMeasuringBSize,
                      "We're not in a flex container, so the flag "
-                     "'mIsFlexContainerMeasuringHeight' shouldn't be set");
+                     "'mIsFlexContainerMeasuringBSize' shouldn't be set");
         }
       }
 
@@ -2798,15 +2798,32 @@ ComputeLineHeight(nsStyleContext* aStyleContext,
   return GetNormalLineHeight(fm);
 }
 
-nscoord
-ReflowInput::CalcLineHeight() const
-{
+nscoord ReflowInput::GetLineHeight() const {
+  if (mLineHeight != NS_AUTOHEIGHT) {
+    return mLineHeight;
+  }
+
   nscoord blockBSize =
     nsLayoutUtils::IsNonWrapperBlock(mFrame) ? ComputedBSize() :
     (mCBReflowInput ? mCBReflowInput->ComputedBSize() : NS_AUTOHEIGHT);
 
-  return CalcLineHeight(mFrame->GetContent(), mFrame->StyleContext(), blockBSize,
-                        nsLayoutUtils::FontSizeInflationFor(mFrame));
+  mLineHeight = CalcLineHeight(mFrame->GetContent(),
+                               mFrame->StyleContext(),
+                               blockBSize,
+                               nsLayoutUtils::FontSizeInflationFor(mFrame));
+
+  return mLineHeight;
+}
+
+void ReflowInput::SetLineHeight(nscoord aLineHeight) {
+  MOZ_ASSERT(aLineHeight >= 0, "aLineHeight must be >= 0!");
+
+  if (mLineHeight != aLineHeight) {
+    mLineHeight = aLineHeight;
+    // Setting used line height can change a frame's block-size if mFrame's
+    // block-size behaves as auto.
+    InitResizeFlags(mFrame->PresContext(), mFrame->GetType());
+  }
 }
 
 /* static */ nscoord
@@ -2976,7 +2993,7 @@ ReflowInput::ComputeMinMaxValues(const LogicalSize&aCBSize)
        minBSize.HasPercent()) ||
       (mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE &&
        minBSize.IsCalcUnit() && minBSize.CalcHasPercent()) ||
-      mFlags.mIsFlexContainerMeasuringHeight) {
+      mFlags.mIsFlexContainerMeasuringBSize) {
     ComputedMinBSize() = 0;
   } else {
     ComputedMinBSize() = ComputeBSizeValue(aCBSize.BSize(wm),
@@ -2998,7 +3015,7 @@ ReflowInput::ComputeMinMaxValues(const LogicalSize&aCBSize)
          maxBSize.HasPercent()) ||
         (mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE &&
          maxBSize.IsCalcUnit() && maxBSize.CalcHasPercent()) ||
-        mFlags.mIsFlexContainerMeasuringHeight) {
+        mFlags.mIsFlexContainerMeasuringBSize) {
       ComputedMaxBSize() = NS_UNCONSTRAINEDSIZE;
     } else {
       ComputedMaxBSize() = ComputeBSizeValue(aCBSize.BSize(wm),

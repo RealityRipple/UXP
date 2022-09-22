@@ -182,8 +182,8 @@ case "$target" in
         19*)
             _CC_SUITE=14
             MSVS_VERSION=2015
-            MSVC_C_RUNTIME_DLL=vcruntime140.dll
-            MSVC_CXX_RUNTIME_DLL=msvcp140.dll
+            MSVC_C_RUNTIME_DLL=vcruntime140*.dll
+            MSVC_CXX_RUNTIME_DLL=msvcp140*.dll
 
             MOZ_CHECK_HEADER(dia2.h, MSVC_HAS_DIA_SDK=1)
             if test -n "$MSVC_HAS_DIA_SDK"; then
@@ -5048,37 +5048,6 @@ if test -n "$A11Y_LOG"; then
 fi
 
 AC_SUBST(MOZILLA_VERSION)
-
-dnl ========================================================
-dnl Directive 4
-dnl ========================================================
-
-DIRECTIVE4_LIST="
-MOZ_OFFICIAL_BRANDING=$MOZ_OFFICIAL_BRANDING
-MOZ_BRANDING_DIRECTORY=$MOZ_BRANDING_DIRECTORY
-MC_BASILISK=$MC_BASILISK
-MC_PALEMOON=$MC_PALEMOON
-MOZ_EME=$MOZ_EME
-MOZ_WEBRTC=$MOZ_WEBRTC
-MOZ_SYSTEM_JPEG=$MOZ_SYSTEM_JPEG
-MOZ_SYSTEM_ZLIB=$MOZ_SYSTEM_ZLIB
-MOZ_SYSTEM_BZ2=$MOZ_SYSTEM_BZ2
-MOZ_SYSTEM_PNG=$MOZ_SYSTEM_PNG
-MOZ_SYSTEM_LIBVPX=$MOZ_SYSTEM_LIBVPX
-MOZ_SYSTEM_SQLITE=$MOZ_SYSTEM_SQLITE
-MOZ_SYSTEM_JEMALLOC=$MOZ_SYSTEM_JEMALLOC"
-
-DIRECTIVE4=`$PYTHON $_topsrcdir/build/directive4.py $DIRECTIVE4_LIST`
-
-if test -n "$DIRECTIVE4"; then
-    if test -n "$MC_PRIVATE_BUILD"; then
-        AC_MSG_WARN([Private Build - The configuration you have chosen to use with official branding deviates from official build configuration. Your build is thus for personal and private use only and must not be (re)distributed - Please see: http://www.palemoon.org/redist.shtml])
-    else
-        AC_MSG_ERROR([Branding Violation - Please see: http://www.palemoon.org/redist.shtml])
-    fi
-fi
-
-AC_SUBST(DIRECTIVE4)
 
 dnl Spit out some output
 dnl ========================================================

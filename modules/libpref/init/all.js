@@ -361,6 +361,10 @@ pref("media.wakelock_timeout", 2000);
 // opened as top-level documents, as opposed to inside a media element.
 pref("media.play-stand-alone", true);
 
+// Whether we should play wave files opened in a "media document", i.e. wave
+// audio opened as top-level documents, as opposed to inside a media element.
+pref("media.wave.play-stand-alone", true);
+
 pref("media.hardware-video-decoding.enabled", true);
 pref("media.hardware-video-decoding.force-enabled", false);
 
@@ -1463,8 +1467,8 @@ pref("network.http.referer.XOriginTrimmingPolicy", 0);
 pref("network.http.referer.XOriginPolicy", 0);
 
 // Include an origin header on non-GET and non-HEAD requests regardless of CORS
-// 0=never send, 1=send when same-origin only, 2=always send
-pref("network.http.sendOriginHeader", 0);
+// 0=never send, 1=send when same-origin only, 2=always send (careful!)
+pref("network.http.sendOriginHeader", 1);
 
 // Controls whether referrer attributes in <a>, <img>, <area>, <iframe>, and <link> are honoured
 pref("network.http.enablePerElementReferrer", true);

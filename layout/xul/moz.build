@@ -37,7 +37,7 @@ EXPORTS.mozilla.dom += [
     'ScrollBoxObject.h',
 ]
 
-SOURCES += [
+UNIFIED_SOURCES += [
     'BoxObject.cpp',
     'ContainerBoxObject.cpp',
     'ListBoxObject.cpp',
