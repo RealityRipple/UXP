@@ -40,9 +40,6 @@ const PREF_GETADDONS_GETRECOMMENDED      = "extensions.getAddons.recommended.url
 const PREF_GETADDONS_BROWSESEARCHRESULTS = "extensions.getAddons.search.browseURL";
 const PREF_GETADDONS_GETSEARCHRESULTS    = "extensions.getAddons.search.url";
 const PREF_GETADDONS_DB_SCHEMA           = "extensions.getAddons.databaseSchema";
-#ifdef MOZ_PHOENIX_EXTENSIONS
-const PREF_FAKEID                        = "extensions.guid.fakeId";
-#endif
 const PREF_METADATA_LASTUPDATE           = "extensions.getAddons.cache.lastUpdate";
 const PREF_METADATA_UPDATETHRESHOLD_SEC  = "extensions.getAddons.cache.updateThreshold";
 const DEFAULT_METADATA_UPDATETHRESHOLD_SEC = 172800;  // two days
@@ -66,6 +63,9 @@ const BLANK_DB = function() {
 }
 
 const TOOLKIT_ID     = "toolkit@mozilla.org";
+#ifdef MOZ_PHOENIX_EXTENSIONS
+const APPCOMPATID    = Services.prefs.getCharPref("extensions.guid.appCompatId");
+#endif
 Cu.import("resource://gre/modules/Log.jsm");
 const LOGGER_ID = "addons.repository";
 
@@ -1255,7 +1255,7 @@ this.AddonRepository = {
     function isSameApplication(aAppNode) {
 #ifdef MOZ_PHOENIX_EXTENSIONS
       if (self._getTextContent(aAppNode) == Services.appinfo.ID ||
-          self._getTextContent(aAppNode) == Services.prefs.getCharPref(PREF_FAKEID)) {
+          self._getTextContent(aAppNode) == APPCOMPATID) {
 #else
       if (self._getTextContent(aAppNode) == Services.appinfo.ID) {
 #endif
