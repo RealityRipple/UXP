@@ -523,7 +523,7 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
         maxVersion: getRequiredProperty(app, "max_version", "string"),
       }
     }
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
     else if (APPCOMPATID in applications) {
       logger.debug("update.json: Dual-GUID targetApplication");
       app = getProperty(applications, APPCOMPATID, "object");
@@ -558,7 +558,7 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
         id: TOOLKIT_ID,
         minVersion: platformVersion,
 #endif
-#if defined(MOZ_PHOENIX) && defined(MOZ_PHOENIX_EXTENSIONS)
+#if defined(MOZ_PHOENIX) && defined(UXP_APPCOMPAT_GUID)
         maxVersion: APPCOMPATVERSION,
 #else
         maxVersion: '*',
@@ -833,7 +833,7 @@ function matchesVersions(aUpdate, aAppVersion, aPlatformVersion,
       return (Services.vc.compare(aAppVersion, app.minVersion) >= 0) &&
              (aIgnoreMaxVersion || (Services.vc.compare(aAppVersion, app.maxVersion) <= 0));
     }
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
     if (app.id == APPCOMPATID) {
       return (Services.vc.compare(aAppVersion, app.minVersion) >= 0) &&
              (aIgnoreMaxVersion || (Services.vc.compare(aAppVersion, app.maxVersion) <= 0));
@@ -896,7 +896,7 @@ this.AddonUpdateChecker = {
         if (aIgnoreCompatibility) {
           for (let targetApp of update.targetApplications) {
             let id = targetApp.id;
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
             if (id == Services.appinfo.ID || id == APPCOMPATID ||
                 id == TOOLKIT_ID)
 #else

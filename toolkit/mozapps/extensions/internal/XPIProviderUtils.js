@@ -71,7 +71,7 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
                           "softDisabled", "foreignInstall", "hasBinaryComponents",
                           "strictCompatibility", "locales", "targetApplications",
                           "targetPlatforms", "multiprocessCompatible",
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
                           "native"
 #endif
                           ];

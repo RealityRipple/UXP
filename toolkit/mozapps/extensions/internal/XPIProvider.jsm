@@ -134,7 +134,7 @@ const RDFURI_INSTALL_MANIFEST_ROOT    = "urn:mozilla:install-manifest";
 const PREFIX_NS_EM                    = "http://www.mozilla.org/2004/em-rdf#";
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
 const APPCOMPATID                     = Services.prefs.getCharPref("extensions.guid.appCompatId");
 const APPCOMPATVERSION                = Services.prefs.getCharPref("extensions.guid.appCompatVersion");
 #endif
@@ -6403,14 +6403,14 @@ AddonInternal.prototype = {
     if (!aPlatformVersion)
       aPlatformVersion = Services.appinfo.platformVersion;
 
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
     this.native = false;
 #endif
 
     let version;
     if (app.id == Services.appinfo.ID) {
       version = aAppVersion;
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
       this.native = true;
     }
     else if (app.id == APPCOMPATID) {
@@ -6421,7 +6421,7 @@ AddonInternal.prototype = {
 #endif
     }
     else if (app.id == TOOLKIT_ID) {
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
       this.native = true;
 #endif
       version = aPlatformVersion;
@@ -6446,7 +6446,7 @@ AddonInternal.prototype = {
 
       // Extremely old extensions should not be compatible by default.
       let minCompatVersion;
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
       if (app.id == Services.appinfo.ID || app.id == APPCOMPATID)
 #else
       if (app.id == Services.appinfo.ID)
@@ -6474,7 +6474,7 @@ AddonInternal.prototype = {
       if (targetApp.id == TOOLKIT_ID)
         app = targetApp;
     }
-#ifdef MOZ_PHOENIX_EXTENSIONS
+#ifdef UXP_APPCOMPAT_GUID
     // Special case: check for AppCompat GUID TargetApps. this has to be done AFTER
     // the initial check to make sure appinfo.ID is preferred, even if
     // AppCompat GUID is listed before it in the install manifest.
