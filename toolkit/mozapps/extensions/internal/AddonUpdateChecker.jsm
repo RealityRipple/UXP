@@ -24,8 +24,8 @@ const PREFIX_THEME                    = "urn:mozilla:theme:";
 const XMLURI_PARSE_ERROR              = "http://www.mozilla.org/newlayout/xml/parsererror.xml";
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
-const FIREFOX_ID                      = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
-const FIREFOX_APPCOMPATVERSION        = "56.9"
+const PREF_FAKEID                     = "extensions.guid.fakeId";
+const PREF_APPCOMPATVERSION           = "extensions.guid.appCompatVersion";
 
 const PREF_UPDATE_REQUIREBUILTINCERTS = "extensions.update.requireBuiltInCerts";
 const PREF_EM_MIN_COMPAT_APP_VERSION  = "extensions.minCompatibleAppVersion";
@@ -524,12 +524,12 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
       }
     }
 #ifdef MOZ_PHOENIX_EXTENSIONS
-    else if (FIREFOX_ID in applications) {
+    else if (Services.prefs.getCharPref(PREF_FAKEID) in applications) {
       logger.debug("update.json: Dual-GUID targetApplication");
-      app = getProperty(applications, FIREFOX_ID, "object");
+      app = getProperty(applications, Services.prefs.getCharPref(PREF_FAKEID), "object");
 
       appEntry = {
-        id: FIREFOX_ID,
+        id: Services.prefs.getCharPref(PREF_FAKEID),
         minVersion: getRequiredProperty(app, "min_version", "string"),
         maxVersion: getRequiredProperty(app, "max_version", "string"),
       }
@@ -551,7 +551,7 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
 
       appEntry = {
 #ifdef MOZ_PHOENIX
-        id: FIREFOX_ID,
+        id: Services.prefs.getCharPref(PREF_FAKEID),
         minVersion: getProperty(app, "strict_min_version", "string",
                                 Services.prefs.getCharPref(PREF_EM_MIN_COMPAT_APP_VERSION)),
 #else
@@ -559,7 +559,7 @@ function parseJSONManifest(aId, aUpdateKey, aRequest, aManifestData) {
         minVersion: platformVersion,
 #endif
 #if defined(MOZ_PHOENIX) && defined(MOZ_PHOENIX_EXTENSIONS)
-        maxVersion: FIREFOX_APPCOMPATVERSION,
+        maxVersion: Services.prefs.getCharPref(PREF_APPCOMPATVERSION),
 #else
         maxVersion: '*',
 #endif
@@ -834,7 +834,7 @@ function matchesVersions(aUpdate, aAppVersion, aPlatformVersion,
              (aIgnoreMaxVersion || (Services.vc.compare(aAppVersion, app.maxVersion) <= 0));
     }
 #ifdef MOZ_PHOENIX_EXTENSIONS
-    if (app.id == FIREFOX_ID) {
+    if (app.id == Services.prefs.getCharPref(PREF_FAKEID)) {
       return (Services.vc.compare(aAppVersion, app.minVersion) >= 0) &&
              (aIgnoreMaxVersion || (Services.vc.compare(aAppVersion, app.maxVersion) <= 0));
     }
@@ -897,7 +897,7 @@ this.AddonUpdateChecker = {
           for (let targetApp of update.targetApplications) {
             let id = targetApp.id;
 #ifdef MOZ_PHOENIX_EXTENSIONS
-            if (id == Services.appinfo.ID || id == FIREFOX_ID ||
+            if (id == Services.appinfo.ID || id == Services.prefs.getCharPref(PREF_FAKEID) ||
                 id == TOOLKIT_ID)
 #else
             if (id == Services.appinfo.ID || id == TOOLKIT_ID)

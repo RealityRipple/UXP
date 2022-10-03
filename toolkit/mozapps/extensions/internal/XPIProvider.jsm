@@ -135,8 +135,8 @@ const PREFIX_NS_EM                    = "http://www.mozilla.org/2004/em-rdf#";
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 #ifdef MOZ_PHOENIX_EXTENSIONS
-const FIREFOX_ID                      = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}"
-const FIREFOX_APPCOMPATVERSION        = "56.9"
+const PREF_FAKEID                     = "extensions.guid.fakeId";
+const PREF_APPCOMPATVERSION           = "extensions.guid.appCompatVersion";
 #endif
 
 // The value for this is in Makefile.in
@@ -6413,10 +6413,10 @@ AddonInternal.prototype = {
 #ifdef MOZ_PHOENIX_EXTENSIONS
       this.native = true;
     }
-    else if (app.id == FIREFOX_ID) {
-     version = FIREFOX_APPCOMPATVERSION;
+    else if (app.id == Services.prefs.getCharPref(PREF_FAKEID)) {
+     version = Services.prefs.getCharPref(PREF_APPCOMPATVERSION);
       if (this.type != "extension")
-        //Only allow extensions in Firefox compatibility mode
+        //Only allow extensions in Fake GUID compatibility mode
         return false;
 #endif
     }
@@ -6447,7 +6447,7 @@ AddonInternal.prototype = {
       // Extremely old extensions should not be compatible by default.
       let minCompatVersion;
 #ifdef MOZ_PHOENIX_EXTENSIONS
-      if (app.id == Services.appinfo.ID || app.id == FIREFOX_ID)
+      if (app.id == Services.appinfo.ID || app.id == Services.prefs.getCharPref(PREF_FAKEID))
 #else
       if (app.id == Services.appinfo.ID)
 #endif
@@ -6475,13 +6475,13 @@ AddonInternal.prototype = {
         app = targetApp;
     }
 #ifdef MOZ_PHOENIX_EXTENSIONS
-    // Special case: check for Firefox TargetApps. this has to be done AFTER
+    // Special case: check for Fake GUID TargetApps. this has to be done AFTER
     // the initial check to make sure appinfo.ID is preferred, even if
-    // Firefox is listed before it in the install manifest.
+    // Fake GUID is listed before it in the install manifest.
     // Only do this for extensions. Other types should not be allowed.
     if (this.type == "extension") {
       for (let targetApp of this.targetApplications) {
-        if (targetApp.id == FIREFOX_ID) //Firefox GUID
+        if (targetApp.id == Services.prefs.getCharPref(PREF_FAKEID)) //Fake GUID
           return targetApp;
       }
     }
