@@ -30,5 +30,5 @@ if CONFIG['MOZ_EM_DEBUG']:
     DEFINES['MOZ_EM_DEBUG'] = 1
 
 # Apperently this needs to be defined because it isn't picked up automagically any more
-if CONFIG['MOZ_PHOENIX_EXTENSIONS']:
-    DEFINES['MOZ_PHOENIX_EXTENSIONS'] = 1
+if CONFIG['UXP_APPCOMPAT_GUID']:
+    DEFINES['UXP_APPCOMPAT_GUID'] = 1
