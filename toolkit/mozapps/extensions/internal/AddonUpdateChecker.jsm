@@ -15,6 +15,9 @@ const Cu = Components.utils;
 
 this.EXPORTED_SYMBOLS = [ "AddonUpdateChecker" ];
 
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 const TIMEOUT                         = 60 * 1000;
 const PREFIX_NS_RDF                   = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 const PREFIX_NS_EM                    = "http://www.mozilla.org/2004/em-rdf#";
@@ -30,8 +33,7 @@ const APPCOMPATVERSION                = Services.prefs.getCharPref("extensions.g
 const PREF_UPDATE_REQUIREBUILTINCERTS = "extensions.update.requireBuiltInCerts";
 const PREF_EM_MIN_COMPAT_APP_VERSION  = "extensions.minCompatibleAppVersion";
 
-Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+
 
 XPCOMUtils.defineLazyModuleGetter(this, "AddonManager",
                                   "resource://gre/modules/AddonManager.jsm");
