@@ -45,6 +45,7 @@ LockImpl::~LockImpl() {
 bool LockImpl::Try() {
   int rv = pthread_mutex_trylock(&native_handle_);
   DCHECK(rv == 0 || rv == EBUSY) << ". " << strerror(rv);
+  return rv == 0;
 }
 
 void LockImpl::Lock() {
