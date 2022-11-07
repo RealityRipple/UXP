@@ -105,6 +105,19 @@ def get_debugger_path(debugger):
             # Just default to find_executable instead.
             pass
 
+    if mozinfo.os == 'win' and debugger == 'devenv.exe':
+        # We can no longer rely on PATH for finding the executable of newer
+        # versions of Visual Studio due to changes in their deployment and
+        # extensibility models. Instead, we use Microsoft's vswhere utility
+        # for this purpose.
+        try:
+            path = check_output(['vswhere', '-property', 'productPath']).strip()
+            if path:
+                return path
+        except:
+            # Just default to find_executable instead.
+            pass
+
     return find_executable(debugger)
 
 
@@ -213,7 +226,7 @@ def get_default_debugger_name(search=DebuggerSearch.OnlyFirst):
 
     # Finally get the debugger information.
     for debuggerName in debuggerPriorities:
-        debuggerPath = find_executable(debuggerName)
+        debuggerPath = get_debugger_path(debuggerName)
         if debuggerPath:
             return debuggerName
         elif not search == DebuggerSearch.KeepLooking:

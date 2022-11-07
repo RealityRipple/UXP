@@ -223,6 +223,10 @@ pref("dom.keyboardevent.code.enabled", true);
 // even if this is true).
 pref("dom.keyboardevent.dispatch_during_composition", false);
 
+// If this is true, TextEventDispatcher dispatches keypress events
+// for the input of non-printable characters (content only).
+pref("dom.keyboardevent.keypress.dispatch_non_printable_in_content", false);
+
 // Whether URL,Location,Link::GetHash should be percent encoded
 // in setter and percent decoded in getter (old behaviour = true)
 pref("dom.url.encode_decode_hash", true);
@@ -360,6 +364,10 @@ pref("media.wakelock_timeout", 2000);
 // Whether we should play videos opened in a "video document", i.e. videos
 // opened as top-level documents, as opposed to inside a media element.
 pref("media.play-stand-alone", true);
+
+// Whether we should play wave files opened in a "media document", i.e. wave
+// audio opened as top-level documents, as opposed to inside a media element.
+pref("media.wave.play-stand-alone", true);
 
 pref("media.hardware-video-decoding.enabled", true);
 pref("media.hardware-video-decoding.force-enabled", false);
@@ -1231,7 +1239,7 @@ pref("javascript.options.wasm_baselinejit", false);
 #endif
 pref("javascript.options.native_regexp",    true);
 pref("javascript.options.parallel_parsing", true);
-// ayncstack is used for debugging promises in devtools.
+// asyncstack is used for debugging promises in devtools.
 pref("javascript.options.asyncstack",       false);
 pref("javascript.options.throw_on_asmjs_validation_failure", false);
 pref("javascript.options.ion.offthread_compilation", true);
@@ -1276,6 +1284,18 @@ pref("javascript.options.shared_memory", true);
 
 pref("javascript.options.throw_on_debuggee_would_run", false);
 pref("javascript.options.dump_stack_on_debuggee_would_run", false);
+
+// Set a thread stack quota limit for the main thread.
+// Default 2MB for normal builds on all OSes. Tweak this if your custom
+// build explicitly requires a larger or smaller stack limit
+// Do NOT touch these values unless you know exactly what you are doing!
+// Neither exceedingly large nor exceedingly small values are beneficial.
+#ifdef MOZ_ASAN
+pref("javascript.options.main_thread_stack_quota_cap", 6291456);
+#else
+pref("javascript.options.main_thread_stack_quota_cap", 2097152);
+#endif
+
 
 // advanced prefs
 pref("advanced.mailftp",                    false);
@@ -1331,22 +1351,27 @@ pref("network.protocol-handler.external-default", true);      // OK to load
 pref("network.protocol-handler.warn-external-default", true); // warn before load
 
 // Prevent using external protocol handlers for these schemes
-pref("network.protocol-handler.external.hcp", false);
-pref("network.protocol-handler.external.vbscript", false);
-pref("network.protocol-handler.external.javascript", false);
+pref("network.protocol-handler.external.afp", false);
 pref("network.protocol-handler.external.data", false);
-pref("network.protocol-handler.external.ms-help", false);
+pref("network.protocol-handler.external.disk", false);
+pref("network.protocol-handler.external.disks", false);
+pref("network.protocol-handler.external.hcp", false);
+pref("network.protocol-handler.external.javascript", false);
 pref("network.protocol-handler.external.mk", false);
+pref("network.protocol-handler.external.moz-icon", false);
 pref("network.protocol-handler.external.res", false);
 pref("network.protocol-handler.external.shell", false);
+pref("network.protocol-handler.external.vbscript", false);
 pref("network.protocol-handler.external.vnd.ms.radio", false);
+#ifdef XP_WIN
+pref("network.protocol-handler.external.ms-help", false);
+pref("network.protocol-handler.external.ms-msdt", false);
+pref("network.protocol-handler.external.search", false);
+pref("network.protocol-handler.external.search-ms", false);
+#endif
 #ifdef XP_MACOSX
 pref("network.protocol-handler.external.help", false);
 #endif
-pref("network.protocol-handler.external.disk", false);
-pref("network.protocol-handler.external.disks", false);
-pref("network.protocol-handler.external.afp", false);
-pref("network.protocol-handler.external.moz-icon", false);
 
 // Don't allow  external protocol handlers for common typos
 pref("network.protocol-handler.external.ttp", false);  // http
@@ -1444,6 +1469,10 @@ pref("network.http.referer.trimmingPolicy", 0);
 pref("network.http.referer.XOriginTrimmingPolicy", 0);
 // 0=always send, 1=send iff base domains match, 2=send iff hosts match
 pref("network.http.referer.XOriginPolicy", 0);
+
+// Include an origin header on non-GET and non-HEAD requests regardless of CORS
+// 0=never send, 1=send when same-origin only, 2=always send (careful!)
+pref("network.http.sendOriginHeader", 1);
 
 // Controls whether referrer attributes in <a>, <img>, <area>, <iframe>, and <link> are honoured
 pref("network.http.enablePerElementReferrer", true);
@@ -4207,6 +4236,7 @@ pref("webgl.lose-context-on-memory-pressure", false);
 pref("webgl.can-lose-context-in-foreground", true);
 pref("webgl.restore-context-when-visible", true);
 pref("webgl.max-warnings-per-context", 32);
+pref("webgl.max-size-per-texture-mb", 1024);
 pref("webgl.enable-draft-extensions", false);
 pref("webgl.enable-privileged-extensions", false);
 pref("webgl.bypass-shader-validation", false);
@@ -4409,6 +4439,10 @@ pref("xpinstall.signatures.required", false);
 pref("extensions.alwaysUnpack", false);
 pref("extensions.minCompatiblePlatformVersion", "2.0");
 pref("extensions.webExtensionsMinPlatformVersion", "42.0a1");
+
+// AppCompat GUID system
+pref("extensions.guid.appCompatVersion", "56.9");
+pref("extensions.guid.appCompatId", "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}");
 
 // Other webextensions prefs
 pref("extensions.webextensions.keepStorageOnUninstall", false);

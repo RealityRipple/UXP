@@ -592,12 +592,13 @@ av_cold void ff_h264_pred_init(H264PredContext *h, int codec_id,
             break;
     }
 
-    if (ARCH_AARCH64)
+    #if ARCH_AARCH64 == 1
         ff_h264_pred_init_aarch64(h, codec_id, bit_depth, chroma_format_idc);
-    if (ARCH_ARM)
+    #elif ARCH_ARM == 1
         ff_h264_pred_init_arm(h, codec_id, bit_depth, chroma_format_idc);
-    if (ARCH_X86)
+    #elif ARCH_X86 == 1
         ff_h264_pred_init_x86(h, codec_id, bit_depth, chroma_format_idc);
-    if (ARCH_MIPS)
+    #elif ARCH_MIPS == 1
         ff_h264_pred_init_mips(h, codec_id, bit_depth, chroma_format_idc);
+	#endif
 }

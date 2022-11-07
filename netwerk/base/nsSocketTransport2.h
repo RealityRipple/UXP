@@ -295,6 +295,7 @@ private:
     bool mProxyTransparentResolvesHost;
     bool mHttpsProxy;
     uint32_t     mConnectionFlags;
+    bool mReuseAddrPort;
 
     // The origin attributes are used to create sockets.  The first party domain
     // will eventually be used to isolate OCSP cache and is only non-empty when
@@ -350,13 +351,13 @@ private:
 
     void OnMsgInputPending()
     {
-        MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+        NS_ASSERTION(PR_GetCurrentThread() == gSocketThread, "not on socket thread");
         if (mState == STATE_TRANSFERRING)
             mPollFlags |= (PR_POLL_READ | PR_POLL_EXCEPT);
     }
     void OnMsgOutputPending()
     {
-        MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+        NS_ASSERTION(PR_GetCurrentThread() == gSocketThread, "not on socket thread");
         if (mState == STATE_TRANSFERRING)
             mPollFlags |= (PR_POLL_WRITE | PR_POLL_EXCEPT);
     }

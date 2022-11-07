@@ -20,8 +20,8 @@
 #include "jsstr.h"
 #include "jsweakmap.h"
 #include "jswrapper.h"
+#include "selfhosted.out.h"
 
-#include "builtin/selfhosted.out.h"
 #include "builtin/Intl.h"
 #include "builtin/MapObject.h"
 #include "builtin/ModuleObject.h"
@@ -571,39 +571,31 @@ intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
     bound->setExtendedSlot(BOUND_FUN_LENGTH_SLOT, NumberValue(length));
 
     // Try to avoid invoking the resolve hook.
-    JSAtom* name = nullptr;
-    if (targetObj->is<JSFunction>() && !targetObj->as<JSFunction>().hasResolvedName())
-        name = targetObj->as<JSFunction>().getUnresolvedName(cx);
+    RootedAtom name(cx);
+    if (targetObj->is<JSFunction>() && !targetObj->as<JSFunction>().hasResolvedName()) {
+        if (!JSFunction::getUnresolvedName(cx, targetObj.as<JSFunction>(), &name))
+            return false;
+    }
 
-    RootedString rootedName(cx);
-    if (name) {
-        rootedName = name;
-    } else {
+    // 19.2.3.2 Function.prototype.bind, steps 9-11.
+    if (!name) {
         // 19.2.3.2 Function.prototype.bind, step 9.
         RootedValue targetName(cx);
         if (!GetProperty(cx, targetObj, targetObj, cx->names().name, &targetName))
             return false;
 
         // 19.2.3.2 Function.prototype.bind, step 10.
-        if (targetName.isString())
-            rootedName = targetName.toString();
+        if (targetName.isString() && !targetName.toString()->empty()) {
+            name = AtomizeString(cx, targetName.toString());
+            if (!name)
+                return false;
+        } else {
+            name = cx->names().empty;
+        }
     }
 
-    // 19.2.3.2 Function.prototype.bind, step 11 (Inlined SetFunctionName).
     MOZ_ASSERT(!bound->hasGuessedAtom());
-    if (rootedName && !rootedName->empty()) {
-        StringBuffer sb(cx);
-        if (!sb.append(cx->names().boundWithSpace) || !sb.append(rootedName))
-            return false;
-
-        RootedAtom nameAtom(cx, sb.finishAtom());
-        if (!nameAtom)
-            return false;
-
-        bound->setAtom(nameAtom);
-    } else {
-        bound->setAtom(cx->names().boundWithSpace);
-    }
+    bound->setAtom(name);
 
     args.rval().setUndefined();
     return true;
@@ -2528,6 +2520,8 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("intl_PluralRules_availableLocales", intl_PluralRules_availableLocales, 0,0),
     JS_FN("intl_GetPluralCategories", intl_GetPluralCategories, 2, 0),
     JS_FN("intl_SelectPluralRule", intl_SelectPluralRule, 2,0),
+    JS_FN("intl_RelativeTimeFormat_availableLocales", intl_RelativeTimeFormat_availableLocales, 0,0),
+    JS_FN("intl_FormatRelativeTime", intl_FormatRelativeTime, 3,0),
 
     JS_INLINABLE_FN("IsRegExpObject",
                     intrinsic_IsInstanceOfBuiltin<RegExpObject>, 1,0,

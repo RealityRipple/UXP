@@ -156,6 +156,7 @@ def old_configure_options(*options):
     '--enable-accessibility',
     '--enable-address-sanitizer',
     '--enable-alsa',
+    '--enable-appcompat-guid',
     '--enable-av1',
     '--enable-jxl',
     '--enable-b2g-bt',
@@ -307,7 +308,6 @@ def old_configure_options(*options):
     '--disable-browser-statusbar',
     '--disable-sync',
     '--disable-personas',
-    '--enable-phoenix-extensions',
     
     # Below are configure flags used by Basilisk
     '--disable-webextensions',

@@ -28,14 +28,6 @@ Important Concepts
    locales
    rust
 
-integrated development environment (IDE)
-========================================
-.. toctree::
-   :maxdepth: 1
-
-   cppeclipse
-   visualstudio
-
 mozbuild
 ========
 
