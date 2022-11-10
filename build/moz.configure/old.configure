@@ -158,6 +158,7 @@ def old_configure_options(*options):
     '--enable-alsa',
     '--enable-appcompat-guid',
     '--enable-av1',
+    '--enable-jxl',
     '--enable-b2g-bt',
     '--enable-b2g-camera',
     '--enable-b2g-ril',
