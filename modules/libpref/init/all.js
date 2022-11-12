@@ -223,6 +223,10 @@ pref("dom.keyboardevent.code.enabled", true);
 // even if this is true).
 pref("dom.keyboardevent.dispatch_during_composition", false);
 
+// If this is true, TextEventDispatcher dispatches keypress events
+// for the input of non-printable characters (content only).
+pref("dom.keyboardevent.keypress.dispatch_non_printable_in_content", false);
+
 // Whether URL,Location,Link::GetHash should be percent encoded
 // in setter and percent decoded in getter (old behaviour = true)
 pref("dom.url.encode_decode_hash", true);
@@ -4142,7 +4146,11 @@ pref("image.decode-immediately.enabled", false);
 pref("image.downscale-during-decode.enabled", true);
 
 // The default Accept header sent for images loaded over HTTP(S)
+#ifdef MOZ_JXL
+pref("image.http.accept", "image/webp,image/jxl,image/png,image/*;q=0.8,*/*;q=0.5");
+#else
 pref("image.http.accept", "image/webp,image/png,image/*;q=0.8,*/*;q=0.5");
+#endif
 
 // The threshold for inferring that changes to an <img> element's |src|
 // attribute by JavaScript represent an animation, in milliseconds. If the |src|
@@ -4197,6 +4205,10 @@ pref("image.multithreaded_decoding.limit", -1);
 
 // Whether we attempt to decode WebP images or not.
 pref("image.webp.enabled", true);
+
+#ifdef MOZ_JXL
+pref("image.jxl.enabled", true);
+#endif
 
 // Limit for the canvas image cache. 0 means we don't limit the size of the
 // cache.
@@ -4431,6 +4443,10 @@ pref("xpinstall.signatures.required", false);
 pref("extensions.alwaysUnpack", false);
 pref("extensions.minCompatiblePlatformVersion", "2.0");
 pref("extensions.webExtensionsMinPlatformVersion", "42.0a1");
+
+// AppCompat GUID system
+pref("extensions.guid.appCompatVersion", "56.9");
+pref("extensions.guid.appCompatId", "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}");
 
 // Other webextensions prefs
 pref("extensions.webextensions.keepStorageOnUninstall", false);

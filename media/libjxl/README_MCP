@@ -1,0 +1,13 @@
+This directory contains build files for the JPEG-XL image
+format reference implementation.
+
+Any patches or additional configuration to be applied to the
+upstream source should be kept here in the media/libjxl
+directory.
+
+The upstream jxl git repository is:
+
+    https://github.com/libjxl/libjxl
+
+The tree used was from commit
+192ddd90fdf0c69cd1db1c8d7850db036dd87f4b.
