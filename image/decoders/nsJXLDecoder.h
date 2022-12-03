@@ -44,6 +44,12 @@ class nsJXLDecoder final : public Decoder {
   Vector<uint8_t> mBuffer;
   Vector<uint8_t> mOutBuffer;
   JxlBasicInfo mInfo{};
+  JxlFrameHeader mFrameHeader;
+
+  uint32_t mNumFrames;
+  FrameTimeout mTimeout;
+  SurfacePipe mPipe;
+  bool mContinue;
 };
 
 }  // namespace image
