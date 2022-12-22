@@ -94,7 +94,6 @@ Status ImageCodec::ParseParam(const std::string& param) {
     }
     return true;
   } else if (param[0] == 'r') {
-    butteraugli_target_ = -1.0;
     ba_params_.hf_asymmetry = args_.ba_params.hf_asymmetry;
     bitrate_target_ = strtof(param.substr(1).c_str(), nullptr);
     return true;
@@ -109,7 +108,7 @@ class NoneCodec : public ImageCodec {
   Status ParseParam(const std::string& param) override { return true; }
 
   Status Compress(const std::string& filename, const CodecInOut* io,
-                  ThreadPoolInternal* pool, PaddedBytes* compressed,
+                  ThreadPoolInternal* pool, std::vector<uint8_t>* compressed,
                   jpegxl::tools::SpeedStats* speed_stats) override {
     PROFILER_ZONE("NoneCompress");
     const double start = Now();
