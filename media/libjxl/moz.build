@@ -11,6 +11,9 @@ LOCAL_INCLUDES += [
 ]
 
 SOURCES += [
+    "/media/libjxl/src/lib/extras/dec/jxl.cc",
+    "/media/libjxl/src/lib/extras/exif.cc",
+    "/media/libjxl/src/lib/extras/render_hdr.cc",
     "/media/libjxl/src/lib/jxl/ac_strategy.cc",
     "/media/libjxl/src/lib/jxl/alpha.cc",
     "/media/libjxl/src/lib/jxl/ans_common.cc",
@@ -26,7 +29,11 @@ SOURCES += [
     "/media/libjxl/src/lib/jxl/color_encoding_internal.cc",
     "/media/libjxl/src/lib/jxl/color_management.cc",
     "/media/libjxl/src/lib/jxl/compressed_dc.cc",
-    "/media/libjxl/src/lib/jxl/convolve.cc",
+    "/media/libjxl/src/lib/jxl/convolve_separable5.cc",
+    "/media/libjxl/src/lib/jxl/convolve_separable7.cc",
+    "/media/libjxl/src/lib/jxl/convolve_slow.cc",
+    "/media/libjxl/src/lib/jxl/convolve_symmetric3.cc",
+    "/media/libjxl/src/lib/jxl/convolve_symmetric5.cc",
     "/media/libjxl/src/lib/jxl/dct_scales.cc",
     "/media/libjxl/src/lib/jxl/dec_ans.cc",
     "/media/libjxl/src/lib/jxl/dec_cache.cc",
@@ -45,7 +52,6 @@ SOURCES += [
     "/media/libjxl/src/lib/jxl/enc_bit_writer.cc",
     "/media/libjxl/src/lib/jxl/entropy_coder.cc",
     "/media/libjxl/src/lib/jxl/epf.cc",
-    "/media/libjxl/src/lib/jxl/exif.cc",
     "/media/libjxl/src/lib/jxl/fast_dct.cc",
     "/media/libjxl/src/lib/jxl/fields.cc",
     "/media/libjxl/src/lib/jxl/frame_header.cc",
@@ -79,11 +85,14 @@ SOURCES += [
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_blending.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_chroma_upsampling.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_epf.cc",
+    "/media/libjxl/src/lib/jxl/render_pipeline/stage_from_linear.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_gaborish.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_noise.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_patches.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_splines.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_spot.cc",
+    "/media/libjxl/src/lib/jxl/render_pipeline/stage_to_linear.cc",
+    "/media/libjxl/src/lib/jxl/render_pipeline/stage_tone_mapping.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_upsampling.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_write.cc",
     "/media/libjxl/src/lib/jxl/render_pipeline/stage_xyb.cc",
@@ -98,7 +107,7 @@ SOURCES += [
 ]
 
 DEFINES["JPEGXL_MAJOR_VERSION"] = "0"
-DEFINES["JPEGXL_MINOR_VERSION"] = "0"
+DEFINES["JPEGXL_MINOR_VERSION"] = "7"
 DEFINES["JPEGXL_PATCH_VERSION"] = "0"
 
 EXPORTS.jxl += [
