@@ -13,12 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "hwy/contrib/sort/disabled_targets.h"
 #include "hwy/contrib/sort/vqsort.h"
 
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "hwy/contrib/sort/vqsort_i64a.cc"
-#include "hwy/foreach_target.h"
+#include "hwy/foreach_target.h"  // IWYU pragma: keep
 
 // After foreach_target
 #include "hwy/contrib/sort/traits-inl.h"
@@ -31,7 +30,7 @@ namespace HWY_NAMESPACE {
 void SortI64Asc(int64_t* HWY_RESTRICT keys, size_t num,
                 int64_t* HWY_RESTRICT buf) {
   SortTag<int64_t> d;
-  detail::SharedTraits<detail::TraitsLane<detail::OrderAscending>> st;
+  detail::SharedTraits<detail::TraitsLane<detail::OrderAscending<int64_t>>> st;
   Sort(d, st, keys, num, buf);
 }
 

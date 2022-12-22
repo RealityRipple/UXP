@@ -28,8 +28,8 @@ namespace hwy {
 struct SortConstants {
 // SortingNetwork reshapes its input into a matrix. This is the maximum number
 // of *keys* per vector.
-#if HWY_COMPILER_MSVC
-  static constexpr size_t kMaxCols = 8;  // avoids build timeout
+#if HWY_COMPILER_MSVC || HWY_IS_DEBUG_BUILD
+  static constexpr size_t kMaxCols = 8;  // avoid build timeout/stack overflow
 #else
   static constexpr size_t kMaxCols = 16;  // enough for u32 in 512-bit vector
 #endif
@@ -101,6 +101,17 @@ struct SortConstants {
 #endif
 
 #include "hwy/highway.h"
+
+// vqsort isn't available on HWY_SCALAR, and builds time out on MSVC opt and
+// Arm v7 debug.
+#undef VQSORT_ENABLED
+#if (HWY_TARGET == HWY_SCALAR) ||                 \
+    (HWY_COMPILER_MSVC && !HWY_IS_DEBUG_BUILD) || \
+    (HWY_ARCH_ARM_V7 && HWY_IS_DEBUG_BUILD)
+#define VQSORT_ENABLED 0
+#else
+#define VQSORT_ENABLED 1
+#endif
 
 namespace hwy {
 namespace HWY_NAMESPACE {

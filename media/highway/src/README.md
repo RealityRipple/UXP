@@ -55,7 +55,8 @@ layouts, and aligned/padded allocations.
 
 Online demos using Compiler Explorer:
 
--   [generating code for multiple targets](https://gcc.godbolt.org/z/n6rx6xK5h) (recommended)
+-   [multiple targets with dynamic dispatch](https://gcc.godbolt.org/z/zP7MYe9Yf)
+    (recommended)
 -   [single target using -m flags](https://gcc.godbolt.org/z/rGnjMevKG)
 
 Projects using Highway: (to add yours, feel free to raise an issue or contact us
@@ -83,19 +84,19 @@ incrementing MINOR after backward-compatible additions and PATCH after
 backward-compatible fixes. We recommend using releases (rather than the Git tip)
 because they are tested more extensively, see below.
 
-Version 0.11 is considered stable enough to use in other projects.
-Version 1.0 will signal an increased focus on backwards compatibility and is
-planned for 2022H1 now that all targets are feature-complete.
+The current version 1.0 signals an increased focus on backwards compatibility.
+Applications using documented functionality will remain compatible with future
+updates that have the same major version number.
 
 ### Testing
 
 Continuous integration tests build with a recent version of Clang (running on
-native x86, Spike for RVV, and QEMU for ARM) and MSVC from VS2015 (running on
-native x86).
+native x86, or QEMU for RVV and ARM) and MSVC 2019 (v19.28, running on native
+x86).
 
-Before releases, we also test on x86 with Clang and GCC, and ARMv7/8 via
-GCC cross-compile and QEMU. See the
-[testing process](g3doc/release_testing_process.md) for details.
+Before releases, we also test on x86 with Clang and GCC, and ARMv7/8 via GCC
+cross-compile. See the [testing process](g3doc/release_testing_process.md) for
+details.
 
 ### Related modules
 
@@ -142,6 +143,9 @@ A [quick-reference page](g3doc/quick_reference.md) briefly lists all operations
 and their parameters, and the [instruction_matrix](g3doc/instruction_matrix.pdf)
 indicates the number of instructions per operation.
 
+The [FAQ](g3doc/faq.md) answers questions about portability, API design and
+where to find more information.
+
 We recommend using full SIMD vectors whenever possible for maximum performance
 portability. To obtain them, pass a `ScalableTag<float>` (or equivalently
 `HWY_FULL(float)`) tag to functions such as `Zero/Set/Load`. There are two
@@ -163,8 +167,8 @@ Due to ADL restrictions, user code calling Highway ops must either:
     hn::Add()`; or
 *   add using-declarations for each op used: `using hwy::HWY_NAMESPACE::Add;`.
 
-Additionally, each function that calls Highway ops must either be prefixed with
-`HWY_ATTR`, OR reside between `HWY_BEFORE_NAMESPACE()` and
+Additionally, each function that calls Highway ops (such as `Load`) must either
+be prefixed with `HWY_ATTR`, OR reside between `HWY_BEFORE_NAMESPACE()` and
 `HWY_AFTER_NAMESPACE()`. Lambda functions currently require `HWY_ATTR` before
 their opening brace.
 
@@ -185,6 +189,27 @@ they use static or dynamic dispatch.
     module is automatically compiled for each target in `HWY_TARGETS` (see
     [quick-reference](g3doc/quick_reference.md)) if `HWY_TARGET_INCLUDE` is
     defined and `foreach_target.h` is included.
+
+When using dynamic dispatch, `foreach_target.h` is included from translation
+units (.cc files), not headers. Headers containing vector code shared between
+several translation units require a special include guard, for example the
+following taken from `examples/skeleton-inl.h`:
+
+```
+#if defined(HIGHWAY_HWY_EXAMPLES_SKELETON_INL_H_) == defined(HWY_TARGET_TOGGLE)
+#ifdef HIGHWAY_HWY_EXAMPLES_SKELETON_INL_H_
+#undef HIGHWAY_HWY_EXAMPLES_SKELETON_INL_H_
+#else
+#define HIGHWAY_HWY_EXAMPLES_SKELETON_INL_H_
+#endif
+
+#include "hwy/highway.h"
+// Your vector code
+#endif
+```
+
+By convention, we name such headers `-inl.h` because their contents (often
+function templates) are usually inlined.
 
 ## Compiler flags
 
