@@ -4,6 +4,7 @@
 
 backends = {
     'CompileDB': 'mozbuild.compilation.database',
+    'FasterMake': 'mozbuild.backend.fastermake',
     'RecursiveMake': 'mozbuild.backend.recursivemake',
 }
 
