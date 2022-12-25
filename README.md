@@ -33,5 +33,7 @@ If you fork this repository to perform your own work on it, please consider offe
 improvement patches upstream to its origin to mutually improve the platform and build
 a future for XUL.
 
-## Looking for Pale Moon and Basilisk?
-As of [`Issue #969`](https://repo.palemoon.org/MoonchildProductions/UXP/issues/969), release versions `28.9.0` and `2020.03.04` respectively, they have been split off into their own dedicated repositories located at [`MoonchildProductions/Pale-Moon`](https://repo.palemoon.org/MoonchildProductions/Pale-Moon) and [`MoonchildProductions/Basilisk`](https://repo.palemoon.org/MoonchildProductions/Basilisk).
+## Looking for Pale Moon?
+As of [`Issue #969`](https://repo.palemoon.org/MoonchildProductions/UXP/issues/969), release version `28.9.0`,
+applications have been split off into their own dedicated (front-end) repositories, with Pale Moon located at
+[`MoonchildProductions/Pale-Moon`](https://repo.palemoon.org/MoonchildProductions/Pale-Moon).
