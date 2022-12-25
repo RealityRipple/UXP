@@ -1192,10 +1192,11 @@ HWY_API V CLMulUpper(V a, V b) {
 
 // This algorithm requires vectors to be at least 16 bytes, which is the case
 // for LMUL >= 2. If not, use the fallback below.
-template <typename V, HWY_IF_LANES_ARE(uint8_t, V), HWY_IF_GE128_D(DFromV<V>),
-          HWY_IF_POW2_GE(DFromV<V>, HWY_MIN_POW2_FOR_128)>
+template <typename V, class D = DFromV<V>, HWY_IF_LANE_SIZE_D(D, 1),
+          HWY_IF_GE128_D(D), HWY_IF_POW2_GE(D, HWY_MIN_POW2_FOR_128)>
 HWY_API V PopulationCount(V v) {
-  const DFromV<V> d;
+  static_assert(IsSame<TFromD<D>, uint8_t>(), "V must be u8");
+  const D d;
   HWY_ALIGN constexpr uint8_t kLookup[16] = {
       0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
   };
@@ -1208,9 +1209,11 @@ HWY_API V PopulationCount(V v) {
 // RVV has a specialization that avoids the Set().
 #if HWY_TARGET != HWY_RVV
 // Slower fallback for capped vectors.
-template <typename V, HWY_IF_LANES_ARE(uint8_t, V), HWY_IF_LT128_D(DFromV<V>)>
+template <typename V, class D = DFromV<V>, HWY_IF_LANE_SIZE_D(D, 1),
+          HWY_IF_LT128_D(D)>
 HWY_API V PopulationCount(V v) {
-  const DFromV<V> d;
+  static_assert(IsSame<TFromD<D>, uint8_t>(), "V must be u8");
+  const D d;
   // See https://arxiv.org/pdf/1611.07612.pdf, Figure 3
   v = Sub(v, And(ShiftRight<1>(v), Set(d, 0x55)));
   v = Add(And(ShiftRight<2>(v), Set(d, 0x33)), And(v, Set(d, 0x33)));
@@ -1218,26 +1221,29 @@ HWY_API V PopulationCount(V v) {
 }
 #endif  // HWY_TARGET != HWY_RVV
 
-template <typename V, HWY_IF_LANES_ARE(uint16_t, V)>
+template <typename V, class D = DFromV<V>, HWY_IF_LANE_SIZE_D(D, 2)>
 HWY_API V PopulationCount(V v) {
-  const DFromV<V> d;
+  static_assert(IsSame<TFromD<D>, uint16_t>(), "V must be u16");
+  const D d;
   const Repartition<uint8_t, decltype(d)> d8;
   const auto vals = BitCast(d, PopulationCount(BitCast(d8, v)));
   return Add(ShiftRight<8>(vals), And(vals, Set(d, 0xFF)));
 }
 
-template <typename V, HWY_IF_LANES_ARE(uint32_t, V)>
+template <typename V, class D = DFromV<V>, HWY_IF_LANE_SIZE_D(D, 4)>
 HWY_API V PopulationCount(V v) {
-  const DFromV<V> d;
+  static_assert(IsSame<TFromD<D>, uint32_t>(), "V must be u32");
+  const D d;
   Repartition<uint16_t, decltype(d)> d16;
   auto vals = BitCast(d, PopulationCount(BitCast(d16, v)));
   return Add(ShiftRight<16>(vals), And(vals, Set(d, 0xFF)));
 }
 
 #if HWY_HAVE_INTEGER64
-template <typename V, HWY_IF_LANES_ARE(uint64_t, V)>
+template <typename V, class D = DFromV<V>, HWY_IF_LANE_SIZE_D(D, 8)>
 HWY_API V PopulationCount(V v) {
-  const DFromV<V> d;
+  static_assert(IsSame<TFromD<D>, uint64_t>(), "V must be u64");
+  const D d;
   Repartition<uint32_t, decltype(d)> d32;
   auto vals = BitCast(d, PopulationCount(BitCast(d32, v)));
   return Add(ShiftRight<32>(vals), And(vals, Set(d, 0xFF)));
@@ -1245,6 +1251,105 @@ HWY_API V PopulationCount(V v) {
 #endif
 
 #endif  // HWY_NATIVE_POPCNT
+
+template <class V, class D = DFromV<V>, HWY_IF_LANE_SIZE_D(D, 8),
+          HWY_IF_LT128_D(D)>
+HWY_API V operator*(V x, V y) {
+  return Set(D(), GetLane(x) * GetLane(y));
+}
+
+// "Include guard": skip if native 64-bit mul instructions are available.
+#if (defined(HWY_NATIVE_I64MULLO) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_I64MULLO
+#undef HWY_NATIVE_I64MULLO
+#else
+#define HWY_NATIVE_I64MULLO
+#endif
+
+template <class V, class D64 = DFromV<V>, typename T = LaneType<V>,
+          HWY_IF_LANE_SIZE(T, 8), HWY_IF_UNSIGNED(T), HWY_IF_GE128_D(D64)>
+HWY_API V operator*(V x, V y) {
+  RepartitionToNarrow<D64> d32;
+  auto x32 = BitCast(d32, x);
+  auto y32 = BitCast(d32, y);
+  auto lolo = BitCast(d32, MulEven(x32, y32));
+  auto lohi = BitCast(d32, MulEven(x32, BitCast(d32, ShiftRight<32>(y))));
+  auto hilo = BitCast(d32, MulEven(BitCast(d32, ShiftRight<32>(x)), y32));
+  auto hi = BitCast(d32, ShiftLeft<32>(BitCast(D64{}, lohi + hilo)));
+  return BitCast(D64{}, lolo + hi);
+}
+template <class V, class DI64 = DFromV<V>, typename T = LaneType<V>,
+          HWY_IF_LANE_SIZE(T, 8), HWY_IF_SIGNED(T), HWY_IF_GE128_D(DI64)>
+HWY_API V operator*(V x, V y) {
+  RebindToUnsigned<DI64> du64;
+  return BitCast(DI64{}, BitCast(du64, x) * BitCast(du64, y));
+}
+
+#endif  // HWY_NATIVE_I64MULLO
+
+// ================================================== Operator wrapper
+
+// These targets currently cannot define operators and have already defined
+// (only) the corresponding functions such as Add.
+#if HWY_TARGET != HWY_RVV && HWY_TARGET != HWY_SVE &&      \
+    HWY_TARGET != HWY_SVE2 && HWY_TARGET != HWY_SVE_256 && \
+    HWY_TARGET != HWY_SVE2_128
+
+template <class V>
+HWY_API V Add(V a, V b) {
+  return a + b;
+}
+template <class V>
+HWY_API V Sub(V a, V b) {
+  return a - b;
+}
+
+template <class V>
+HWY_API V Mul(V a, V b) {
+  return a * b;
+}
+template <class V>
+HWY_API V Div(V a, V b) {
+  return a / b;
+}
+
+template <class V>
+V Shl(V a, V b) {
+  return a << b;
+}
+template <class V>
+V Shr(V a, V b) {
+  return a >> b;
+}
+
+template <class V>
+HWY_API auto Eq(V a, V b) -> decltype(a == b) {
+  return a == b;
+}
+template <class V>
+HWY_API auto Ne(V a, V b) -> decltype(a == b) {
+  return a != b;
+}
+template <class V>
+HWY_API auto Lt(V a, V b) -> decltype(a == b) {
+  return a < b;
+}
+
+template <class V>
+HWY_API auto Gt(V a, V b) -> decltype(a == b) {
+  return a > b;
+}
+template <class V>
+HWY_API auto Ge(V a, V b) -> decltype(a == b) {
+  return a >= b;
+}
+
+template <class V>
+HWY_API auto Le(V a, V b) -> decltype(a == b) {
+  return a <= b;
+}
+
+#endif  // HWY_TARGET for operators
 
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE

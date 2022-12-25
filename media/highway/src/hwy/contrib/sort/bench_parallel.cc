@@ -28,10 +28,9 @@
 #include <vector>
 
 // clang-format off
-#include "hwy/contrib/sort/vqsort.h"
 #undef HWY_TARGET_INCLUDE
 #define HWY_TARGET_INCLUDE "hwy/contrib/sort/bench_parallel.cc"  //NOLINT
-#include "hwy/foreach_target.h"
+#include "hwy/foreach_target.h"  // IWYU pragma: keep
 
 // After foreach_target
 #include "hwy/contrib/sort/algo-inl.h"
@@ -45,8 +44,6 @@ HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
 namespace {
-
-#if HWY_TARGET != HWY_SCALAR && HWY_TARGET != HWY_EMU128
 
 class ThreadPool {
  public:
@@ -169,16 +166,21 @@ class ThreadPool {
   const void* data_;                               // points to caller's Func
 };
 
-template <class Order, typename T>
-void RunWithoutVerify(const Dist dist, const size_t num, const Algo algo,
-                      SharedState& shared, size_t thread) {
-  auto aligned = hwy::AllocateAligned<T>(num);
+template <class Traits>
+void RunWithoutVerify(Traits st, const Dist dist, const size_t num_keys,
+                      const Algo algo, SharedState& shared, size_t thread) {
+  using LaneType = typename Traits::LaneType;
+  using KeyType = typename Traits::KeyType;
+  using Order = typename Traits::Order;
+  const size_t num_lanes = num_keys * st.LanesPerKey();
+  auto aligned = hwy::AllocateAligned<LaneType>(num_lanes);
 
-  (void)GenerateInput(dist, aligned.get(), num);
+  (void)GenerateInput(dist, aligned.get(), num_lanes);
 
   const Timestamp t0;
-  Run<Order>(algo, aligned.get(), num, shared, thread);
-  HWY_ASSERT(aligned[0] < aligned[num - 1]);
+  Run<Order>(algo, reinterpret_cast<KeyType*>(aligned.get()), num_keys, shared,
+             thread);
+  HWY_ASSERT(aligned[0] < aligned[num_lanes - 1]);
 }
 
 void BenchParallel() {
@@ -190,17 +192,16 @@ void BenchParallel() {
   ThreadPool pool;
   const size_t NT = pool.NumThreads();
 
-  using T = int64_t;
-  detail::SharedTraits<detail::TraitsLane<detail::OrderAscending>> st;
-
-  size_t num = 100 * 1000 * 1000;
+  detail::SharedTraits<detail::TraitsLane<detail::OrderAscending<int64_t>>> st;
+  using KeyType = typename decltype(st)::KeyType;
+  const size_t num_keys = size_t{100} * 1000 * 1000;
 
 #if HAVE_IPS4O
   const Algo algo = Algo::kIPS4O;
 #else
   const Algo algo = Algo::kVQSort;
 #endif
-  const Dist dist = Dist::kUniform16;
+  const Dist dist = Dist::kUniform32;
 
   SharedState shared;
   shared.tls.resize(NT);
@@ -210,17 +211,14 @@ void BenchParallel() {
     Timestamp t0;
     // Default capture because MSVC wants algo/dist but clang does not.
     pool.RunOnThreads(nt, [=, &shared](size_t thread) {
-      RunWithoutVerify<SortAscending, T>(dist, num, algo, shared, thread);
+      RunWithoutVerify(st, dist, num_keys, algo, shared, thread);
     });
     const double sec = SecondsSince(t0);
-    results.push_back(MakeResult<T>(algo, dist, st, num, nt, sec));
+    results.emplace_back(algo, dist, num_keys, nt, sec, sizeof(KeyType),
+                         st.KeyString());
     results.back().Print();
   }
 }
-
-#else
-void BenchParallel() {}
-#endif
 
 }  // namespace
 // NOLINTNEXTLINE(google-readability-namespace-comments)

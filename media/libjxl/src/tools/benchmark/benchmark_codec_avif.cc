@@ -213,7 +213,7 @@ class AvifCodec : public ImageCodec {
   }
 
   Status Compress(const std::string& filename, const CodecInOut* io,
-                  ThreadPoolInternal* pool, PaddedBytes* compressed,
+                  ThreadPoolInternal* pool, std::vector<uint8_t>* compressed,
                   jpegxl::tools::SpeedStats* speed_stats) override {
     double elapsed_convert_image = 0;
     const double start = Now();
@@ -324,7 +324,7 @@ class AvifCodec : public ImageCodec {
                                   rgb_image.height * rgb_image.rowBytes),
               rgb_image.width, rgb_image.height, color, (has_alpha ? 4 : 3),
               /*alpha_is_premultiplied=*/false, rgb_image.depth,
-              JXL_NATIVE_ENDIAN, /*flipped_y=*/false, pool, &ib,
+              JXL_NATIVE_ENDIAN, pool, &ib,
               /*float_in=*/false, /*align=*/0));
           io->frames.push_back(std::move(ib));
           io->dec_pixels += rgb_image.width * rgb_image.height;
