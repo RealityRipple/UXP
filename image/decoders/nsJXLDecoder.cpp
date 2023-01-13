@@ -45,9 +45,13 @@ nsJXLDecoder::nsJXLDecoder(RasterImage* aImage)
              Transition::TerminateSuccess()),
       mDecoder(JxlDecoderMake(nullptr)),
       mParallelRunner(
-          JxlThreadParallelRunnerMake(nullptr, PreferredThreadCount())) {
+          JxlThreadParallelRunnerMake(nullptr, PreferredThreadCount())),
+      mNumFrames(0),
+      mTimeout(FrameTimeout::Forever()),
+      mContinue(false) {
   JxlDecoderSubscribeEvents(mDecoder.get(),
-                            JXL_DEC_BASIC_INFO | JXL_DEC_FULL_IMAGE);
+                            JXL_DEC_BASIC_INFO | JXL_DEC_FRAME |
+                            JXL_DEC_FULL_IMAGE);
   JxlDecoderSetParallelRunner(mDecoder.get(), JxlThreadParallelRunner,
                               mParallelRunner.get());
 
@@ -85,17 +89,32 @@ nsJXLDecoder::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
                     });
 };
 
+NextPixel<uint32_t>
+nsJXLDecoder::PackRGBAPixelAndAdvance(uint8_t*& aRawPixelInOut)
+{
+  const uint32_t pixel =
+    gfxPackedPixel(aRawPixelInOut[3], aRawPixelInOut[0],
+                   aRawPixelInOut[1], aRawPixelInOut[2]);
+  aRawPixelInOut += 4;
+  return AsVariant(pixel);
+}
+
 LexerTransition<nsJXLDecoder::State>
 nsJXLDecoder::ReadJXLData(const char* aData, size_t aLength)
 {
-  const uint8_t* input = (const uint8_t*)aData;
-  size_t length = aLength;
-  if (mBuffer.length() != 0) {
-    JXL_TRY_BOOL(mBuffer.append(aData, aLength));
-    input = mBuffer.begin();
-    length = mBuffer.length();
+  // Ignore data we have already read.
+  // This will only occur as a result of a yield for animation.
+  if (!mContinue) {
+    const uint8_t* input = (const uint8_t*)aData;
+    size_t length = aLength;
+    if (mBuffer.length() != 0) {
+      JXL_TRY_BOOL(mBuffer.append(aData, aLength));
+      input = mBuffer.begin();
+      length = mBuffer.length();
+    }
+    JXL_TRY(JxlDecoderSetInput(mDecoder.get(), input, length));
   }
-  JXL_TRY(JxlDecoderSetInput(mDecoder.get(), input, length));
+  mContinue = false;
 
   while (true) {
     JxlDecoderStatus status = JxlDecoderProcessInput(mDecoder.get());
@@ -108,6 +127,28 @@ nsJXLDecoder::ReadJXLData(const char* aData, size_t aLength)
         size_t remaining = JxlDecoderReleaseInput(mDecoder.get());
         mBuffer.clear();
         JXL_TRY_BOOL(mBuffer.append(aData + aLength - remaining, remaining));
+
+        if (mNumFrames == 0 && InFrame()) {
+          // If an image was flushed by JxlDecoderFlushImage, then we know that
+          // JXL_DEC_FRAME has already been run and there is a pipe.
+          if (JxlDecoderFlushImage(mDecoder.get()) == JXL_DEC_SUCCESS) {
+            // A full frame partial image is written to the buffer.
+            mPipe.ResetToFirstRow();
+            for (uint8_t* rowPtr = mOutBuffer.begin();
+                 rowPtr < mOutBuffer.end(); rowPtr += mInfo.xsize * 4) {
+              mPipe.WritePixels<uint32_t>([&]{
+                return PackRGBAPixelAndAdvance(rowPtr);
+              });
+            }
+
+            if (Maybe<SurfaceInvalidRect> invalidRect =
+                    mPipe.TakeInvalidRect()) {
+              PostInvalidation(invalidRect->mInputSpaceRect,
+                               Some(invalidRect->mOutputSpaceRect));
+            }
+          }
+        }
+
         return Transition::ContinueUnbuffered(State::JXL_DATA);
       }
 
@@ -117,9 +158,64 @@ nsJXLDecoder::ReadJXLData(const char* aData, size_t aLength)
         if (mInfo.alpha_bits > 0) {
           PostHasTransparency();
         }
+        if (!mInfo.have_animation && IsMetadataDecode()) {
+          return Transition::TerminateSuccess();
+        }
+        break;
+      }
+
+      case JXL_DEC_FRAME: {
+        if (mInfo.have_animation) {
+          JXL_TRY(JxlDecoderGetFrameHeader(mDecoder.get(), &mFrameHeader));
+          int32_t duration = (int32_t)(1000.0 * mFrameHeader.duration *
+                                       mInfo.animation.tps_denominator /
+                                       mInfo.animation.tps_numerator);
+
+          mTimeout = FrameTimeout::FromRawMilliseconds(duration);
+
+          if (!HasAnimation()) {
+            PostIsAnimated(mTimeout);
+          }
+        }
+
+        bool is_last = mInfo.have_animation ? mFrameHeader.is_last : true;
+        MOZ_LOG(sJXLLog, LogLevel::Debug,
+                ("[this=%p] nsJXLDecoder::ReadJXLData - frame %d, is_last %d, "
+                 "metadata decode %d, first frame decode %d\n",
+                 this, mNumFrames, is_last, IsMetadataDecode(),
+                 IsFirstFrameDecode()));
+
         if (IsMetadataDecode()) {
           return Transition::TerminateSuccess();
         }
+
+        Maybe<AnimationParams> animParams;
+        if (!IsFirstFrameDecode()) {
+          animParams.emplace(AnimationParams {
+            FullFrame().ToUnknownRect(), mTimeout, mNumFrames,
+            BlendMethod::SOURCE, DisposalMethod::CLEAR
+          });
+        }
+
+        SurfacePipeFlags pipeFlags = SurfacePipeFlags();
+
+        if (mNumFrames == 0) {
+          // The first frame may be displayed progressively.
+          pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
+        }
+
+        Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateSurfacePipe(
+            this, Size(), OutputSize(), FullFrame(), SurfaceFormat::B8G8R8A8,
+            animParams, pipeFlags);
+
+        if (!pipe) {
+          MOZ_LOG(sJXLLog, LogLevel::Debug,
+                  ("[this=%p] nsJXLDecoder::ReadJXLData - no pipe\n", this));
+          return Transition::TerminateFailure();
+        }
+
+        mPipe = std::move(*pipe);
+
         break;
       }
 
@@ -136,31 +232,35 @@ nsJXLDecoder::ReadJXLData(const char* aData, size_t aLength)
       }
 
       case JXL_DEC_FULL_IMAGE: {
-        Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateSurfacePipe(
-            this, Size(), OutputSize(), FullFrame(), SurfaceFormat::B8G8R8A8,
-            Nothing(), SurfacePipeFlags());
+        mPipe.ResetToFirstRow();
         for (uint8_t* rowPtr = mOutBuffer.begin(); rowPtr < mOutBuffer.end();
              rowPtr += mInfo.xsize * 4) {
-          // FIXME: Quick and dirty BGRA to RGBA conversion.
-          // We currently have a channel ordering mis-match here.
-          for (uint8_t* pixPtr = rowPtr; pixPtr < rowPtr + mInfo.xsize * 4; pixPtr+=4){
-            std::swap(pixPtr[0], pixPtr[2]);
-            // Pre-multiply, too
-            if (pixPtr[3] < 255) {
-              pixPtr[0]=((uint16_t)pixPtr[0]*(uint16_t)pixPtr[3]) >> 8;
-              pixPtr[1]=((uint16_t)pixPtr[1]*(uint16_t)pixPtr[3]) >> 8;
-              pixPtr[2]=((uint16_t)pixPtr[2]*(uint16_t)pixPtr[3]) >> 8;
-            }
-          }
-          pipe->WriteBuffer(reinterpret_cast<uint32_t*>(rowPtr));
+          mPipe.WritePixels<uint32_t>([&]{
+            return PackRGBAPixelAndAdvance(rowPtr);
+          });
         }
 
-        if (Maybe<SurfaceInvalidRect> invalidRect = pipe->TakeInvalidRect()) {
+        if (Maybe<SurfaceInvalidRect> invalidRect = mPipe.TakeInvalidRect()) {
           PostInvalidation(invalidRect->mInputSpaceRect,
                            Some(invalidRect->mOutputSpaceRect));
         }
+
         PostFrameStop();
-        PostDecodeDone();
+
+        if (!IsFirstFrameDecode() && mInfo.have_animation &&
+            !mFrameHeader.is_last) {
+          mNumFrames++;
+          mContinue = true;
+          // Notify for a new frame but there may be data in the current buffer
+          // that can immediately be processed.
+          return Transition::ToAfterYield(State::JXL_DATA);
+        }
+        [[fallthrough]];  // We are done.
+      }
+
+      case JXL_DEC_SUCCESS: {
+        PostDecodeDone(HasAnimation() ? (int32_t)mInfo.animation.num_loops - 1
+                                      : 0);
         return Transition::TerminateSuccess();
       }
     }

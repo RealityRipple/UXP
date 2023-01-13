@@ -141,6 +141,7 @@ cc_library(
     name = "hwy",
     srcs = [
         "hwy/aligned_allocator.cc",
+        "hwy/per_target.cc",
         "hwy/print.cc",
         "hwy/targets.cc",
     ],
@@ -160,9 +161,12 @@ cc_library(
         # These are textual because config macros influence them:
         "hwy/detect_targets.h",  # private
         "hwy/targets.h",
+        # This .cc file #includes itself through foreach_target.h
+        "hwy/per_target.cc",
         # End of list
         "hwy/highway.h",  # public
         "hwy/foreach_target.h",  # public
+        "hwy/per_target.h",  # public
         "hwy/print-inl.h",  # public
         "hwy/highway_export.h",  # public
         "hwy/ops/arm_neon-inl.h",
@@ -321,10 +325,14 @@ HWY_TESTS = [
     ("hwy/tests/", "crypto_test"),
     ("hwy/tests/", "demote_test"),
     ("hwy/tests/", "float_test"),
+    ("hwy/tests/", "if_test"),
+    ("hwy/tests/", "interleaved_test"),
     ("hwy/tests/", "logical_test"),
     ("hwy/tests/", "mask_test"),
+    ("hwy/tests/", "mask_mem_test"),
     ("hwy/tests/", "memory_test"),
     ("hwy/tests/", "mul_test"),
+    ("hwy/tests/", "reduction_test"),
     ("hwy/tests/", "reverse_test"),
     ("hwy/tests/", "shift_test"),
     ("hwy/tests/", "swizzle_test"),

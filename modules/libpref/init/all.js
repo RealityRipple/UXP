@@ -183,7 +183,7 @@ pref("dom.enable_resource_timing", true);
 pref("dom.enable_user_timing", true);
 
 // Whether performance.GetEntries* will contain an entry for the active document
-pref("dom.enable_performance_navigation_timing", true);
+pref("dom.enable_performance_navigation_timing", false);
 
 // Enable printing performance marks/measures to log
 pref("dom.performance.enable_user_timing_logging", false);
@@ -1176,6 +1176,9 @@ pref("dom.forms.datetime.timepicker", false);
 // Support for input type=month, type=week and type=datetime-local.
 // TODO: implement/fix these.
 pref("dom.forms.datetime.others", false);
+
+// <button> elements are opaque to pointer events.
+pref("dom.forms.button.standards_compliant", true);
 
 // Support for new @autocomplete values
 pref("dom.forms.autocomplete.experimental", false);
@@ -2519,12 +2522,6 @@ pref("layout.css.prefixes.webkit", true);
 // pref is set to false.)
 pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
 
-// Is the CSS Unprefixing Service enabled? (This service emulates support
-// for certain vendor-prefixed properties & values, for sites on a "fixlist".)
-pref("layout.css.unprefixing-service.enabled", true);
-// Is the CSS Unprefixing Service whitelisted for all domains?
-pref("layout.css.unprefixing-service.globally-whitelisted", false);
-
 // Is support for the :scope selector enabled?
 pref("layout.css.scope-pseudo.enabled", true);
 
@@ -2533,6 +2530,10 @@ pref("layout.css.background-blend-mode.enabled", true);
 
 // Is support for background-clip:text enabled?
 pref("layout.css.background-clip-text.enabled", true);
+
+// Is support for the non-standard offset-* logical property aliases enabled?
+// These map to their inset-* equivalents.
+pref("layout.css.offset-logical-properties.enabled", true);
 
 // Is support for CSS text-combine-upright (tate-chu-yoko) enabled?
 pref("layout.css.text-combine-upright.enabled", true);
@@ -4132,6 +4133,19 @@ pref("toolkit.zoomManager.zoomValues", ".3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2
 // Image-related prefs
 //
 
+// The maximum size (in kB) that the aggregate frames of an animation can use
+// before it starts to discard already displayed frames and redecode them as
+// necessary.
+pref("image.animated.decode-on-demand.threshold-kb", 262144);
+
+// The minimum number of frames we want to have buffered ahead of an
+// animation's currently displayed frame.
+pref("image.animated.decode-on-demand.batch-size", 6);
+
+// Resume an animated image from the last displayed frame rather than
+// advancing when out of view.
+pref("image.animated.resume-from-last-displayed", true);
+
 // The maximum size, in bytes, of the decoded images we cache
 pref("image.cache.size", 5242880);
 
@@ -4171,6 +4185,10 @@ pref("image.layerize.always", false);
 // Discards inactive image frames and re-decodes them on demand from
 // compressed data.
 pref("image.mem.discardable", true);
+
+// Discards inactive image frames of _animated_ images and re-decodes them on
+// demand from compressed data. Has no effect if image.mem.discardable is false.
+pref("image.mem.animated.discardable", true);
 
 // Allows image locking of decoded image data in content processes.
 pref("image.mem.allow_locking_in_content_processes", true);
@@ -5057,6 +5075,9 @@ pref("dom.storageManager.enabled", false);
 // >0 = suppress further prompts after the user has canceled the dialog n times
 // See application preferences for appropriate defaults.
 pref("prompts.authentication_dialog_abuse_limit", 0);
+
+// Whether content handling dialog is window modal
+pref("prompts.content_handling_dialog_modal.enabled", false);
 
 // Whether module scripts (<script type="module">) are enabled for content.
 pref("dom.moduleScripts.enabled", true);

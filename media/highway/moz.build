@@ -11,6 +11,7 @@ LOCAL_INCLUDES += [
 SOURCES += [
     "/media/highway/src/hwy/aligned_allocator.cc",
     "/media/highway/src/hwy/contrib/image/image.cc",
+    "/media/highway/src/hwy/per_target.cc",
     "/media/highway/src/hwy/targets.cc",
 ]
 

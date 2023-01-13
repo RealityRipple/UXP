@@ -54,7 +54,7 @@ def SplitLibFiles(repo_files):
 
   """
   testonly = (
-      'testdata.h', 'test_utils.h', '_test.h', '_test.cc',
+      'testdata.h', 'test_utils.h', 'test_image.h', '_test.h', '_test.cc',
       # _testonly.* files are library code used in tests only.
       '_testonly.h', '_testonly.cc'
   )
@@ -100,10 +100,6 @@ def SplitLibFiles(repo_files):
       "lib/jxl/progressive_split.h",
       # TODO(deymo): Add luminance.cc and luminance.h here too. Currently used
       # by aux_out.h.
-      # dec_file is not intended to be part of the decoder library, so move it
-      # to the encoder source set
-      "lib/jxl/dec_file.cc",
-      "lib/jxl/dec_file.h",
   ])
   # Temporarily remove enc_bit_writer from the encoder sources: a lot of
   # decoder source code still needs to be split up into encoder and decoder.

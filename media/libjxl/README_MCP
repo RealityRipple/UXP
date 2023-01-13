@@ -9,5 +9,4 @@ The upstream jxl git repository is:
 
     https://github.com/libjxl/libjxl
 
-The tree used was from commit
-192ddd90fdf0c69cd1db1c8d7850db036dd87f4b.
+The version used was tagged 0.7.0.

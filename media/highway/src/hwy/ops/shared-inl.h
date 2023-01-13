@@ -99,21 +99,21 @@ struct Simd {
 
 namespace detail {
 
-#if HWY_HAVE_SCALABLE
-
 template <typename T, size_t N, int kPow2>
 constexpr bool IsFull(Simd<T, N, kPow2> /* d */) {
   return N == HWY_LANES(T) && kPow2 == 0;
 }
-
-#endif
 
 // Returns the number of lanes (possibly zero) after applying a shift:
 // - 0: no change;
 // - [1,3]: a group of 2,4,8 [fractional] vectors;
 // - [-3,-1]: a fraction of a vector from 1/8 to 1/2.
 constexpr size_t ScaleByPower(size_t N, int pow2) {
+#if HWY_TARGET == HWY_RVV
   return pow2 >= 0 ? (N << pow2) : (N >> (-pow2));
+#else
+  return pow2 >= 0 ? N : (N >> (-pow2));
+#endif
 }
 
 // Struct wrappers enable validation of arguments via static_assert.
@@ -241,16 +241,12 @@ using Full128 = Simd<T, 16 / sizeof(T), 0>;
 #define HWY_IF_GE128_D(D) \
   hwy::EnableIf<D::kPrivateN * sizeof(TFromD<D>) >= 16>* = nullptr
 
-// Same, but with a vector argument.
+// Same, but with a vector argument. ops/*-inl.h define their own TFromV.
 #define HWY_IF_UNSIGNED_V(V) HWY_IF_UNSIGNED(TFromV<V>)
 #define HWY_IF_SIGNED_V(V) HWY_IF_SIGNED(TFromV<V>)
 #define HWY_IF_FLOAT_V(V) HWY_IF_FLOAT(TFromV<V>)
 #define HWY_IF_LANE_SIZE_V(V, bytes) HWY_IF_LANE_SIZE(TFromV<V>, bytes)
 #define HWY_IF_NOT_LANE_SIZE_V(V, bytes) HWY_IF_NOT_LANE_SIZE(TFromV<V>, bytes)
-
-// For implementing functions for a specific type.
-// IsSame<...>() in template arguments is broken on MSVC2015.
-#define HWY_IF_LANES_ARE(T, V) EnableIf<IsSameT<T, TFromV<V>>::value>* = nullptr
 
 template <class D>
 HWY_INLINE HWY_MAYBE_UNUSED constexpr int Pow2(D /* d */) {
@@ -301,8 +297,7 @@ HWY_INLINE HWY_MAYBE_UNUSED size_t Lanes(Simd<T, N, kPow2>) {
 // We therefore pass by const& only on GCC and (Windows or ARM64). This alias
 // must be used for all vector/mask parameters of functions marked HWY_NOINLINE,
 // and possibly also other functions that are not inlined.
-#if HWY_COMPILER_GCC && !HWY_COMPILER_CLANG && \
-    ((defined(_WIN32) || defined(_WIN64)) || HWY_ARCH_ARM_A64)
+#if HWY_COMPILER_GCC_ACTUAL && (HWY_OS_WIN || HWY_ARCH_ARM_A64)
 template <class V>
 using VecArg = const V&;
 #else

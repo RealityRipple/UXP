@@ -21,6 +21,8 @@ class nsJXLDecoder final : public Decoder {
  public:
   virtual ~nsJXLDecoder();
 
+  DecoderType GetType() const override { return DecoderType::JXL; }
+
  protected:
   LexerResult DoDecode(SourceBufferIterator& aIterator,
                        IResumable* aOnResume) override;
@@ -35,6 +37,10 @@ class nsJXLDecoder final : public Decoder {
 
   enum class State { JXL_DATA, FINISHED_JXL_DATA };
 
+  // Copied from nsPNGDecoder with the same name. Handles R&B channels
+  // as well as alpha premultiplication for us. See Issue #2057.
+  NextPixel<uint32_t> PackRGBAPixelAndAdvance(uint8_t*& aRawPixelInOut);
+
   LexerTransition<State> ReadJXLData(const char* aData, size_t aLength);
   LexerTransition<State> FinishedJXLData();
 
@@ -44,6 +50,12 @@ class nsJXLDecoder final : public Decoder {
   Vector<uint8_t> mBuffer;
   Vector<uint8_t> mOutBuffer;
   JxlBasicInfo mInfo{};
+  JxlFrameHeader mFrameHeader;
+
+  uint32_t mNumFrames;
+  FrameTimeout mTimeout;
+  SurfacePipe mPipe;
+  bool mContinue;
 };
 
 }  // namespace image

@@ -125,11 +125,13 @@ class BuildBackend(LoggingMixin):
 
         for obj in objs:
             obj_start = time.time()
-            if (not self.consume_object(obj)):
+            if (not self.consume_object(obj) and
+                    not isinstance(self, PartialBackend)):
                 raise Exception('Unhandled object of type %s' % type(obj))
             self._execution_time += time.time() - obj_start
 
-            if (isinstance(obj, ContextDerived)):
+            if (isinstance(obj, ContextDerived) and
+                    not isinstance(self, PartialBackend)):
                 self.backend_input_files |= obj.context_all_paths
 
         # Pull in all loaded Python as dependencies so any Python changes that
@@ -264,3 +266,8 @@ class BuildBackend(LoggingMixin):
         with self._write_file(obj.output_path) as fh:
             pp.out = fh
             yield pp
+
+class PartialBackend(BuildBackend):
+    """A PartialBackend is a BuildBackend declaring that its consume_object
+    method may not handle all build configuration objects it's passed, and
+    that it's fine."""
