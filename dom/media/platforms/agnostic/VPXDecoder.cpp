@@ -26,6 +26,8 @@ static VPXDecoder::Codec MimeTypeToCodec(const nsACString& aMimeType)
 {
   if (aMimeType.EqualsLiteral("video/webm; codecs=vp8")) {
     return VPXDecoder::Codec::VP8;
+  } else if (aMimeType.EqualsLiteral("video/vp8")) {
+    return VPXDecoder::Codec::VP8;
   } else if (aMimeType.EqualsLiteral("video/webm; codecs=vp9")) {
     return VPXDecoder::Codec::VP9;
   } else if (aMimeType.EqualsLiteral("video/vp9")) {
