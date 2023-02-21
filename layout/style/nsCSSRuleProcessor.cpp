@@ -1939,17 +1939,19 @@ static bool SelectorMatches(Element* aElement,
           // selector.
            
           // We match automatically if GetParent() and GetShadowRoot() have 
-          // the same result. Without special casing this ahead of all other 
-          // selector matching, it fails. Have not determined the cause.
-
-          if (aElement->GetParent() == aElement->GetShadowRoot()) {
+          // the same result iff our selector list is empty. Without special
+          // casing this ahead of all other selector matching, it fails.
+          // Have not determined the cause.
+          if (!pseudoClass->u.mSelectorList &&
+              aElement->GetParent() == aElement->GetShadowRoot()) {
             break;
           }
 
           // Match if any selector in the argument list matches.
-
+          // FIXME: What this effectively does is bypass the "featureless"
+          // selector check under SelectorMatches.
           NodeMatchContext nodeContext(EventStates(),
-                               nsCSSRuleProcessor::IsLink(aElement));
+                                       aNodeMatchContext.mIsRelevantLink);
           if (SelectorListMatches(aElement,
                                   pseudoClass,
                                   nodeContext,
