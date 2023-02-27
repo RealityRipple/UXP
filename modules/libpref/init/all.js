@@ -4226,10 +4226,8 @@ pref("image.mem.surfacecache.discard_factor", 1);
 // automatically determined based on the system's number of cores.
 pref("image.multithreaded_decoding.limit", -1);
 
-// Whether we attempt to decode WebP images or not.
-pref("image.webp.enabled", true);
-
 #ifdef MOZ_JXL
+// Whether we attempt to decode JPEG-XL images or not.
 pref("image.jxl.enabled", true);
 #endif
 
