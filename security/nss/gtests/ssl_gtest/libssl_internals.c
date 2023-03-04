@@ -8,12 +8,32 @@
 #include "libssl_internals.h"
 
 #include "nss.h"
+#include "pk11hpke.h"
 #include "pk11pub.h"
 #include "pk11priv.h"
+#include "tls13ech.h"
 #include "seccomon.h"
 #include "selfencrypt.h"
 #include "secmodti.h"
 #include "sslproto.h"
+
+SECStatus SSLInt_RemoveServerCertificates(PRFileDesc *fd) {
+  if (!fd) {
+    return SECFailure;
+  }
+  sslSocket *ss = ssl_FindSocket(fd);
+  if (!ss) {
+    return SECFailure;
+  }
+
+  PRCList *cursor;
+  while (!PR_CLIST_IS_EMPTY(&ss->serverCerts)) {
+    cursor = PR_LIST_TAIL(&ss->serverCerts);
+    PR_REMOVE_LINK(cursor);
+    ssl_FreeServerCert((sslServerCert *)cursor);
+  }
+  return SECSuccess;
+}
 
 SECStatus SSLInt_SetDCAdvertisedSigSchemes(PRFileDesc *fd,
                                            const SSLSignatureScheme *schemes,
@@ -127,6 +147,8 @@ PRBool SSLInt_ExtensionNegotiated(PRFileDesc *fd, PRUint16 ext) {
   return (PRBool)(ss && ssl3_ExtensionNegotiated(ss, ext));
 }
 
+// Tests should not use this function directly, because the keys may
+// still be in cache. Instead, use TlsConnectTestBase::ClearServerCache.
 void SSLInt_ClearSelfEncryptKey() { ssl_ResetSelfEncryptKeys(); }
 
 sslSelfEncryptKeys *ssl_GetSelfEncryptKeysInt();
@@ -402,6 +424,24 @@ SECStatus SSLInt_AdvanceWriteSeqByAWindow(PRFileDesc *fd, PRInt32 extra) {
   return SSLInt_AdvanceWriteSeqNum(fd, to);
 }
 
+SECStatus SSLInt_AdvanceDtls13DecryptFailures(PRFileDesc *fd, PRUint64 to) {
+  sslSocket *ss = ssl_FindSocket(fd);
+  if (!ss) {
+    return SECFailure;
+  }
+
+  ssl_GetSpecWriteLock(ss);
+  ssl3CipherSpec *spec = ss->ssl3.crSpec;
+  if (spec->cipherDef->type != type_aead) {
+    ssl_ReleaseSpecWriteLock(ss);
+    return SECFailure;
+  }
+
+  spec->deprotectionFailures = to;
+  ssl_ReleaseSpecWriteLock(ss);
+  return SECSuccess;
+}
+
 SSLKEAType SSLInt_GetKEAType(SSLNamedGroup group) {
   const sslNamedGroupDef *groupDef = ssl_LookupNamedGroup(group);
   if (!groupDef) return ssl_kea_null;
@@ -443,3 +483,19 @@ SECStatus SSLInt_HasPendingHandshakeData(PRFileDesc *fd, PRBool *pending) {
   ssl_ReleaseSSL3HandshakeLock(ss);
   return SECSuccess;
 }
+
+SECStatus SSLInt_SetRawEchConfigForRetry(PRFileDesc *fd, const uint8_t *buf,
+                                         size_t len) {
+  sslSocket *ss = ssl_FindSocket(fd);
+  if (!ss) {
+    return SECFailure;
+  }
+
+  sslEchConfig *cfg = (sslEchConfig *)PR_LIST_HEAD(&ss->echConfigs);
+  SECITEM_FreeItem(&cfg->raw, PR_FALSE);
+  SECITEM_AllocItem(NULL, &cfg->raw, len);
+  PORT_Memcpy(cfg->raw.data, buf, len);
+  return SECSuccess;
+}
+
+PRBool SSLInt_IsIp(PRUint8 *s, unsigned int len) { return tls13_IsIp(s, len); }

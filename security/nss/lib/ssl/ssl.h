@@ -175,7 +175,7 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 
 /* SSL_REUSE_SERVER_ECDHE_KEY controls whether the ECDHE server key is
  * reused for multiple handshakes or generated each time.
- * SSL_REUSE_SERVER_ECDHE_KEY is currently enabled by default.
+ * SSL_REUSE_SERVER_ECDHE_KEY is currently disabled by default.
  * This socket option is for ECDHE, only. It is unrelated to DHE.
  */
 #define SSL_REUSE_SERVER_ECDHE_KEY 27
@@ -327,6 +327,25 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
  */
 #define SSL_ENABLE_DELEGATED_CREDENTIALS 40
 
+/* Causes TLS (>=1.3) to suppress the EndOfEarlyData message in stream mode.
+ *
+ * This is not advisable in general, but the message only exists to delineate
+ * early data in a streamed connection.  DTLS does not use this message as a
+ * result.  The integration of TLS with QUIC, which uses a record/packet
+ * protection layer that is unreliable, also does not use this message.
+ *
+ * On the server, this requires that SSL_RecordLayerData be used.
+ * EndOfEarlyData is otherwise needed to drive key changes.  Additionally,
+ * servers that use this API must check that handshake messages (Certificate,
+ * CertificateVerify, and Finished in particular) are only received in epoch 2
+ * (Handshake).  SSL_RecordLayerData will accept these handshake messages if
+ * they are passed as epoch 1 (Early Data) in a single call.
+ *
+ * Using this option will cause connections to fail if early data is attempted
+ * and the peer expects this message.
+ */
+#define SSL_SUPPRESS_END_OF_EARLY_DATA 41
+
 #ifdef SSL_DEPRECATED_FUNCTION
 /* Old deprecated function names */
 SSL_IMPORT SECStatus SSL_Enable(PRFileDesc *fd, int option, PRIntn on);
@@ -384,7 +403,14 @@ SSL_IMPORT SECStatus SSL_SetNextProtoCallback(PRFileDesc *fd,
  * preferred. The other protocols should be in preference order.
  *
  * The supported protocols are specified in |data| in wire-format (8-bit
- * length-prefixed). For example: "\010http/1.1\006spdy/2". */
+ * length-prefixed). For example: "\010http/1.1\006spdy/2".
+ *
+ * An empty value (i.e., where |length| is 0 and |data| is any value,
+ * including NULL) forcibly disables ALPN.  In this mode, the server will
+ * reject any ClientHello that includes the ALPN extension.
+ *
+ * Calling this function overrides the callback previously set by
+ * SSL_SetNextProtoCallback. */
 SSL_IMPORT SECStatus SSL_SetNextProtoNego(PRFileDesc *fd,
                                           const unsigned char *data,
                                           unsigned int length);
@@ -1232,6 +1258,20 @@ NSS_GetClientAuthData(void *arg,
                       struct CERTDistNamesStr *caNames,
                       struct CERTCertificateStr **pRetCert,
                       struct SECKEYPrivateKeyStr **pRetKey);
+
+/* This function can be called by the appliation's custom GetClientAuthHook
+ * to filter out any certs in the cert list that doesn't match the negotiated
+ * requirements of the current SSL connection.
+ */
+SSL_IMPORT SECStatus
+SSL_FilterClientCertListBySocket(PRFileDesc *socket, CERTCertList *certlist);
+
+/* This function can be called by the application's custom GetClientAuthHook
+ * to determine if a single certificate matches the negotiated requirements of
+ * the current SSL connection.
+ */
+SSL_IMPORT PRBool
+SSL_CertIsUsable(PRFileDesc *socket, CERTCertificate *cert);
 
 /*
 ** Configure DTLS-SRTP (RFC 5764) cipher suite preferences.

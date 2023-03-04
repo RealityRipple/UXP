@@ -122,14 +122,6 @@ include $(CORE_DEPTH)/coreconf/suffix.mk
 endif
 
 #######################################################################
-# [13.0] Master "Core Components" for defining JDK                    #
-#        (dependent upon <architecture>, <source>, and <suffix>  tags)#
-#######################################################################
-ifdef NS_USE_JDK
-include $(CORE_DEPTH)/coreconf/jdk.mk
-endif
-
-#######################################################################
 # [14.0] Master "Core Components" rule set                            #
 #######################################################################
 ifndef MK_RULESET
@@ -139,17 +131,29 @@ endif
 #######################################################################
 # Master "Core Components" macros for Hardware features               #
 #######################################################################
-# NSS Build system does not properly support MozillaBuild 2 MSYS1
-# So we simply aren't going to enable AVX2 at all
-# Plus there seems to be an issue with it anyway for other reasons
-NSS_DISABLE_AVX2 = 1
-export NSS_DISABLE_AVX2
-
-#######################################################################
-# [15.0] Dependencies.
-#######################################################################
-
--include $(MKDEPENDENCIES)
+ifndef NSS_DISABLE_AVX2
+    ifneq ($(CPU_ARCH),x86_64)
+        # Disable AVX2 entirely on non-Intel platforms
+        NSS_DISABLE_AVX2 = 1
+        $(warning CPU_ARCH is not x86_64, disabling -mavx2)
+    else
+        # Clang reports its version as an older gcc, but it's OK
+        ifndef CC_IS_CLANG
+            ifneq (,$(filter 0 1 2 3,$(word 1,$(GCC_VERSION))))
+                NSS_DISABLE_AVX2 = 1
+            endif
+            ifeq (4,$(word 1,$(GCC_VERSION)))
+                ifeq (,$(filter 8 9,$(word 2,$(GCC_VERSION))))
+                    NSS_DISABLE_AVX2 = 1
+                endif
+            endif
+        endif
+        ifeq (1,$(NSS_DISABLE_AVX2))
+            $(warning Unable to find gcc 4.8 or greater, disabling -mavx2)
+            export NSS_DISABLE_AVX2
+        endif
+    endif
+endif #ndef NSS_DISABLE_AVX2
 
 #######################################################################
 # [16.0] Global environ ment defines
@@ -177,6 +181,14 @@ endif
 
 ifdef NSS_DISABLE_CHACHAPOLY
 DEFINES += -DNSS_DISABLE_CHACHAPOLY
+endif
+
+ifdef NSS_DISABLE_DEPRECATED_SEED
+DEFINES += -DNSS_DISABLE_DEPRECATED_SEED
+endif
+
+ifdef NSS_DISABLE_DEPRECATED_RC2
+DEFINES += -DNSS_DISABLE_DEPRECATED_RC2
 endif
 
 ifdef NSS_PKIX_NO_LDAP
@@ -215,8 +227,13 @@ DEFINES += -DNSS_DISABLE_ARM32_NEON
 endif
 
 # Avoid building with PowerPC's Altivec acceleration
-ifdef NSS_DISABLE_ALTIVEC
+ifeq ($(NSS_DISABLE_ALTIVEC),1)
 DEFINES += -DNSS_DISABLE_ALTIVEC
+endif
+
+# Avoid building with PowerPC's Crypto and VSX instructions
+ifeq ($(NSS_DISABLE_CRYPTO_VSX),1)
+DEFINES += -DNSS_DISABLE_CRYPTO_VSX
 endif
 
 # This allows all library and tools code to use the util function

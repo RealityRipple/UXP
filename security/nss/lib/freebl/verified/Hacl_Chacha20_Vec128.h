@@ -21,14 +21,18 @@
  * SOFTWARE.
  */
 
+#ifndef __Hacl_Chacha20_Vec128_H
+#define __Hacl_Chacha20_Vec128_H
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 #include "libintvector.h"
 #include "kremlin/internal/types.h"
 #include "kremlin/lowstar_endianness.h"
 #include <string.h>
 #include <stdbool.h>
-
-#ifndef __Hacl_Chacha20_Vec128_H
-#define __Hacl_Chacha20_Vec128_H
 
 #include "Hacl_Chacha20.h"
 #include "Hacl_Kremlib.h"
@@ -39,7 +43,7 @@ Hacl_Chacha20_Vec128_chacha20_encrypt_128(
     uint8_t *out,
     uint8_t *text,
     uint8_t *key,
-    uint8_t *n1,
+    uint8_t *n,
     uint32_t ctr);
 
 void
@@ -48,8 +52,12 @@ Hacl_Chacha20_Vec128_chacha20_decrypt_128(
     uint8_t *out,
     uint8_t *cipher,
     uint8_t *key,
-    uint8_t *n1,
+    uint8_t *n,
     uint32_t ctr);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #define __Hacl_Chacha20_Vec128_H_DEFINED
 #endif

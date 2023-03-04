@@ -107,6 +107,7 @@ struct PK11SlotInfoStr {
     unsigned int lastState;
     /* for Stan */
     NSSToken *nssToken;
+    PZLock *nssTokenLock;
     /* the tokeninfo struct */
     CK_TOKEN_INFO tokenInfo;
     /* fast mechanism lookup */
@@ -149,12 +150,13 @@ struct PK11ContextStr {
                                            * doing (CKA_ENCRYPT, CKA_SIGN,
                                            * CKA_HASH, etc.) */
     PK11SymKey *key;                      /* symetric key for this context */
+    CK_OBJECT_HANDLE objectID;            /* object handle to key */
     PK11SlotInfo *slot;                   /* slot this context is using */
     CK_SESSION_HANDLE session;            /* session this context is using */
     PZLock *sessionLock;                  /* lock before accessing a PKCS #11
                                            * session */
     PRBool ownSession;                    /* do we own the session? */
-    void *cx;                             /* window context for login */
+    void *pwArg;                          /* applicaton specific passwd arg */
     void *savedData;                      /* save data when we are 
                                            * multiplexing on a single context */
     unsigned long savedLength;            /* length of the saved context */

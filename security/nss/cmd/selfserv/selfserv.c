@@ -42,6 +42,7 @@
 #include "cert.h"
 #include "certt.h"
 #include "ocsp.h"
+#include "nssb64.h"
 
 #ifndef PORT_Sprintf
 #define PORT_Sprintf sprintf
@@ -138,6 +139,9 @@ static SECItem bigBuf;
 static int configureDHE = -1;        /* -1: don't configure, 0 disable, >=1 enable*/
 static int configureReuseECDHE = -1; /* -1: don't configure, 0 refresh, >=1 reuse*/
 static int configureWeakDHE = -1;    /* -1: don't configure, 0 disable, >=1 enable*/
+SECItem psk = { siBuffer, NULL, 0 };
+SECItem pskLabel = { siBuffer, NULL, 0 };
+char *echParamsStr = NULL;
 
 static PRThread *acceptorThread;
 
@@ -167,7 +171,7 @@ PrintUsageHeader(const char *progName)
             "         [ T <good|revoked|unknown|badsig|corrupted|none|ocsp>] [-A ca]\n"
             "         [-C SSLCacheEntries] [-S dsa_nickname] [-Q]\n"
             "         [-I groups] [-J signatureschemes] [-e ec_nickname]\n"
-            "         -U [0|1] -H [0|1|2] -W [0|1]\n"
+            "         -U [0|1] -H [0|1|2] -W [0|1] [-z externalPsk]\n"
             "\n",
             progName);
 }
@@ -241,7 +245,18 @@ PrintParameterUsage()
         "     LABEL[:OUTPUT-LENGTH[:CONTEXT]]\n"
         "   where LABEL and CONTEXT can be either a free-form string or\n"
         "   a hex string if it is preceded by \"0x\"; OUTPUT-LENGTH\n"
-        "   is a decimal integer.\n",
+        "   is a decimal integer.\n"
+        "-z Configure a TLS 1.3 External PSK with the given hex string for a key.\n"
+        "   To specify a label, use ':' as a delimiter. For example:\n"
+        "   0xAAAABBBBCCCCDDDD:mylabel. Otherwise, the default label of\n"
+        "  'Client_identity' will be used.\n"
+        "-X Configure the server for ECH via the given <ECHParams>.  ECHParams\n"
+        "   are expected in one of two formats:\n"
+        "      1. A string containing the ECH public name prefixed by the substring\n"
+        "         \"publicname:\". For example, \"publicname:example.com\". In this mode,\n"
+        "         an ephemeral ECH keypair is generated and ECHConfigs are printed to stdout.\n"
+        "      2. As a Base64 tuple of <ECHRawPrivateKey> || <ECHConfigs>. In this mode, the\n"
+        "         raw private key is used to bootstrap the HPKE context.\n",
         stderr);
 }
 
@@ -389,10 +404,11 @@ printSecurityInfo(PRFileDesc *fd)
                                         &suite, sizeof suite);
         if (result == SECSuccess) {
             FPRINTF(stderr,
-                    "selfserv: SSL version %d.%d using %d-bit %s with %d-bit %s MAC\n",
+                    "selfserv: SSL version %d.%d using %d-bit %s with %d-bit %s MAC%s\n",
                     channel.protocolVersion >> 8, channel.protocolVersion & 0xff,
                     suite.effectiveKeyBits, suite.symCipherName,
-                    suite.macBits, suite.macAlgorithmName);
+                    suite.macBits, suite.macAlgorithmName,
+                    channel.isFIPS ? " FIPS" : "");
             FPRINTF(stderr,
                     "selfserv: Server Auth: %d-bit %s, Key Exchange: %d-bit %s\n"
                     "          Compression: %s, Extended Master Secret: %s\n",
@@ -1695,19 +1711,30 @@ do_accepts(
 PRFileDesc *
 getBoundListenSocket(unsigned short port)
 {
-    PRFileDesc *listen_sock;
+    PRFileDesc *listen_sock = NULL;
     int listenQueueDepth = 5 + (2 * maxThreads);
     PRStatus prStatus;
     PRNetAddr addr;
     PRSocketOptionData opt;
 
-    addr.inet.family = PR_AF_INET;
-    addr.inet.ip = PR_INADDR_ANY;
-    addr.inet.port = PR_htons(port);
+    // We want to listen on the IP family that tstclnt will use.
+    // tstclnt uses PR_GetPrefLoopbackAddrInfo to decide, if it's
+    // asked to connect to localhost.
 
-    listen_sock = PR_NewTCPSocket();
+    prStatus = PR_GetPrefLoopbackAddrInfo(&addr, port);
+    if (prStatus == PR_FAILURE) {
+        addr.inet.family = PR_AF_INET;
+        addr.inet.ip = PR_INADDR_ANY;
+        addr.inet.port = PR_htons(port);
+    }
+
+    if (addr.inet.family == PR_AF_INET6) {
+        listen_sock = PR_OpenTCPSocket(PR_AF_INET6);
+    } else if (addr.inet.family == PR_AF_INET) {
+        listen_sock = PR_NewTCPSocket();
+    }
     if (listen_sock == NULL) {
-        errExit("PR_NewTCPSocket");
+        errExit("Couldn't create socket");
     }
 
     opt.option = PR_SockOpt_Nonblocking;
@@ -1839,6 +1866,212 @@ handshakeCallback(PRFileDesc *fd, void *client_data)
                     SECU_Strerror(err));
         }
     }
+}
+
+static SECStatus
+importPsk(PRFileDesc *model_sock)
+{
+    SECU_PrintAsHex(stdout, &psk, "Using External PSK", 0);
+    PK11SlotInfo *slot = NULL;
+    PK11SymKey *symKey = NULL;
+    slot = PK11_GetInternalSlot();
+    if (!slot) {
+        errWarn("PK11_GetInternalSlot failed");
+        return SECFailure;
+    }
+    symKey = PK11_ImportSymKey(slot, CKM_HKDF_KEY_GEN, PK11_OriginUnwrap,
+                               CKA_DERIVE, &psk, NULL);
+    PK11_FreeSlot(slot);
+    if (!symKey) {
+        errWarn("PK11_ImportSymKey failed\n");
+        return SECFailure;
+    }
+
+    SECStatus rv = SSL_AddExternalPsk(model_sock, symKey,
+                                      (const PRUint8 *)pskLabel.data,
+                                      pskLabel.len, ssl_hash_sha256);
+    PK11_FreeSymKey(symKey);
+    return rv;
+}
+
+static SECStatus
+configureEchWithPublicName(PRFileDesc *model_sock, const char *public_name)
+{
+    SECStatus rv;
+
+#define OID_LEN 65
+    unsigned char paramBuf[OID_LEN];
+    SECItem ecParams = { siBuffer, paramBuf, sizeof(paramBuf) };
+    SECKEYPublicKey *pubKey = NULL;
+    SECKEYPrivateKey *privKey = NULL;
+    SECOidData *oidData;
+    char *echConfigBase64 = NULL;
+    PRUint8 configId = 0;
+    PRUint8 configBuf[1000];
+    unsigned int len = 0;
+    HpkeSymmetricSuite echCipherSuite = { HpkeKdfHkdfSha256,
+                                          HpkeAeadChaCha20Poly1305 };
+
+    PK11SlotInfo *slot = PK11_GetInternalKeySlot();
+    if (!slot) {
+        errWarn("PK11_GetInternalKeySlot failed");
+        return SECFailure;
+    }
+
+    if (PK11_GenerateRandom(&configId, sizeof(configId)) != SECSuccess) {
+        errWarn("Failed to generate random configId");
+        goto loser;
+    }
+
+    oidData = SECOID_FindOIDByTag(SEC_OID_CURVE25519);
+    if (oidData && (2 + oidData->oid.len) < sizeof(paramBuf)) {
+        ecParams.data[0] = SEC_ASN1_OBJECT_ID;
+        ecParams.data[1] = oidData->oid.len;
+        memcpy(ecParams.data + 2, oidData->oid.data, oidData->oid.len);
+        ecParams.len = oidData->oid.len + 2;
+    } else {
+        errWarn("SECOID_FindOIDByTag failed");
+        goto loser;
+    }
+    privKey = PK11_GenerateKeyPair(slot, CKM_EC_KEY_PAIR_GEN, &ecParams,
+                                   &pubKey, PR_FALSE, PR_FALSE, NULL);
+    if (!privKey || !pubKey) {
+        errWarn("Failed to generate ECH keypair");
+        goto loser;
+    }
+
+    rv = SSL_EncodeEchConfigId(configId, echParamsStr, 100,
+                               HpkeDhKemX25519Sha256, pubKey,
+                               &echCipherSuite, 1,
+                               configBuf, &len, sizeof(configBuf));
+    if (rv != SECSuccess) {
+        errWarn("SSL_EncodeEchConfigId failed");
+        goto loser;
+    }
+
+    rv = SSL_SetServerEchConfigs(model_sock, pubKey, privKey, configBuf, len);
+    if (rv != SECSuccess) {
+        errWarn("SSL_SetServerEchConfigs failed");
+        goto loser;
+    }
+
+    SECItem echConfigItem = { siBuffer, configBuf, len };
+    echConfigBase64 = NSSBase64_EncodeItem(NULL, NULL, 0, &echConfigItem);
+    if (!echConfigBase64) {
+        errWarn("NSSBase64_EncodeItem failed");
+        goto loser;
+    }
+
+    // Remove the newline characters that NSSBase64_EncodeItem unhelpfully inserts.
+    char *newline = strstr(echConfigBase64, "\r\n");
+    if (newline) {
+        memmove(newline, newline + 2, strlen(newline + 2) + 1);
+    }
+
+    printf("%s\n", echConfigBase64);
+    PORT_Free(echConfigBase64);
+    SECKEY_DestroyPrivateKey(privKey);
+    SECKEY_DestroyPublicKey(pubKey);
+    PK11_FreeSlot(slot);
+    return SECSuccess;
+
+loser:
+    PORT_Free(echConfigBase64);
+    SECKEY_DestroyPrivateKey(privKey);
+    SECKEY_DestroyPublicKey(pubKey);
+    PK11_FreeSlot(slot);
+    return SECFailure;
+}
+
+static SECStatus
+configureEchWithData(PRFileDesc *model_sock)
+{
+/* The input should be a Base64-encoded ECHKey struct:
+     *  struct {
+     *     opaque pkcs8_ech_keypair<0..2^16-1>;
+     *     ECHConfigs configs<0..2^16>; // draft-ietf-tls-esni-09
+     * } ECHKey;
+     *
+     * This is not a standardized format, rather it's designed for
+     * interoperability with https://github.com/xvzcf/tls-interop-runner.
+     * It is the user's responsibility to ensure that the PKCS8 keypair
+     * corresponds to the public key embedded in the ECHConfigs.
+     */
+
+#define REMAINING_BYTES(rdr, buf) \
+    buf->len - (rdr - buf->data)
+
+    SECStatus rv;
+    size_t len;
+    unsigned char *reader;
+    PK11SlotInfo *slot = NULL;
+    SECItem *decoded = NULL;
+    SECKEYPublicKey *pk = NULL;
+    SECKEYPrivateKey *sk = NULL;
+    SECItem pkcs8Key = { siBuffer, NULL, 0 };
+
+    decoded = NSSBase64_DecodeBuffer(NULL, NULL, echParamsStr, PORT_Strlen(echParamsStr));
+    if (!decoded || decoded->len < 2) {
+        errWarn("Couldn't decode ECHParams");
+        goto loser;
+    };
+    reader = decoded->data;
+
+    len = (*(reader++) << 8);
+    len |= *(reader++);
+    if (len > (REMAINING_BYTES(reader, decoded) - 2)) {
+        errWarn("Bad ECHParams encoding");
+        goto loser;
+    }
+    pkcs8Key.data = reader;
+    pkcs8Key.len = len;
+    reader += len;
+
+    /* Convert the key bytes to key handles */
+    slot = PK11_GetInternalKeySlot();
+    rv = PK11_ImportDERPrivateKeyInfoAndReturnKey(
+        slot, &pkcs8Key, NULL, NULL, PR_FALSE, PR_FALSE, KU_ALL, &sk, NULL);
+    if (rv != SECSuccess || !sk) {
+        errWarn("ECH key import failed");
+        goto loser;
+    }
+    pk = SECKEY_ConvertToPublicKey(sk);
+    if (!pk) {
+        errWarn("ECH key conversion failed");
+        goto loser;
+    }
+
+    /* Remainder is the ECHConfigs. */
+    rv = SSL_SetServerEchConfigs(model_sock, pk, sk, reader,
+                                 REMAINING_BYTES(reader, decoded));
+    if (rv != SECSuccess) {
+        errWarn("SSL_SetServerEchConfigs failed");
+        goto loser;
+    }
+
+    PK11_FreeSlot(slot);
+    SECKEY_DestroyPrivateKey(sk);
+    SECKEY_DestroyPublicKey(pk);
+    SECITEM_FreeItem(decoded, PR_TRUE);
+    return SECSuccess;
+loser:
+    if (slot) {
+        PK11_FreeSlot(slot);
+    }
+    SECKEY_DestroyPrivateKey(sk);
+    SECKEY_DestroyPublicKey(pk);
+    SECITEM_FreeItem(decoded, PR_TRUE);
+    return SECFailure;
+}
+
+static SECStatus
+configureEch(PRFileDesc *model_sock)
+{
+    if (!PORT_Strncmp(echParamsStr, "publicname:", PORT_Strlen("publicname:"))) {
+        return configureEchWithPublicName(model_sock,
+                                          &echParamsStr[PORT_Strlen("publicname:")]);
+    }
+    return configureEchWithData(model_sock);
 }
 
 void
@@ -2047,6 +2280,20 @@ server_main(
             if (rv < 0) {
                 errExit("first SSL_OptionSet SSL_REQUIRE_CERTIFICATE");
             }
+        }
+    }
+
+    if (psk.data) {
+        rv = importPsk(model_sock);
+        if (rv != SECSuccess) {
+            errExit("importPsk failed");
+        }
+    }
+
+    if (echParamsStr) {
+        rv = configureEch(model_sock);
+        if (rv != SECSuccess) {
+            errExit("configureEch failed");
         }
     }
 
@@ -2291,10 +2538,9 @@ main(int argc, char **argv)
     /* please keep this list of options in ASCII collating sequence.
     ** numbers, then capital letters, then lower case, alphabetical.
     ** XXX: 'B', and 'q' were used in the past but removed
-    **      in 3.28, please leave some time before resuing those.
-    **      'z' was removed in 3.39. */
+    **      in 3.28, please leave some time before resuing those. */
     optstate = PL_CreateOptState(argc, argv,
-                                 "2:A:C:DEGH:I:J:L:M:NP:QRS:T:U:V:W:YZa:bc:d:e:f:g:hi:jk:lmn:op:rst:uvw:x:y");
+                                 "2:A:C:DEGH:I:J:L:M:NP:QRS:T:U:V:W:X:YZa:bc:d:e:f:g:hi:jk:lmn:op:rst:uvw:x:yz:");
     while ((status = PL_GetNextOpt(optstate)) == PL_OPT_OK) {
         ++optionsFound;
         switch (optstate->option) {
@@ -2516,6 +2762,16 @@ main(int argc, char **argv)
                 zeroRTT = PR_TRUE;
                 break;
 
+            case 'z':
+                rv = readPSK(optstate->value, &psk, &pskLabel);
+                if (rv != SECSuccess) {
+                    PL_DestroyOptState(optstate);
+                    fprintf(stderr, "Bad PSK specified.\n");
+                    Usage(progName);
+                    exit(1);
+                }
+                break;
+
             case 'Q':
                 enableALPN = PR_TRUE;
                 break;
@@ -2551,9 +2807,17 @@ main(int argc, char **argv)
                 }
                 break;
 
+            case 'X':
+                echParamsStr = PORT_Strdup(optstate->value);
+                if (echParamsStr == NULL) {
+                    PL_DestroyOptState(optstate);
+                    fprintf(stderr, "echParamsStr copy failed.\n");
+                    exit(5);
+                }
+                break;
             default:
             case '?':
-                fprintf(stderr, "Unrecognized or bad option specified.\n");
+                fprintf(stderr, "Unrecognized or bad option specified: %c\n", optstate->option);
                 fprintf(stderr, "Run '%s -h' for usage information.\n", progName);
                 exit(4);
                 break;
@@ -2871,6 +3135,9 @@ cleanup:
     if (antiReplay) {
         SSL_ReleaseAntiReplayContext(antiReplay);
     }
+    SECITEM_ZfreeItem(&psk, PR_FALSE);
+    SECITEM_ZfreeItem(&pskLabel, PR_FALSE);
+    PORT_Free(echParamsStr);
     if (NSS_Shutdown() != SECSuccess) {
         SECU_PrintError(progName, "NSS_Shutdown");
         if (loggerThread) {

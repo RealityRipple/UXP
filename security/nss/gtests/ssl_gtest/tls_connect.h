@@ -11,6 +11,7 @@
 
 #include "sslproto.h"
 #include "sslt.h"
+#include "nss.h"
 
 #include "tls_agent.h"
 #include "tls_filter.h"
@@ -80,6 +81,8 @@ class TlsConnectTestBase : public ::testing::Test {
   void ConnectExpectAlert(std::shared_ptr<TlsAgent>& sender, uint8_t alert);
   void ConnectExpectFailOneSide(TlsAgent::Role failingSide);
   void ConnectWithCipherSuite(uint16_t cipher_suite);
+  void CheckEarlyDataLimit(const std::shared_ptr<TlsAgent>& agent,
+                           size_t expected_size);
   // Check that the keys used in the handshake match expectations.
   void CheckKeys(SSLKEAType kea_type, SSLNamedGroup kea_group,
                  SSLAuthType auth_type, SSLSignatureScheme sig_scheme) const;
@@ -120,6 +123,9 @@ class TlsConnectTestBase : public ::testing::Test {
   void EnableSrtp();
   void CheckSrtp() const;
   void SendReceive(size_t total = 50);
+  void AddPsk(const ScopedPK11SymKey& psk, std::string label, SSLHashType hash,
+              uint16_t zeroRttSuite = TLS_NULL_WITH_NULL_NULL);
+  void RemovePsk(std::string label);
   void SetupForZeroRtt();
   void SetupForResume();
   void ZeroRttSendReceive(
@@ -128,7 +134,7 @@ class TlsConnectTestBase : public ::testing::Test {
   void Receive(size_t amount);
   void ExpectExtendedMasterSecret(bool expected);
   void ExpectEarlyDataAccepted(bool expected);
-  void DisableECDHEServerKeyReuse();
+  void EnableECDHEServerKeyReuse();
   void SkipVersionChecks();
 
   // Move the DTLS timers for both endpoints to pop the next timer.
@@ -140,6 +146,17 @@ class TlsConnectTestBase : public ::testing::Test {
 
   void SaveAlgorithmPolicy();
   void RestoreAlgorithmPolicy();
+
+  static ScopedSECItem MakeEcKeyParams(SSLNamedGroup group);
+  static void GenerateEchConfig(
+      HpkeKemId kem_id, const std::vector<HpkeSymmetricSuite>& cipher_suites,
+      const std::string& public_name, uint16_t max_name_len, DataBuffer& record,
+      ScopedSECKEYPublicKey& pubKey, ScopedSECKEYPrivateKey& privKey);
+  void SetupEch(std::shared_ptr<TlsAgent>& client,
+                std::shared_ptr<TlsAgent>& server,
+                HpkeKemId kem_id = HpkeDhKemX25519Sha256,
+                bool expect_ech = true, bool set_client_config = true,
+                bool set_server_config = true, int maxConfigSize = 100);
 
  protected:
   SSLProtocolVariant variant_;
@@ -166,6 +183,10 @@ class TlsConnectTestBase : public ::testing::Test {
                                               SEC_OID_ANSIX9_DSA_SIGNATURE,
                                               SEC_OID_CURVE25519, SEC_OID_SHA1};
   std::vector<std::tuple<SECOidTag, uint32_t>> saved_policies_;
+  const std::vector<PRInt32> options_ = {
+      NSS_RSA_MIN_KEY_SIZE, NSS_DH_MIN_KEY_SIZE, NSS_DSA_MIN_KEY_SIZE,
+      NSS_TLS_VERSION_MIN_POLICY, NSS_TLS_VERSION_MAX_POLICY};
+  std::vector<std::tuple<PRInt32, uint32_t>> saved_options_;
 
  private:
   void CheckResumption(SessionResumptionMode expected);

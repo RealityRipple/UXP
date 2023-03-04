@@ -3,6 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef _PK11PRIV_H_
 #define _PK11PRIV_H_
+
+#include <stddef.h>
+
 #include "plarena.h"
 #include "seccomon.h"
 #include "secoidt.h"
@@ -48,7 +51,7 @@ CK_ULONG PK11_ReadULongAttribute(PK11SlotInfo *slot, CK_OBJECT_HANDLE id,
 char *PK11_MakeString(PLArenaPool *arena, char *space, char *staticSring,
                       int stringLen);
 PRBool pk11_MatchString(const char *string,
-                        const char *staticString, int staticStringLen);
+                        const char *staticString, size_t staticStringLen);
 int PK11_MapError(CK_RV error);
 CK_SESSION_HANDLE PK11_GetRWSession(PK11SlotInfo *slot);
 void PK11_RestoreROSession(PK11SlotInfo *slot, CK_SESSION_HANDLE rwsession);
@@ -196,6 +199,11 @@ SECStatus pk11_setGlobalOptions(PRBool noSingleThreadedModules,
 
 /* return whether NSS is allowed to call C_Finalize */
 PRBool pk11_getFinalizeModulesOption(void);
+
+/* fetch the FIPS state from the fips indicator, public versions of
+ * this function operate on the slot, the context, and the object */
+PRBool pk11slot_GetFIPSStatus(PK11SlotInfo *slot, CK_SESSION_HANDLE session,
+                              CK_OBJECT_HANDLE object, CK_ULONG operationType);
 
 SEC_END_PROTOS
 
