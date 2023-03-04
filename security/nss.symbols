@@ -15,7 +15,6 @@ PL_*
 #endif
 ATOB_AsciiToData
 ATOB_AsciiToData_Util
-ATOB_ConvertAsciiToItem
 ATOB_ConvertAsciiToItem_Util
 BTOA_ConvertItemToAscii_Util
 BTOA_DataToAscii
@@ -24,7 +23,6 @@ CERT_AddCertToListHead
 CERT_AddCertToListTail
 CERT_AddExtension
 CERT_AddExtensionByOID
-__CERT_AddTempCertToPerm
 CERT_AsciiToName
 CERT_CacheOCSPResponseFromSideChannel
 CERT_CertChainFromCert
@@ -110,7 +108,6 @@ CERT_FreeNicknames
 CERT_GenTime2FormattedAscii_Util
 CERT_GetCertChainFromCert
 CERT_GetCertEmailAddress
-CERT_GetCertificateDer
 CERT_GetCertificateRequestExtensions
 CERT_GetCertKeyType
 CERT_GetCertTimes
@@ -178,62 +175,33 @@ HASH_Destroy
 HASH_End
 HASH_GetHashObject
 HASH_GetHashOidTagByHashType
+HASH_GetHashTypeByOidTag
 HASH_GetType
 HASH_HashBuf
 HASH_ResultLenByOidTag
 HASH_Update
 NSSBase64_DecodeBuffer
-NSSBase64_EncodeItem
 NSSBase64_EncodeItem_Util
 NSS_CMSContentInfo_GetContent
 NSS_CMSContentInfo_GetContentTypeTag
-NSS_CMSContentInfo_SetContent_Data
-NSS_CMSContentInfo_SetContent_EnvelopedData
 NSS_CMSContentInfo_SetContent_SignedData
-NSS_CMSDecoder_Cancel
-NSS_CMSDecoder_Finish
-NSS_CMSDecoder_Start
-NSS_CMSDecoder_Update
-NSS_CMSEncoder_Cancel
 NSS_CMSEncoder_Finish
 NSS_CMSEncoder_Start
-NSS_CMSEncoder_Update
-NSS_CMSEnvelopedData_AddRecipient
-NSS_CMSEnvelopedData_Create
-NSS_CMSEnvelopedData_GetContentInfo
 NSS_CMSMessage_ContentLevel
-NSS_CMSMessage_ContentLevelCount
 NSS_CMSMessage_Create
 NSS_CMSMessage_CreateFromDER
 NSS_CMSMessage_Destroy
-NSS_CMSMessage_GetContent
 NSS_CMSMessage_GetContentInfo
 NSS_CMSMessage_IsEncrypted
 NSS_CMSMessage_IsSigned
-NSS_CMSRecipientInfo_Create
 NSS_CMSSignedData_AddCertificate
 NSS_CMSSignedData_AddCertList
-NSS_CMSSignedData_AddSignerInfo
-NSS_CMSSignedData_Create
 NSS_CMSSignedData_CreateCertsOnly
 NSS_CMSSignedData_Destroy
-NSS_CMSSignedData_GetContentInfo
-NSS_CMSSignedData_GetDigestAlgs
 NSS_CMSSignedData_GetSignerInfo
-NSS_CMSSignedData_HasDigests
-NSS_CMSSignedData_ImportCerts
 NSS_CMSSignedData_SetDigestValue
 NSS_CMSSignedData_SignerInfoCount
-NSS_CMSSignedData_VerifySignerInfo
-NSS_CMSSignerInfo_AddMSSMIMEEncKeyPrefs
-NSS_CMSSignerInfo_AddSigningTime
-NSS_CMSSignerInfo_AddSMIMECaps
-NSS_CMSSignerInfo_AddSMIMEEncKeyPrefs
-NSS_CMSSignerInfo_Create
-NSS_CMSSignerInfo_GetSignerCommonName
-NSS_CMSSignerInfo_GetSignerEmailAddress
 NSS_CMSSignerInfo_GetSigningCertificate
-NSS_CMSSignerInfo_IncludeCerts
 NSS_CMSSignerInfo_Verify
 NSS_FindCertKEAType
 NSS_GetAlgorithmPolicy
@@ -256,6 +224,7 @@ NSS_Get_SEC_IA5StringTemplate
 NSS_Get_SEC_IA5StringTemplate_Util
 NSS_Get_SEC_IntegerTemplate
 NSS_Get_SEC_IntegerTemplate_Util
+NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate
 NSS_Get_SECKEY_RSAPSSParamsTemplate
 NSS_Get_SEC_NullTemplate_Util
 NSS_Get_SEC_ObjectIDTemplate_Util
@@ -268,7 +237,9 @@ NSS_Get_SEC_UTF8StringTemplate
 NSS_Get_SEC_UTF8StringTemplate_Util
 NSS_GetVersion
 NSS_Init
+NSS_InitContext
 NSS_Initialize
+NSS_InitReadWrite
 NSS_InitWithMerge
 NSS_IsInitialized
 NSS_OptionGet
@@ -278,6 +249,7 @@ NSS_SecureMemcmp
 NSS_SetAlgorithmPolicy
 NSS_SetDomesticPolicy
 NSS_Shutdown
+NSS_ShutdownContext
 NSSSMIME_GetVersion
 NSS_SMIMESignerInfo_SaveSMIMEProfile
 NSS_SMIMEUtil_FindBulkAlgForRecipients
@@ -285,6 +257,7 @@ NSSSSL_GetVersion
 #ifdef XP_WIN
 _NSSUTIL_Access
 #endif
+NSSUTIL_AddNSSFlagToModuleSpec
 NSSUTIL_ArgDecodeNumber
 NSSUTIL_ArgFetchValue
 NSSUTIL_ArgGetLabel
@@ -347,7 +320,6 @@ PK11_FindCertsFromNickname
 PK11_FindKeyByAnyCert
 PK11_FindKeyByDERCert
 PK11_FindKeyByKeyID
-PK11_FindRawCertsWithSubject
 PK11_FindSlotByName
 PK11_FindSlotsByNames
 PK11_FreeSlot
@@ -365,7 +337,6 @@ PK11_GetBestSlot
 PK11_GetBestSlotMultiple
 PK11_GetBlockSize
 PK11_GetCertFromPrivateKey
-PK11_GetCertsMatchingPrivateKey
 PK11_GetDefaultArray
 PK11_GetDefaultFlags
 PK11_GetDisabledReason
@@ -402,6 +373,7 @@ PK11_ImportCert
 PK11_ImportCertForKey
 PK11_ImportCRL
 PK11_ImportDERPrivateKeyInfoAndReturnKey
+PK11_ImportEncryptedPrivateKeyInfoAndReturnKey
 PK11_ImportPublicKey
 PK11_ImportSymKey
 PK11_InitPin
@@ -410,6 +382,7 @@ PK11_IsFIPS
 PK11_IsFriendly
 PK11_IsHW
 PK11_IsInternal
+PK11_IsInternalKeySlot
 PK11_IsLoggedIn
 PK11_IsPresent
 PK11_IsReadOnly
@@ -459,6 +432,7 @@ PK11_UnwrapSymKey
 PK11_UpdateSlotAttribute
 PK11_UserDisableSlot
 PK11_UserEnableSlot
+PK11_Verify
 PK11_VerifyWithMechanism
 PK11_WrapPrivKey
 PK11_WrapSymKey
@@ -527,7 +501,6 @@ SECITEM_AllocArray
 SECITEM_AllocItem
 SECITEM_AllocItem_Util
 SECITEM_ArenaDupItem_Util
-SECITEM_CompareItem
 SECITEM_CompareItem_Util
 SECITEM_CopyItem
 SECITEM_CopyItem_Util
@@ -583,6 +556,7 @@ SECMOD_HasRemovableSlots
 SECMOD_InternaltoPubMechFlags
 SECMOD_LoadModule
 SECMOD_LoadUserModule
+SECMOD_LockedModuleHasRemovableSlots
 SECMOD_OpenUserDB
 SECMOD_PubCipherFlagstoInternal
 SECMOD_PubMechFlagstoInternal
@@ -590,6 +564,7 @@ SECMOD_ReferenceModule
 SECMOD_ReleaseReadLock
 SECMOD_UnloadUserModule
 SECMOD_UpdateModule
+SECMOD_UpdateSlotList
 SECMOD_WaitForAnyTokenEvent
 SEC_NullTemplate_Util @DATA@
 SEC_ObjectIDTemplate_Util @DATA@
@@ -682,9 +657,11 @@ SSL_ForceHandshake
 SSL_GetChannelInfo
 SSL_GetCipherSuiteInfo
 SSL_GetClientAuthDataHook
+SSL_GetExperimentalAPI
 SSL_GetImplementedCiphers
 SSL_GetNextProto
 SSL_GetNumImplementedCiphers
+SSL_GetPreliminaryChannelInfo
 SSL_GetSRTPCipher
 SSL_GetStatistics
 SSL_HandshakeCallback
@@ -729,6 +706,7 @@ VFY_VerifyData
 VFY_VerifyDataWithAlgorithmID
 VFY_VerifyDigestDirect
 _SGN_VerifyPKCS1DigestInfo
+__CERT_AddTempCertToPerm
 __PK11_SetCertificateNickname
 # These symbols are not used by applications but are possibly used across
 # NSS library boundaries.
@@ -738,7 +716,7 @@ CERT_FindCertByNicknameOrEmailAddrCX
 SECKEY_GetPrivateKeyType
 SEC_DerSignDataWithAlgorithmID
 SEC_CreateSignatureAlgorithmParameters
-# These symbols are not used by applicatons themselves, but are used by
+# These symbols are not used by applications themselves, but are used by
 # Java's security libraries, which in turn are used by Java
 # applets/plugins/etc.  Provide them to make Java code happy.
 NSS_VersionCheck
