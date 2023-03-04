@@ -17,6 +17,7 @@ extern "C" {
 #include "gtest_utils.h"
 #include "tls_agent.h"
 #include "tls_filter.h"
+#include "tls_parser.h"
 #include "tls_protect.h"
 
 namespace nss_test {
@@ -101,13 +102,16 @@ void TlsRecordFilter::SecretCallback(PRFileDesc* fd, PRUint16 epoch,
             SSL_GetCipherSuiteInfo(suite, &cipherinfo, sizeof(cipherinfo)));
   EXPECT_EQ(sizeof(cipherinfo), cipherinfo.length);
 
-  bool is_dtls = self->agent()->variant() == ssl_variant_datagram;
-  self->cipher_specs_.emplace_back(is_dtls, epoch);
+  self->cipher_specs_.emplace_back(self->is_dtls_agent(), epoch);
   EXPECT_TRUE(self->cipher_specs_.back().SetKeys(&cipherinfo, secret));
 }
 
+bool TlsRecordFilter::is_dtls_agent() const {
+  return agent()->variant() == ssl_variant_datagram;
+}
+
 bool TlsRecordFilter::is_dtls13() const {
-  if (agent()->variant() != ssl_variant_datagram) {
+  if (!is_dtls_agent()) {
     return false;
   }
   if (agent()->state() == TlsAgent::STATE_CONNECTED) {
@@ -136,8 +140,7 @@ TlsCipherSpec& TlsRecordFilter::spec(uint16_t write_epoch) {
   // count sequence numbers.
   EXPECT_FALSE(decrypting_) << "No spec available for epoch " << write_epoch;
   ;
-  bool is_dtls = agent()->variant() == ssl_variant_datagram;
-  cipher_specs_.emplace_back(is_dtls, write_epoch);
+  cipher_specs_.emplace_back(is_dtls_agent(), write_epoch);
   return cipher_specs_.back();
 }
 
@@ -503,7 +506,7 @@ bool TlsRecordFilter::Unprotect(const TlsRecordHeader& header,
   if (!decrypting_ || !header.is_protected()) {
     // Maintain the epoch and sequence number for plaintext records.
     uint16_t ep = 0;
-    if (agent()->variant() == ssl_variant_datagram) {
+    if (is_dtls_agent()) {
       ep = static_cast<uint16_t>(header.sequence_number() >> 48);
     }
     spec(ep).RecordUnprotected(header.sequence_number());
@@ -514,7 +517,7 @@ bool TlsRecordFilter::Unprotect(const TlsRecordHeader& header,
   }
 
   uint16_t ep = 0;
-  if (agent()->variant() == ssl_variant_datagram) {
+  if (is_dtls_agent()) {
     ep = static_cast<uint16_t>(header.sequence_number() >> 48);
     if (!spec(ep).Unprotect(header, ciphertext, plaintext, out_header)) {
       return false;
@@ -1031,6 +1034,69 @@ PacketFilter::Action TlsExtensionReplacer::FilterExtension(
   return CHANGE;
 }
 
+PacketFilter::Action TlsExtensionResizer::FilterExtension(
+    uint16_t extension_type, const DataBuffer& input, DataBuffer* output) {
+  if (extension_type != extension_) {
+    return KEEP;
+  }
+
+  if (input.len() <= length_) {
+    DataBuffer buf(length_ - input.len());
+    output->Append(buf);
+    return CHANGE;
+  }
+
+  output->Assign(input.data(), length_);
+  return CHANGE;
+}
+
+PacketFilter::Action TlsExtensionAppender::FilterHandshake(
+    const HandshakeHeader& header, const DataBuffer& input,
+    DataBuffer* output) {
+  TlsParser parser(input);
+  if (!TlsExtensionFilter::FindExtensions(&parser, header)) {
+    return KEEP;
+  }
+  *output = input;
+
+  // Increase the length of the extensions block.
+  if (!UpdateLength(output, parser.consumed(), 2)) {
+    return KEEP;
+  }
+
+  // Extensions in Certificate are nested twice.  Increase the size of the
+  // certificate list.
+  if (header.handshake_type() == kTlsHandshakeCertificate) {
+    TlsParser p2(input);
+    if (!p2.SkipVariable(1)) {
+      ADD_FAILURE();
+      return KEEP;
+    }
+    if (!UpdateLength(output, p2.consumed(), 3)) {
+      return KEEP;
+    }
+  }
+
+  size_t offset = output->len();
+  offset = output->Write(offset, extension_, 2);
+  WriteVariable(output, offset, data_, 2);
+
+  return CHANGE;
+}
+
+bool TlsExtensionAppender::UpdateLength(DataBuffer* output, size_t offset,
+                                        size_t size) {
+  uint32_t len;
+  if (!output->Read(offset, size, &len)) {
+    ADD_FAILURE();
+    return false;
+  }
+
+  len += 4 + data_.len();
+  output->Write(offset, len, size);
+  return true;
+}
+
 PacketFilter::Action TlsExtensionDropper::FilterExtension(
     uint16_t extension_type, const DataBuffer& input, DataBuffer* output) {
   if (extension_type == extension_) {
@@ -1141,20 +1207,67 @@ PacketFilter::Action TlsClientHelloVersionSetter::FilterHandshake(
   return CHANGE;
 }
 
+PacketFilter::Action TlsServerHelloVersionSetter::FilterHandshake(
+    const HandshakeHeader& header, const DataBuffer& input,
+    DataBuffer* output) {
+  *output = input;
+  output->Write(0, version_, 2);
+  return CHANGE;
+}
+
 PacketFilter::Action SelectedCipherSuiteReplacer::FilterHandshake(
     const HandshakeHeader& header, const DataBuffer& input,
     DataBuffer* output) {
   *output = input;
   uint32_t temp = 0;
   EXPECT_TRUE(input.Read(0, 2, &temp));
-  // Cipher suite is after version(2) and random(32).
+  EXPECT_EQ(header.version(), NormalizeTlsVersion(temp));
+  // Cipher suite is after version(2), random(32)
+  // and [legacy_]session_id(<0..32>).
   size_t pos = 34;
-  if (temp < SSL_LIBRARY_VERSION_TLS_1_3) {
-    // In old versions, we have to skip a session_id too.
-    EXPECT_TRUE(input.Read(pos, 1, &temp));
-    pos += 1 + temp;
-  }
+  EXPECT_TRUE(input.Read(pos, 1, &temp));
+  pos += 1 + temp;
+
   output->Write(pos, static_cast<uint32_t>(cipher_suite_), 2);
   return CHANGE;
 }
+
+PacketFilter::Action ServerHelloRandomChanger::FilterHandshake(
+    const HandshakeHeader& header, const DataBuffer& input,
+    DataBuffer* output) {
+  *output = input;
+  uint32_t temp = 0;
+  size_t pos = 30;
+  EXPECT_TRUE(input.Read(pos, 2, &temp));
+  output->Write(pos, (temp ^ 0xffff), 2);
+  return CHANGE;
+}
+
+PacketFilter::Action ClientHelloPreambleCapture::FilterHandshake(
+    const HandshakeHeader& header, const DataBuffer& input,
+    DataBuffer* output) {
+  EXPECT_TRUE(header.handshake_type() == kTlsHandshakeClientHello);
+
+  if (captured_) {
+    return KEEP;
+  }
+  captured_ = true;
+
+  DataBuffer temp;
+  TlsParser parser(input);
+  EXPECT_TRUE(parser.Read(&temp, 2 + 32));     // Version + Random
+  EXPECT_TRUE(parser.ReadVariable(&temp, 1));  // Session ID
+  if (is_dtls_agent()) {
+    EXPECT_TRUE(parser.ReadVariable(&temp, 1));  // Cookie
+  }
+  EXPECT_TRUE(parser.ReadVariable(&temp, 2));  // Ciphersuites
+  EXPECT_TRUE(parser.ReadVariable(&temp, 1));  // Compression
+
+  // Copy the preamble into a new buffer
+  data_ = input;
+  data_.Truncate(parser.consumed());
+
+  return KEEP;
+}
+
 }  // namespace nss_test

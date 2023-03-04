@@ -214,7 +214,7 @@ TEST_P(SSLv2ClientHelloTest, ConnectDisabled) {
   // But to be certain, feed in more data to see if an error comes out.
   uint8_t zeros[SSL_LIBRARY_VERSION_TLS_1_2] = {0};
   client_->SendDirect(DataBuffer(zeros, sizeof(zeros)));
-  ExpectAlert(server_, kTlsAlertIllegalParameter);
+  ExpectAlert(server_, kTlsAlertUnexpectedMessage);
   server_->Handshake();
   client_->Handshake();
 }
@@ -237,8 +237,8 @@ TEST_P(SSLv2ClientHelloTest, ConnectAfterEmptyV3Record) {
   // as the record length.
   SetPadding(255);
 
-  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
-  EXPECT_EQ(SSL_ERROR_BAD_CLIENT, server_->error_code());
+  ConnectExpectAlert(server_, kTlsAlertUnexpectedMessage);
+  EXPECT_EQ(SSL_ERROR_RX_UNKNOWN_RECORD_TYPE, server_->error_code());
 }
 
 // Test negotiating TLS 1.3.
@@ -277,7 +277,7 @@ TEST_P(SSLv2ClientHelloTest, SendSecurityEscape) {
   // Set a big padding so that the server fails instead of timing out.
   SetPadding(255);
 
-  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
+  ConnectExpectAlert(server_, kTlsAlertUnexpectedMessage);
 }
 
 // Invalid SSLv2 client hello padding must fail the handshake.
@@ -406,9 +406,9 @@ TEST_F(SSLv2ClientHelloTestF, InappropriateFallbackSCSV) {
   EXPECT_EQ(SSL_ERROR_INAPPROPRIATE_FALLBACK_ALERT, server_->error_code());
 }
 
-INSTANTIATE_TEST_CASE_P(VersionsStream10Pre13, SSLv2ClientHelloTest,
-                        TlsConnectTestBase::kTlsV10);
-INSTANTIATE_TEST_CASE_P(VersionsStreamPre13, SSLv2ClientHelloTest,
-                        TlsConnectTestBase::kTlsV11V12);
+INSTANTIATE_TEST_SUITE_P(VersionsStream10Pre13, SSLv2ClientHelloTest,
+                         TlsConnectTestBase::kTlsV10);
+INSTANTIATE_TEST_SUITE_P(VersionsStreamPre13, SSLv2ClientHelloTest,
+                         TlsConnectTestBase::kTlsV11V12);
 
 }  // namespace nss_test

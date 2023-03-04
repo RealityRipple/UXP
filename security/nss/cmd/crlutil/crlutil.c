@@ -386,7 +386,6 @@ CreateModifiedCRLCopy(PLArenaPool *arena, CERTCertDBHandle *certHandle,
         rv = SECU_ReadDERFromFile(&crlDER, inFile, PR_FALSE, PR_FALSE);
         if (rv != SECSuccess) {
             SECU_PrintError(progName, "unable to read input file");
-            PORT_FreeArena(modArena, PR_FALSE);
             goto loser;
         }
 
@@ -1045,7 +1044,10 @@ main(int argc, char **argv)
     PK11_SetPasswordFunc(SECU_GetModulePassword);
 
     if (showFileCRL) {
-        NSS_NoDB_Init(NULL);
+        rv = NSS_NoDB_Init(NULL);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
     } else {
         secstatus = NSS_Initialize(SECU_ConfigDirectory(NULL), dbPrefix, dbPrefix,
                                    "secmod.db", readonly ? NSS_INIT_READONLY : 0);

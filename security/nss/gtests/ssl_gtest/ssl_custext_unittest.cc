@@ -23,23 +23,23 @@ static void IncrementCounterArg(void *arg) {
   }
 }
 
-PRBool NoopExtensionWriter(PRFileDesc *fd, SSLHandshakeType message,
-                           PRUint8 *data, unsigned int *len,
-                           unsigned int maxLen, void *arg) {
+static PRBool NoopExtensionWriter(PRFileDesc *fd, SSLHandshakeType message,
+                                  PRUint8 *data, unsigned int *len,
+                                  unsigned int maxLen, void *arg) {
   IncrementCounterArg(arg);
   return PR_FALSE;
 }
 
-PRBool EmptyExtensionWriter(PRFileDesc *fd, SSLHandshakeType message,
-                            PRUint8 *data, unsigned int *len,
-                            unsigned int maxLen, void *arg) {
+static PRBool EmptyExtensionWriter(PRFileDesc *fd, SSLHandshakeType message,
+                                   PRUint8 *data, unsigned int *len,
+                                   unsigned int maxLen, void *arg) {
   IncrementCounterArg(arg);
   return PR_TRUE;
 }
 
-SECStatus NoopExtensionHandler(PRFileDesc *fd, SSLHandshakeType message,
-                               const PRUint8 *data, unsigned int len,
-                               SSLAlertDescription *alert, void *arg) {
+static SECStatus NoopExtensionHandler(PRFileDesc *fd, SSLHandshakeType message,
+                                      const PRUint8 *data, unsigned int len,
+                                      SSLAlertDescription *alert, void *arg) {
   return SECSuccess;
 }
 
@@ -67,8 +67,8 @@ static const uint16_t kManyExtensions[] = {
     ssl_tls13_certificate_authorities_xtn,
     ssl_next_proto_nego_xtn,
     ssl_renegotiation_info_xtn,
-    ssl_tls13_short_header_xtn,
     ssl_record_size_limit_xtn,
+    ssl_tls13_encrypted_client_hello_xtn,
     1,
     0xffff};
 // The list here includes all extensions we expect to use (SSL_MAX_EXTENSIONS),

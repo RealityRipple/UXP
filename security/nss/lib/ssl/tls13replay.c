@@ -16,6 +16,7 @@
 #include "sslbloom.h"
 #include "sslimpl.h"
 #include "tls13hkdf.h"
+#include "tls13psk.h"
 
 struct SSLAntiReplayContextStr {
     /* The number of outstanding references to this context. */
@@ -55,8 +56,7 @@ tls13_ReleaseAntiReplayContext(SSLAntiReplayContext *ctx)
     PORT_Free(ctx);
 }
 
-/* Clear the current state and free any resources we allocated. The signature
- * here is odd to allow this to be called during shutdown. */
+/* Clear the current state and free any resources we allocated. */
 SECStatus
 SSLExp_ReleaseAntiReplayContext(SSLAntiReplayContext *ctx)
 {
@@ -250,7 +250,9 @@ tls13_IsReplay(const sslSocket *ss, const sslSessionID *sid)
         return PR_TRUE;
     }
 
-    if (!tls13_InWindow(ss, sid)) {
+    if (!sid) {
+        PORT_Assert(ss->xtnData.selectedPsk->type == ssl_psk_external);
+    } else if (!tls13_InWindow(ss, sid)) {
         return PR_TRUE;
     }
 

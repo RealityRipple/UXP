@@ -100,8 +100,15 @@ queue.filter(task => {
 
   // Don't run all additional hardware tests on ARM.
   if (task.group == "Cipher" && task.platform == "aarch64" && task.env &&
-      (task.env.NSS_DISABLE_PCLMUL == "1" || task.env.NSS_DISABLE_HW_AES == "1"
+      (task.env.NSS_DISABLE_PCLMUL == "1" || task.env.NSS_DISABLE_SSE4_1 == "1"
        || task.env.NSS_DISABLE_AVX == "1" || task.env.NSS_DISABLE_AVX2 == "1")) {
+    return false;
+  }
+
+  // Don't run ARM specific hardware tests on non-ARM.
+  // TODO: our server that runs task cluster doesn't support Intel SHA extensions.
+  if (task.group == "Cipher" && task.platform != "aarch64" && task.env &&
+      (task.env.NSS_DISABLE_HW_SHA1 == "1" || task.env.NSS_DISABLE_HW_SHA2 == "1")) {
     return false;
   }
 
@@ -534,6 +541,7 @@ async function scheduleLinux(name, overrides, args = "") {
     },
     symbol: "clang-4"
   }));
+
   queue.scheduleTask(merge(extra_base, {
     name: `${name} w/ gcc-4.4`,
     image: LINUX_GCC44_IMAGE,
@@ -558,8 +566,17 @@ async function scheduleLinux(name, overrides, args = "") {
     name: `${name} w/ gcc-4.8`,
     env: {
       CC: "gcc-4.8",
-      CCC: "g++-4.8"
+      CCC: "g++-4.8",
+      // gcc-4.8 has incomplete c++11 support
+      NSS_DISABLE_GTESTS: "1",
     },
+    // Use -Ddisable-intelhw_sha=1, GYP doesn't have a proper GCC version
+    // check for Intel SHA support.
+    command: [
+      "/bin/bash",
+      "-c",
+      "bin/checkout.sh && nss/automation/taskcluster/scripts/build.sh",
+    ],
     symbol: "gcc-4.8"
   }));
 
@@ -579,6 +596,33 @@ async function scheduleLinux(name, overrides, args = "") {
       CCC: "g++-6"
     },
     symbol: "gcc-6"
+  }));
+
+  queue.scheduleTask(merge(extra_base, {
+    name: `${name} w/ gcc-9`,
+    env: {
+      CC: "gcc-9",
+      CCC: "g++-9"
+    },
+    symbol: "gcc-9"
+  }));
+
+  queue.scheduleTask(merge(extra_base, {
+    name: `${name} w/ gcc-10`,
+    env: {
+      CC: "gcc-10",
+      CCC: "g++-10",
+    },
+    symbol: "gcc-10"
+  }));
+
+  queue.scheduleTask(merge(extra_base, {
+    name: `${name} w/ gcc-11`,
+    env: {
+      CC: "gcc-11",
+      CCC: "g++-11",
+    },
+    symbol: "gcc-11"
   }));
 
   queue.scheduleTask(merge(extra_base, {
@@ -1003,8 +1047,15 @@ function scheduleTests(task_build, task_cert, test_base) {
     name: "Cipher tests", symbol: "Default", tests: "cipher", group: "Cipher"
   }));
   queue.scheduleTask(merge(cert_base_long, {
-    name: "Cipher tests", symbol: "NoAESNI", tests: "cipher",
+    name: "Cipher tests", symbol: "NoAES", tests: "cipher",
     env: {NSS_DISABLE_HW_AES: "1"}, group: "Cipher"
+  }));
+  queue.scheduleTask(merge(cert_base_long, {
+    name: "Cipher tests", symbol: "NoSHA", tests: "cipher",
+    env: {
+      NSS_DISABLE_HW_SHA1: "1",
+      NSS_DISABLE_HW_SHA2: "1"
+    }, group: "Cipher"
   }));
   queue.scheduleTask(merge(cert_base_long, {
     name: "Cipher tests", symbol: "NoPCLMUL", tests: "cipher",
@@ -1124,33 +1175,6 @@ async function scheduleTools() {
       "/bin/bash",
       "-c",
       "bin/checkout.sh && nss/automation/taskcluster/scripts/run_scan_build.sh"
-    ]
-  }));
-
-  queue.scheduleTask(merge(base, {
-    symbol: "coverity",
-    name: "coverity",
-    image: FUZZ_IMAGE,
-    tags: ['code-review'],
-    env: {
-      USE_64: "1",
-      CC: "clang",
-      CCC: "clang++",
-      NSS_AUTOMATION: "1"
-    },
-    features: ["taskclusterProxy"],
-    scopes: ["secrets:get:project/relman/coverity-nss"],
-    artifacts: {
-      "public/code-review/coverity.json": {
-        expires: 24 * 7,
-        type: "file",
-        path: "/home/worker/nss/coverity/coverity.json"
-      }
-    },
-    command: [
-      "/bin/bash",
-      "-c",
-      "bin/checkout.sh && nss/automation/taskcluster/scripts/run_coverity.sh"
     ]
   }));
 

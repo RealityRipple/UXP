@@ -3,27 +3,14 @@
   Licensed under the Apache 2.0 License.
 */
 
+#ifndef __FStar_UInt128_Verified_H
+#define __FStar_UInt128_Verified_H
 #include <inttypes.h>
 #include <stdbool.h>
 #include "kremlin/internal/types.h"
 #include "kremlin/internal/target.h"
 
-#ifndef __FStar_UInt128_Verified_H
-#define __FStar_UInt128_Verified_H
-
 #include "FStar_UInt_8_16_32_64.h"
-
-static inline uint64_t
-FStar_UInt128___proj__Mkuint128__item__low(FStar_UInt128_uint128 projectee)
-{
-    return projectee.low;
-}
-
-static inline uint64_t
-FStar_UInt128___proj__Mkuint128__item__high(FStar_UInt128_uint128 projectee)
-{
-    return projectee.high;
-}
 
 static inline uint64_t
 FStar_UInt128_constant_time_carry(uint64_t a, uint64_t b)
