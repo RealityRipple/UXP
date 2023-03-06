@@ -15,6 +15,7 @@ PL_*
 #endif
 ATOB_AsciiToData
 ATOB_AsciiToData_Util
+ATOB_ConvertAsciiToItem
 ATOB_ConvertAsciiToItem_Util
 BTOA_ConvertItemToAscii_Util
 BTOA_DataToAscii
