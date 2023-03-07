@@ -27,8 +27,6 @@ public:
     // Calls nsIURIClassifier.Classify with the principal of the given channel,
     // and cancels the channel on a bad verdict.
     void Start(nsIChannel *aChannel);
-    // Whether or not tracking protection should be enabled on this channel.
-    nsresult ShouldEnableTrackingProtection(nsIChannel *aChannel, bool *result);
 
 private:
     // True if the channel is on the allow list.
@@ -49,12 +47,6 @@ private:
     bool IsHostnameWhitelisted(nsIURI *aUri, const nsACString &aWhitelisted);
     // Checks that the channel was loaded by the URI currently loaded in aDoc
     static bool SameLoadingURI(nsIDocument *aDoc, nsIChannel *aChannel);
-
-public:
-    // If we are blocking tracking content, update the corresponding flag in
-    // the respective docshell and call nsISecurityEventSink::onSecurityChange.
-    static nsresult SetBlockedTrackingContent(nsIChannel *channel);
-    static nsresult NotifyTrackingProtectionDisabled(nsIChannel *aChannel);
 };
 
 } // namespace net
