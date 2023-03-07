@@ -147,7 +147,6 @@ nsChannelClassifier::StartInternal()
     NS_ENSURE_SUCCESS(rv, rv);
 
     bool expectCallback;
-    bool trackingProtectionEnabled = false;
 
     if (LOG_ENABLED()) {
       nsCOMPtr<nsIURI> principalURI;
@@ -156,8 +155,7 @@ nsChannelClassifier::StartInternal()
            "uri %s", this, principalURI->GetSpecOrDefault().get(),
            uri->GetSpecOrDefault().get()));
     }
-    rv = uriClassifier->Classify(principal, trackingProtectionEnabled, this,
-                                 &expectCallback);
+    rv = uriClassifier->Classify(principal, false, this, &expectCallback);
     if (NS_FAILED(rv)) {
         return rv;
     }
