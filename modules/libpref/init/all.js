@@ -1206,8 +1206,6 @@ pref("privacy.popups.disable_from_plugins", 2);
 
 // Send "Sec-GPC" HTTP header, disabled by default
 pref("privacy.GPCheader.enabled",    false);
-// Enforce tracking protection in all modes
-pref("privacy.trackingprotection.enabled",  false);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);

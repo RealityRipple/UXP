@@ -190,20 +190,6 @@ LoadContext::GetOriginAttributes(JS::MutableHandleValue aAttrs)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-LoadContext::IsTrackingProtectionOn(bool* aIsTrackingProtectionOn)
-{
-  MOZ_ASSERT(mIsNotNull);
-
-  if (Preferences::GetBool("privacy.trackingprotection.enabled", false)) {
-    *aIsTrackingProtectionOn = true;
-  } else {
-    *aIsTrackingProtectionOn = false;
-  }
-
-  return NS_OK;
-}
-
 //-----------------------------------------------------------------------------
 // LoadContext::nsIInterfaceRequestor
 //-----------------------------------------------------------------------------

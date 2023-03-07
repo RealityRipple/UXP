@@ -396,12 +396,6 @@ NS_IMETHODIMP nsExtProtocolChannel::SetParentListener(HttpChannelParentListener*
   return NS_OK;
 }
 
-NS_IMETHODIMP nsExtProtocolChannel::NotifyTrackingProtectionDisabled()
-{
-  // nothing to do
-  return NS_OK;
-}
-
 NS_IMETHODIMP nsExtProtocolChannel::Delete()
 {
   // nothing to do
