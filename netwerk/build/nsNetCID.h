@@ -441,13 +441,6 @@
     {0x9a, 0x05, 0xb6, 0xd9, 0x2f, 0x8f, 0x22, 0x9a} \
 }
 
-/**
- * Contract ID for a service implementing nsIURIClassifier that identifies
- * phishing and malware sites.
- */
-#define NS_URICLASSIFIERSERVICE_CONTRACTID \
-    "@mozilla.org/uriclassifierservice"
-
 // Redirect channel registrar used for redirect to various protocols
 #define NS_REDIRECTCHANNELREGISTRAR_CONTRACTID \
     "@mozilla.org/redirectchannelregistrar;1"

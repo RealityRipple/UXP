@@ -29,7 +29,6 @@
 #include "nsISeekableStream.h"
 #include "nsILoadGroupChild.h"
 #include "nsIProtocolProxyService2.h"
-#include "nsIURIClassifier.h"
 #include "nsMimeTypes.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
@@ -40,7 +39,6 @@
 #include "nsStreamUtils.h"
 #include "nsIOService.h"
 #include "nsDNSPrefetch.h"
-#include "nsChannelClassifier.h"
 #include "nsIRedirectResultListener.h"
 #include "mozilla/dom/ContentVerifier.h"
 #include "mozilla/TimeStamp.h"
@@ -5995,8 +5993,8 @@ nsHttpChannel::ContinueBeginConnectWithResult()
         mCallOnResume = &nsHttpChannel::ContinueBeginConnect;
         rv = NS_OK;
     } else if (mCanceled) {
-        // We may have been cancelled already, by nsChannelClassifier in that
-        // case, we should not send the request to the server
+        // We may have been cancelled already
+        // in that case, we should not send the request to the server.
         rv = mStatus;
     } else {
         rv = Connect();

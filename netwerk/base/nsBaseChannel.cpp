@@ -15,7 +15,6 @@
 #include "nsIHttpChannel.h"
 #include "nsIChannelEventSink.h"
 #include "nsIStreamConverterService.h"
-#include "nsChannelClassifier.h"
 #include "nsAsyncRedirectVerifyHelper.h"
 #include "nsProxyRelease.h"
 #include "nsXULAppAPI.h"
