@@ -908,9 +908,13 @@ nsCSSSelector::AppendToStringWithoutCombinatorsOrNegations
     // has a ":" that can't be escaped and (b) all pseudo-classes at
     // this point are known, and therefore we know they don't need
     // escaping.
-    aString.Append(temp);
+    if (!nsCSSPseudoClasses::IsHiddenFromSerialization(list->mType)) {
+      aString.Append(temp);
+    }
     if (list->u.mMemory) {
-      aString.Append(char16_t('('));
+      if (!nsCSSPseudoClasses::IsHiddenFromSerialization(list->mType)) {
+        aString.Append(char16_t('('));
+      }
       if (nsCSSPseudoClasses::HasStringArg(list->mType)) {
         nsStyleUtil::AppendEscapedCSSIdent(
           nsDependentString(list->u.mString), aString);
@@ -939,7 +943,9 @@ nsCSSSelector::AppendToStringWithoutCombinatorsOrNegations
         list->u.mSelectorList->ToString(tmp, aSheet);
         aString.Append(tmp);
       }
-      aString.Append(char16_t(')'));
+      if (!nsCSSPseudoClasses::IsHiddenFromSerialization(list->mType)) {
+        aString.Append(char16_t(')'));
+      }
     }
   }
 }
