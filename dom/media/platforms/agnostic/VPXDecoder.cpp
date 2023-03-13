@@ -26,6 +26,8 @@ static VPXDecoder::Codec MimeTypeToCodec(const nsACString& aMimeType)
 {
   if (aMimeType.EqualsLiteral("video/webm; codecs=vp8")) {
     return VPXDecoder::Codec::VP8;
+  } else if (aMimeType.EqualsLiteral("video/vp8")) {
+    return VPXDecoder::Codec::VP8;
   } else if (aMimeType.EqualsLiteral("video/webm; codecs=vp9")) {
     return VPXDecoder::Codec::VP9;
   } else if (aMimeType.EqualsLiteral("video/vp9")) {
@@ -156,6 +158,23 @@ VPXDecoder::DoDecode(MediaRawData* aSample)
                          RESULT_DETAIL("VPX Unknown image format"));
     }
 
+    b.mYUVColorSpace = [&]() {
+      switch (img->cs) {
+        case VPX_CS_BT_601:
+        case VPX_CS_SMPTE_170:
+        case VPX_CS_SMPTE_240:
+          return YUVColorSpace::BT601;
+        case VPX_CS_BT_709:
+          return YUVColorSpace::BT709;
+        case VPX_CS_SRGB:
+          return YUVColorSpace::IDENTITY;
+        default:
+          LOG("Unhandled colorspace %d", img->cs);
+          return YUVColorSpace::BT601;
+      }
+    }();
+    // TODO: need a newer libvpx to support full color range
+
     RefPtr<VideoData> v =
       VideoData::CreateAndCopyData(mInfo,
                                    mImageContainer,
@@ -222,6 +241,8 @@ VPXDecoder::IsVPX(const nsACString& aMimeType, uint8_t aCodecMask)
 {
   return ((aCodecMask & VPXDecoder::VP8) &&
           aMimeType.EqualsLiteral("video/webm; codecs=vp8")) ||
+         ((aCodecMask & VPXDecoder::VP8) &&
+          aMimeType.EqualsLiteral("video/vp8")) ||
          ((aCodecMask & VPXDecoder::VP9) &&
           aMimeType.EqualsLiteral("video/webm; codecs=vp9")) ||
          ((aCodecMask & VPXDecoder::VP9) &&

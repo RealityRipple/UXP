@@ -58,14 +58,11 @@ public:
   static Type GetPseudoType(nsIAtom* aAtom, EnabledState aEnabledState);
   static bool HasStringArg(Type aType);
   static bool HasNthPairArg(Type aType);
-  static bool HasSelectorListArg(Type aType) {
-    return aType == Type::any ||
-	   aType == Type::host ||
-	   aType == Type::hostContext;
-  }
-  static bool HasOptionalSelectorListArg(Type aType) {
-    return aType == Type::host;
-  }
+  static bool HasSingleSelectorArg(Type aType);
+  static bool HasForgivingSelectorListArg(Type aType);
+  static bool HasSelectorListArg(Type aType);
+  static bool HasOptionalSelectorListArg(Type aType);
+  static bool IsHiddenFromSerialization(Type aType);
   static bool IsUserActionPseudoClass(Type aType);
 
   // Should only be used on types other than Count and NotPseudoClass

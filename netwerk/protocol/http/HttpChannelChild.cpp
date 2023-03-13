@@ -19,7 +19,6 @@
 
 #include "AltDataOutputStreamChild.h"
 #include "nsISupportsPrimitives.h"
-#include "nsChannelClassifier.h"
 #include "nsStringStream.h"
 #include "nsHttpHandler.h"
 #include "nsNetUtil.h"
@@ -1468,13 +1467,6 @@ HttpChannelChild::RecvFlushedForDiversion()
 
   mEventQ->RunOrEnqueue(new HttpFlushedForDiversionEvent(this), true);
 
-  return true;
-}
-
-bool
-HttpChannelChild::RecvNotifyTrackingProtectionDisabled()
-{
-  nsChannelClassifier::NotifyTrackingProtectionDisabled(this);
   return true;
 }
 

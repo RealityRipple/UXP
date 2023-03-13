@@ -21,13 +21,15 @@
 
 pref("keyword.enabled", false);
 pref("general.useragent.locale", "chrome://global/locale/intl.properties");
+
+// Platform User-agent compatibility mode default settings
 pref("general.useragent.compatMode.gecko", false);
 pref("general.useragent.compatMode.firefox", false);
-pref("general.useragent.compatMode.version", "68.0");
+pref("general.useragent.compatMode.version", "102.0");
 pref("general.useragent.appVersionIsBuildID", false);
 
-// This pref exists only for testing purposes. In order to disable all
-// overrides by default, don't initialize UserAgentOverrides.jsm.
+// In order to disable all overrides by default, don't initialize
+// UserAgentOverrides.jsm.
 pref("general.useragent.site_specific_overrides", true);
 
 pref("general.config.obscure_value", 13); // for MCD .cfg files
@@ -563,14 +565,8 @@ pref("media.track.enabled", false);
 
 // Whether to enable MediaSource support.
 pref("media.mediasource.enabled", true);
-
 pref("media.mediasource.mp4.enabled", true);
-
-#if defined(XP_WIN) || defined(XP_MACOSX)
-pref("media.mediasource.webm.enabled", false);
-#else
 pref("media.mediasource.webm.enabled", true);
-#endif
 pref("media.mediasource.webm.audio.enabled", true);
 
 #ifdef MOZ_AV1
@@ -586,8 +582,8 @@ pref("media.benchmark.frames", 300);
 pref("media.benchmark.timeout", 1000);
 
 #ifdef MOZ_WEBSPEECH
-pref("media.webspeech.recognition.enable", false);
-pref("media.webspeech.synth.enabled", false);
+// Web text-to-speech API enabled?
+pref("media.webspeech.synth.enabled", true);
 #endif
 #ifdef MOZ_WEBM_ENCODER
 pref("media.encoder.webm.enabled", true);
@@ -1210,15 +1206,15 @@ pref("privacy.popups.disable_from_plugins", 2);
 
 // Send "Sec-GPC" HTTP header, disabled by default
 pref("privacy.GPCheader.enabled",    false);
-// Enforce tracking protection in all modes
-pref("privacy.trackingprotection.enabled",  false);
-// Enforce tracking protection in Private Browsing mode
-pref("privacy.trackingprotection.pbmode.enabled",  false);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
 
-pref("dom.webcomponents.enabled",           false);
+// TODO: merge these two prefs!
+// Enable Google WebComponents?
+pref("dom.webcomponents.enabled",           true);
+// Whether WC getRootNode is available
+pref("dom.getRootNode.enabled",             true);
 
 pref("javascript.enabled",                  true);
 // Enable Array.prototype.values
@@ -2521,6 +2517,12 @@ pref("layout.css.prefixes.webkit", true);
 // (Note: this pref has no effect if the master 'layout.css.prefixes.webkit'
 // pref is set to false.)
 pref("layout.css.prefixes.device-pixel-ratio-webkit", false);
+
+// Is the legacy negation pseudo-class behavior enabled?
+pref("layout.css.legacy-negation-pseudo.enabled", false);
+
+// Is support for the :is() and :where() selectors enabled?
+pref("layout.css.is-where-pseudo.enabled", true);
 
 // Is support for the :scope selector enabled?
 pref("layout.css.scope-pseudo.enabled", true);
@@ -4221,10 +4223,8 @@ pref("image.mem.surfacecache.discard_factor", 1);
 // automatically determined based on the system's number of cores.
 pref("image.multithreaded_decoding.limit", -1);
 
-// Whether we attempt to decode WebP images or not.
-pref("image.webp.enabled", true);
-
 #ifdef MOZ_JXL
+// Whether we attempt to decode JPEG-XL images or not.
 pref("image.jxl.enabled", true);
 #endif
 
@@ -4562,9 +4562,6 @@ pref("dom.push.requestTimeout", 10000);
 pref("dom.push.http2.reset_retry_count_after_ms", 60000);
 pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
-
-// Whether WC getRootNode is available
-pref("dom.getRootNode.enabled", false);
 
 // WebNetworkStats
 pref("dom.mozNetworkStats.enabled", false);

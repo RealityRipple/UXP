@@ -6,6 +6,7 @@
 CC     ?= gcc
 CCC    ?= g++
 RANLIB ?= ranlib
+LD     ?= ld
 
 include $(CORE_DEPTH)/coreconf/UNIX.mk
 
@@ -21,7 +22,7 @@ ifeq ($(USE_PTHREADS),1)
 endif
 
 DEFAULT_COMPILER = gcc
-DEFINES += -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_SOURCE -DSQL_MEASURE_USE_TEMP_DIR
+DEFINES += -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_SOURCE -DSDB_MEASURE_USE_TEMP_DIR
 
 ifeq ($(OS_TARGET),Android)
 ifndef ANDROID_NDK
@@ -53,6 +54,11 @@ ifeq (,$(filter-out ppc64 ppc64le,$(OS_TEST)))
 	CPU_ARCH	= ppc
 ifeq ($(USE_64),1)
 	ARCHFLAG	= -m64
+endif
+ifeq (,$(filter-out ppc ppc64,$(OS_TEST)))
+ifneq ($(NSS_DISABLE_CRYPTO_VSX),0)
+	NSS_DISABLE_CRYPTO_VSX=1
+endif
 endif
 else
 ifeq ($(OS_TEST),alpha)
@@ -152,8 +158,8 @@ DSO_LDOPTS		= -shared $(ARCHFLAG) -Wl,--gc-sections
 # Also, -z defs conflicts with Address Sanitizer, which emits relocations
 # against the libsanitizer runtime built into the main executable.
 ZDEFS_FLAG		= -Wl,-z,defs
-DSO_LDOPTS		+= $(if $(findstring 2.11.90.0.8,$(shell ld -v)),,$(ZDEFS_FLAG))
-LDFLAGS			+= $(ARCHFLAG) -z noexecstack
+DSO_LDOPTS     += $(if $(findstring 2.11.90.0.8,$(shell $(LD) -v)),,$(ZDEFS_FLAG))
+LDFLAGS		   += $(ARCHFLAG) -z noexecstack
 
 # On Maemo, we need to use the -rpath-link flag for even the standard system
 # library directories.

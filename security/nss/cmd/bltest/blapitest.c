@@ -21,6 +21,7 @@
 #include "secoid.h"
 #include "nssutil.h"
 #include "ecl-curve.h"
+#include "chacha20poly1305.h"
 
 #include "pkcs1_vectors.h"
 
@@ -608,9 +609,11 @@ typedef enum {
     bltestDES_CBC,     /* .            */
     bltestDES_EDE_ECB, /* .            */
     bltestDES_EDE_CBC, /* .            */
-    bltestRC2_ECB,     /* .            */
-    bltestRC2_CBC,     /* .            */
-    bltestRC4,         /* .            */
+#ifndef NSS_DISABLE_DEPRECATED_RC2
+    bltestRC2_ECB, /* .            */
+    bltestRC2_CBC, /* .            */
+#endif
+    bltestRC4, /* .            */
 #ifdef NSS_SOFTOKEN_DOES_RC5
     bltestRC5_ECB, /* .            */
     bltestRC5_CBC, /* .            */
@@ -622,8 +625,11 @@ typedef enum {
     bltestAES_GCM,      /* .                     */
     bltestCAMELLIA_ECB, /* .                     */
     bltestCAMELLIA_CBC, /* .                     */
-    bltestSEED_ECB,     /* SEED algorithm      */
-    bltestSEED_CBC,     /* SEED algorithm      */
+#ifndef NSS_DISABLE_DEPRECATED_SEED
+    bltestSEED_ECB, /* SEED algorithm      */
+    bltestSEED_CBC, /* SEED algorithm      */
+#endif
+    bltestCHACHA20_CTR, /* ChaCha20 block cipher */
     bltestCHACHA20,     /* ChaCha20 + Poly1305   */
     bltestRSA,          /* Public Key Ciphers    */
     bltestRSA_OAEP,     /* . (Public Key Enc.)   */
@@ -646,8 +652,10 @@ static char *mode_strings[] =
       "des_cbc",
       "des3_ecb",
       "des3_cbc",
+#ifndef NSS_DISABLE_DEPRECATED_RC2
       "rc2_ecb",
       "rc2_cbc",
+#endif
       "rc4",
 #ifdef NSS_SOFTOKEN_DOES_RC5
       "rc5_ecb",
@@ -660,8 +668,11 @@ static char *mode_strings[] =
       "aes_gcm",
       "camellia_ecb",
       "camellia_cbc",
+#ifndef NSS_DISABLE_DEPRECATED_SEED
       "seed_ecb",
       "seed_cbc",
+#endif
+      "chacha20_ctr",
       "chacha20_poly1305",
       "rsa",
       "rsa_oaep",
@@ -793,7 +804,7 @@ PRBool
 is_symmkeyCipher(bltestCipherMode mode)
 {
     /* change as needed! */
-    if (mode >= bltestDES_ECB && mode <= bltestSEED_CBC)
+    if (mode >= bltestDES_ECB && mode <= bltestCHACHA20_CTR)
         return PR_TRUE;
     return PR_FALSE;
 }
@@ -830,6 +841,7 @@ is_singleShotCipher(bltestCipherMode mode)
     switch (mode) {
         case bltestAES_GCM:
         case bltestAES_CTS:
+        case bltestCHACHA20_CTR:
         case bltestCHACHA20:
             return PR_TRUE;
         default:
@@ -871,7 +883,9 @@ cipher_requires_IV(bltestCipherMode mode)
     switch (mode) {
         case bltestDES_CBC:
         case bltestDES_EDE_CBC:
+#ifndef NSS_DISABLE_DEPRECATED_RC2
         case bltestRC2_CBC:
+#endif
 #ifdef NSS_SOFTOKEN_DOES_RC5
         case bltestRC5_CBC:
 #endif
@@ -880,7 +894,10 @@ cipher_requires_IV(bltestCipherMode mode)
         case bltestAES_CTR:
         case bltestAES_GCM:
         case bltestCAMELLIA_CBC:
+#ifndef NSS_DISABLE_DEPRECATED_SEED
         case bltestSEED_CBC:
+#endif
+        case bltestCHACHA20_CTR:
         case bltestCHACHA20:
             return PR_TRUE;
         default:
@@ -1078,6 +1095,7 @@ des_Decrypt(void *cx, unsigned char *output, unsigned int *outputLen,
                        input, inputLen);
 }
 
+#ifndef NSS_DISABLE_DEPRECATED_RC2
 SECStatus
 rc2_Encrypt(void *cx, unsigned char *output, unsigned int *outputLen,
             unsigned int maxOutputLen, const unsigned char *input,
@@ -1095,6 +1113,7 @@ rc2_Decrypt(void *cx, unsigned char *output, unsigned int *outputLen,
     return RC2_Decrypt((RC2Context *)cx, output, outputLen, maxOutputLen,
                        input, inputLen);
 }
+#endif /* NSS_DISABLE_DEPRECATED_RC2 */
 
 SECStatus
 rc4_Encrypt(void *cx, unsigned char *output, unsigned int *outputLen,
@@ -1130,6 +1149,21 @@ aes_Decrypt(void *cx, unsigned char *output, unsigned int *outputLen,
 {
     return AES_Decrypt((AESContext *)cx, output, outputLen, maxOutputLen,
                        input, inputLen);
+}
+
+SECStatus
+chacha20_Encrypt(void *cx, unsigned char *output, unsigned int *outputLen,
+                 unsigned int maxOutputLen, const unsigned char *input,
+                 unsigned int inputLen)
+{
+    if (maxOutputLen < inputLen) {
+        PORT_SetError(SEC_ERROR_OUTPUT_LEN);
+        return SECFailure;
+    }
+    ChaCha20Context *ctx = cx;
+    *outputLen = inputLen;
+    return ChaCha20_Xor(output, input, inputLen, ctx->key, ctx->nonce,
+                        ctx->counter);
 }
 
 SECStatus
@@ -1176,6 +1210,7 @@ camellia_Decrypt(void *cx, unsigned char *output, unsigned int *outputLen,
                             input, inputLen);
 }
 
+#ifndef NSS_DISABLE_DEPRECATED_SEED
 SECStatus
 seed_Encrypt(void *cx, unsigned char *output, unsigned int *outputLen,
              unsigned int maxOutputLen, const unsigned char *input,
@@ -1193,6 +1228,7 @@ seed_Decrypt(void *cx, unsigned char *output, unsigned int *outputLen,
     return SEED_Decrypt((SEEDContext *)cx, output, outputLen, maxOutputLen,
                         input, inputLen);
 }
+#endif /* NSS_DISABLE_DEPRECATED_SEED */
 
 SECStatus
 rsa_PublicKeyOp(void *cx, SECItem *output, const SECItem *input)
@@ -1361,6 +1397,7 @@ bltest_des_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
     return SECSuccess;
 }
 
+#ifndef NSS_DISABLE_DEPRECATED_RC2
 SECStatus
 bltest_rc2_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
 {
@@ -1406,6 +1443,7 @@ bltest_rc2_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
         cipherInfo->cipher.symmkeyCipher = rc2_Decrypt;
     return SECSuccess;
 }
+#endif /* NSS_DISABLE_DEPRECATED_RC2 */
 
 SECStatus
 bltest_rc4_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
@@ -1587,6 +1625,7 @@ bltest_camellia_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
     return SECSuccess;
 }
 
+#ifndef NSS_DISABLE_DEPRECATED_SEED
 SECStatus
 bltest_seed_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
 {
@@ -1628,6 +1667,25 @@ bltest_seed_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
     else
         cipherInfo->cipher.symmkeyCipher = seed_Decrypt;
 
+    return SECSuccess;
+}
+#endif /* NSS_DISABLE_DEPRECATED_SEED */
+
+SECStatus
+bltest_chacha20_ctr_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
+{
+    const PRUint32 counter = 1;
+    bltestSymmKeyParams *sk = &cipherInfo->params.sk;
+    cipherInfo->cx = ChaCha20_CreateContext(sk->key.buf.data, sk->key.buf.len,
+                                            sk->iv.buf.data, sk->iv.buf.len,
+                                            counter);
+
+    if (cipherInfo->cx == NULL) {
+        PR_fprintf(PR_STDERR, "ChaCha20_CreateContext() returned NULL\n"
+                              "key must be 32 bytes, iv must be 12 bytes\n");
+        return SECFailure;
+    }
+    cipherInfo->cipher.symmkeyCipher = chacha20_Encrypt;
     return SECSuccess;
 }
 
@@ -2245,12 +2303,14 @@ cipherInit(bltestCipherInfo *cipherInfo, PRBool encrypt)
                               cipherInfo->input.pBuf.len);
             return bltest_des_init(cipherInfo, encrypt);
             break;
+#ifndef NSS_DISABLE_DEPRECATED_RC2
         case bltestRC2_ECB:
         case bltestRC2_CBC:
             SECITEM_AllocItem(cipherInfo->arena, &cipherInfo->output.buf,
                               cipherInfo->input.pBuf.len);
             return bltest_rc2_init(cipherInfo, encrypt);
             break;
+#endif /* NSS_DISABLE_DEPRECATED_RC2 */
         case bltestRC4:
             SECITEM_AllocItem(cipherInfo->arena, &cipherInfo->output.buf,
                               cipherInfo->input.pBuf.len);
@@ -2282,11 +2342,18 @@ cipherInit(bltestCipherInfo *cipherInfo, PRBool encrypt)
                               cipherInfo->input.pBuf.len);
             return bltest_camellia_init(cipherInfo, encrypt);
             break;
+#ifndef NSS_DISABLE_DEPRECATED_SEED
         case bltestSEED_ECB:
         case bltestSEED_CBC:
             SECITEM_AllocItem(cipherInfo->arena, &cipherInfo->output.buf,
                               cipherInfo->input.pBuf.len);
             return bltest_seed_init(cipherInfo, encrypt);
+            break;
+#endif /* NSS_DISABLE_DEPRECATED_SEED */
+        case bltestCHACHA20_CTR:
+            outlen = cipherInfo->input.pBuf.len;
+            SECITEM_AllocItem(cipherInfo->arena, &cipherInfo->output.buf, outlen);
+            return bltest_chacha20_ctr_init(cipherInfo, encrypt);
             break;
         case bltestCHACHA20:
             outlen = cipherInfo->input.pBuf.len + (encrypt ? 16 : 0);
@@ -2586,19 +2653,26 @@ cipherFinish(bltestCipherInfo *cipherInfo)
         case bltestCAMELLIA_CBC:
             Camellia_DestroyContext((CamelliaContext *)cipherInfo->cx, PR_TRUE);
             break;
+#ifndef NSS_DISABLE_DEPRECATED_SEED
         case bltestSEED_ECB:
         case bltestSEED_CBC:
             SEED_DestroyContext((SEEDContext *)cipherInfo->cx, PR_TRUE);
+            break;
+#endif /* NSS_DISABLE_DEPRECATED_SEED */
+        case bltestCHACHA20_CTR:
+            ChaCha20_DestroyContext((ChaCha20Context *)cipherInfo->cx, PR_TRUE);
             break;
         case bltestCHACHA20:
             ChaCha20Poly1305_DestroyContext((ChaCha20Poly1305Context *)
                                                 cipherInfo->cx,
                                             PR_TRUE);
             break;
+#ifndef NSS_DISABLE_DEPRECATED_RC2
         case bltestRC2_ECB:
         case bltestRC2_CBC:
             RC2_DestroyContext((RC2Context *)cipherInfo->cx, PR_TRUE);
             break;
+#endif /* NSS_DISABLE_DEPRECATED_RC2 */
         case bltestRC4:
             RC4_DestroyContext((RC4Context *)cipherInfo->cx, PR_TRUE);
             break;
@@ -2674,7 +2748,10 @@ getHighUnitBytes(PRInt64 res)
         }
     }
 
-    return PR_smprintf("%d%s", spl[i], marks[i]);
+    if (i == 0)
+        return PR_smprintf("%d%s", spl[i], marks[i]);
+    else
+        return PR_smprintf("%d%s %d%s", spl[i], marks[i], spl[i - 1], marks[i - 1]);
 }
 
 static void
@@ -2747,10 +2824,14 @@ print_td:
         case bltestAES_GCM:
         case bltestCAMELLIA_ECB:
         case bltestCAMELLIA_CBC:
+#ifndef NSS_DISABLE_DEPRECATED_SEED
         case bltestSEED_ECB:
         case bltestSEED_CBC:
+#endif
+#ifndef NSS_DISABLE_DEPRECATED_RC2
         case bltestRC2_ECB:
         case bltestRC2_CBC:
+#endif
         case bltestRC4:
             if (td)
                 fprintf(stdout, "%8s", "symmkey");
@@ -2934,21 +3015,29 @@ get_params(PLArenaPool *arena, bltestParams *params,
             load_file_data(arena, &params->ask.aad, filename, bltestBinary);
         case bltestDES_CBC:
         case bltestDES_EDE_CBC:
+#ifndef NSS_DISABLE_DEPRECATED_RC2
         case bltestRC2_CBC:
+#endif
         case bltestAES_CBC:
         case bltestAES_CTS:
         case bltestAES_CTR:
         case bltestCAMELLIA_CBC:
+#ifndef NSS_DISABLE_DEPRECATED_SEED
         case bltestSEED_CBC:
+#endif
             sprintf(filename, "%s/tests/%s/%s%d", testdir, modestr, "iv", j);
             load_file_data(arena, &params->sk.iv, filename, bltestBinary);
         case bltestDES_ECB:
         case bltestDES_EDE_ECB:
+#ifndef NSS_DISABLE_DEPRECATED_RC2
         case bltestRC2_ECB:
+#endif
         case bltestRC4:
         case bltestAES_ECB:
         case bltestCAMELLIA_ECB:
+#ifndef NSS_DISABLE_DEPRECATED_SEED
         case bltestSEED_ECB:
+#endif
             sprintf(filename, "%s/tests/%s/%s%d", testdir, modestr, "key", j);
             load_file_data(arena, &params->sk.key, filename, bltestBinary);
             break;

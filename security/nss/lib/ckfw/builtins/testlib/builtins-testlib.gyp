@@ -30,7 +30,7 @@
         {
           'msvs_cygwin_shell': 0,
           'action': [
-            'python',
+            '<(python)',
             '../certdata.py',
             'certdata-testlib.txt',
             '<@(_outputs)',
@@ -47,7 +47,7 @@
         }
       ],
       'variables': {
-        'mapfile': '../nssckbi.def',
+        'mapfile': 'nssckbi-testlib.def',
         'certdata-testlib_c': '<(INTERMEDIATE_DIR)/certdata-testlib.c',
       }
     }

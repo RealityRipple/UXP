@@ -152,6 +152,19 @@ PR_IMPLEMENT(PRStatus) PR_GetSystemInfo(PRSysInfo cmd, char *buf, PRUint32 bufle
 #endif /* OS2 */
             break;
 
+        case PR_SI_RELEASE_BUILD:
+          /* Return the version of the operating system */
+#if defined(XP_UNIX) || defined(WIN32)
+            if (PR_FAILURE == _PR_MD_GETSYSINFO(cmd, buf, (PRUintn)buflen)) {
+              return PR_FAILURE;
+            }
+#else
+            if (buflen) {
+                *buf = 0;
+            }
+#endif /* XP_UNIX || WIN32 */
+            break;
+
         case PR_SI_ARCHITECTURE:
             /* Return the architecture of the machine (ie. x86, mips, alpha, ...)*/
             (void)PR_snprintf(buf, buflen, _PR_SI_ARCHITECTURE);
@@ -193,7 +206,11 @@ PR_IMPLEMENT(PRInt32) PR_GetNumberOfProcessors( void )
     size_t len = sizeof(numCpus);
 
     mib[0] = CTL_HW;
+#ifdef HW_NCPUONLINE
+    mib[1] = HW_NCPUONLINE;
+#else
     mib[1] = HW_NCPU;
+#endif
     rc = sysctl( mib, 2, &numCpus, &len, NULL, 0 );
     if ( -1 == rc )  {
         numCpus = -1; /* set to -1 for return value on error */

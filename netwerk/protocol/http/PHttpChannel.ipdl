@@ -142,9 +142,6 @@ child:
   async AssociateApplicationCache(nsCString groupID,
                                   nsCString clientID);
 
-  // Tell the child that tracking protection was disabled for this load.
-  async NotifyTrackingProtectionDisabled();
-
   // Parent has been suspended for diversion; no more events to be enqueued.
   async FlushedForDiversion();
 

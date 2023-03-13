@@ -55,8 +55,9 @@
         'tls_connect.cc',
         'tls_filter.cc',
         'tls_hkdf_unittest.cc',
-        'tls_esni_unittest.cc',
+        'tls_ech_unittest.cc',
         'tls_protect.cc',
+        'tls_psk_unittest.cc',
         'tls_subcerts_unittest.cc'
       ],
       'dependencies': [

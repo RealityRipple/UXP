@@ -457,10 +457,10 @@ TEST_P(TlsConnectGeneric, ServerSNICertTypeSwitch) {
   EXPECT_TRUE(SECITEM_ItemsAreEqual(&cert1->derCert, &cert2->derCert));
 }
 
-// Prior to TLS 1.3, we were not fully ephemeral; though 1.3 fixes that
 TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceReuseKey) {
   auto filter = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
+  EnableECDHEServerKeyReuse();
   Connect();
   CheckKeys();
   TlsServerKeyExchangeEcdhe dhe1;
@@ -468,6 +468,7 @@ TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceReuseKey) {
 
   // Restart
   Reset();
+  EnableECDHEServerKeyReuse();
   auto filter2 = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
   ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
@@ -485,7 +486,6 @@ TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceReuseKey) {
 
 // This test parses the ServerKeyExchange, which isn't in 1.3
 TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceNewKey) {
-  server_->SetOption(SSL_REUSE_SERVER_ECDHE_KEY, PR_FALSE);
   auto filter = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
   Connect();
@@ -495,7 +495,6 @@ TEST_P(TlsConnectGenericPre13, ConnectEcdheTwiceNewKey) {
 
   // Restart
   Reset();
-  server_->SetOption(SSL_REUSE_SERVER_ECDHE_KEY, PR_FALSE);
   auto filter2 = MakeTlsFilter<TlsHandshakeRecorder>(
       server_, kTlsHandshakeServerKeyExchange);
   ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
@@ -737,7 +736,7 @@ TEST_P(TlsConnectGenericPre13, TestResumptionOverrideVersion) {
   if (variant_ == ssl_variant_stream) {
     switch (version_) {
       case SSL_LIBRARY_VERSION_TLS_1_0:
-        return;  // Skip the test.
+        GTEST_SKIP();
       case SSL_LIBRARY_VERSION_TLS_1_1:
         override_version = SSL_LIBRARY_VERSION_TLS_1_0;
         break;
@@ -752,7 +751,7 @@ TEST_P(TlsConnectGenericPre13, TestResumptionOverrideVersion) {
       override_version = SSL_LIBRARY_VERSION_DTLS_1_0_WIRE;
     } else {
       ASSERT_EQ(SSL_LIBRARY_VERSION_TLS_1_1, version_);
-      return;  // Skip the test.
+      GTEST_SKIP();
     }
   }
 
@@ -837,7 +836,7 @@ TEST_F(TlsConnectTest, TestTls13ResumptionDuplicateNST) {
   Connect();
 
   // Clear the session ticket keys to invalidate the old ticket.
-  SSLInt_ClearSelfEncryptKey();
+  ClearServerCache();
   EXPECT_EQ(SECSuccess, SSL_SendSessionTicket(server_->ssl_fd(), NULL, 0));
 
   SendReceive();  // Need to read so that we absorb the session tickets.
@@ -885,7 +884,7 @@ TEST_F(TlsConnectTest, TestTls13ResumptionDuplicateNSTWithToken) {
   Connect();
 
   // Clear the session ticket keys to invalidate the old ticket.
-  SSLInt_ClearSelfEncryptKey();
+  ClearServerCache();
   nst_capture->Reset();
   uint8_t token[] = {0x20, 0x20, 0xff, 0x00};
   EXPECT_EQ(SECSuccess,
@@ -915,8 +914,7 @@ TEST_F(TlsConnectTest, SendSessionTicketWithTicketsDisabled) {
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
 
-  EXPECT_EQ(SECSuccess, SSL_OptionSet(server_->ssl_fd(),
-                                      SSL_ENABLE_SESSION_TICKETS, PR_FALSE));
+  server_->SetOption(SSL_ENABLE_SESSION_TICKETS, PR_FALSE);
 
   auto nst_capture =
       MakeTlsFilter<TlsHandshakeRecorder>(server_, ssl_hs_new_session_ticket);
@@ -931,6 +929,50 @@ TEST_F(TlsConnectTest, SendSessionTicketWithTicketsDisabled) {
   SendReceive();  // Ensure that the client reads the ticket.
 
   // Resume the connection.
+  Reset();
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
+  ExpectResumption(RESUME_TICKET);
+
+  auto psk_capture =
+      MakeTlsFilter<TlsExtensionCapture>(client_, ssl_tls13_pre_shared_key_xtn);
+  Connect();
+  SendReceive();
+
+  NstTicketMatchesPskIdentity(nst_capture->buffer(), psk_capture->extension());
+}
+
+// Successfully send a session ticket after resuming and then use it.
+TEST_F(TlsConnectTest, SendTicketAfterResumption) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
+  Connect();
+
+  SendReceive();  // Need to read so that we absorb the session tickets.
+  CheckKeys();
+
+  // Resume the connection.
+  Reset();
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
+  ExpectResumption(RESUME_TICKET);
+
+  // We need to capture just one ticket, so
+  // disable automatic sending of tickets at the server.
+  // ConfigureSessionCache enables this option, so revert that.
+  server_->SetOption(SSL_ENABLE_SESSION_TICKETS, PR_FALSE);
+  auto nst_capture =
+      MakeTlsFilter<TlsHandshakeRecorder>(server_, ssl_hs_new_session_ticket);
+  nst_capture->EnableDecryption();
+  Connect();
+
+  ClearServerCache();
+  EXPECT_EQ(SECSuccess, SSL_SendSessionTicket(server_->ssl_fd(), NULL, 0));
+  SendReceive();
+
+  // Reset stats so that the counters for resumptions match up.
+  ClearStats();
+  // Resume again and ensure that we get the same ticket.
   Reset();
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);

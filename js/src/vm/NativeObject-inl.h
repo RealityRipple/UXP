@@ -64,13 +64,19 @@ NativeObject::clearShouldConvertDoubleElements()
 }
 
 inline void
-NativeObject::setDenseElementWithType(ExclusiveContext* cx, uint32_t index, const Value& val)
+NativeObject::addDenseElementType(ExclusiveContext* cx, uint32_t index, const Value& val)
 {
     // Avoid a slow AddTypePropertyId call if the type is the same as the type
     // of the previous element.
     TypeSet::Type thisType = TypeSet::GetValueType(val);
     if (index == 0 || TypeSet::GetValueType(elements_[index - 1]) != thisType)
         AddTypePropertyId(cx, this, JSID_VOID, thisType);
+}
+
+inline void
+NativeObject::setDenseElementWithType(ExclusiveContext* cx, uint32_t index, const Value& val)
+{
+    addDenseElementType(cx, index, val);
     setDenseElementMaybeConvertDouble(index, val);
 }
 
@@ -78,10 +84,9 @@ inline void
 NativeObject::initDenseElementWithType(ExclusiveContext* cx, uint32_t index, const Value& val)
 {
     MOZ_ASSERT(!shouldConvertDoubleElements());
-    if (val.isMagic(JS_ELEMENTS_HOLE))
-        markDenseElementsNotPacked(cx);
-    else
-        AddTypePropertyId(cx, this, JSID_VOID, val);
+    MOZ_ASSERT(!val.isMagic(JS_ELEMENTS_HOLE));
+
+    addDenseElementType(cx, index, val);
     initDenseElement(index, val);
 }
 
@@ -240,6 +245,23 @@ NativeObject::getDenseOrTypedArrayElement(uint32_t idx)
     if (is<TypedArrayObject>())
         return as<TypedArrayObject>().getElement(idx);
     return getDenseElement(idx);
+}
+
+/* static */ inline NativeObject*
+NativeObject::createWithTemplate(JSContext* cx, gc::InitialHeap heap,
+                                 HandleObject templateObject)
+{
+    RootedObjectGroup group(cx, templateObject->group());
+    RootedShape shape(cx, templateObject->as<NativeObject>().lastProperty());
+
+    gc::AllocKind kind = gc::GetGCObjectKind(shape->numFixedSlots());
+    MOZ_ASSERT(CanBeFinalizedInBackground(kind, shape->getObjectClass()));
+    kind = gc::GetBackgroundAllocKind(kind);
+
+    JSObject* baseObj = create(cx, kind, heap, shape, group);
+    if (!baseObj)
+        return nullptr;
+    return &baseObj->as<NativeObject>();
 }
 
 /* static */ inline NativeObject*

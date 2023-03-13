@@ -22,6 +22,7 @@
 #include "nsIObserverService.h"
 #include "nsIDebug2.h"
 #include "nsIDocShell.h"
+#include "nsIInputStream.h"
 #include "nsIRunnable.h"
 #include "amIAddonManager.h"
 #include "nsPIDOMWindow.h"
@@ -40,6 +41,7 @@
 #include "mozilla/dom/GeneratedAtomList.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
@@ -71,6 +73,7 @@
 #endif
 
 using namespace mozilla;
+using namespace mozilla::dom;
 using namespace xpc;
 using namespace JS;
 using mozilla::dom::PerThreadAtomCache;
@@ -108,6 +111,7 @@ const char* const XPCJSContext::mStrings[] = {
     "columnNumber",         // IDX_COLUMNNUMBER
     "stack",                // IDX_STACK
     "message",              // IDX_MESSAGE
+    "errors",               // IDX_ERRORS
     "lastIndex"             // IDX_LASTINDEX
 };
 
@@ -1837,6 +1841,14 @@ ReportZoneStats(const JS::ZoneStats& zStats,
         zStats.scopesMallocHeap,
         "Arrays of binding names and other binding-related data.");
 
+    ZCREPORT_GC_BYTES(pathPrefix + NS_LITERAL_CSTRING("regexp-shareds/gc-heap"),
+        zStats.regExpSharedsGCHeap,
+        "Shared compiled regexp data.");
+
+    ZCREPORT_BYTES(pathPrefix + NS_LITERAL_CSTRING("regexp-shareds/malloc-heap"),
+        zStats.regExpSharedsMallocHeap,
+        "Shared compiled regexp data.");
+
     ZCREPORT_BYTES(pathPrefix + NS_LITERAL_CSTRING("type-pool"),
         zStats.typePool,
         "Type sets and related data.");
@@ -2855,6 +2867,10 @@ JSReporter::CollectReports(WindowPaths* windowPaths,
         KIND_OTHER, rtStats.zTotals.unusedGCThings.jitcode,
         "Unused jitcode cells within non-empty arenas.");
 
+    REPORT_BYTES(NS_LITERAL_CSTRING("js-main-runtime-gc-heap-committed/unused/gc-things/regexp-shareds"),
+        KIND_OTHER, rtStats.zTotals.unusedGCThings.regExpShared,
+        "Unused regexpshared cells within non-empty arenas.");
+
     REPORT_BYTES(NS_LITERAL_CSTRING("js-main-runtime-gc-heap-committed/used/chunk-admin"),
         KIND_OTHER, rtStats.gcHeapChunkAdmin,
         "The same as 'explicit/js-non-window/gc-heap/chunk-admin'.");
@@ -2905,6 +2921,10 @@ JSReporter::CollectReports(WindowPaths* windowPaths,
     MREPORT_BYTES(NS_LITERAL_CSTRING("js-main-runtime-gc-heap-committed/used/gc-things/jitcode"),
         KIND_OTHER, rtStats.zTotals.jitCodesGCHeap,
         "Used jitcode cells.");
+
+    MREPORT_BYTES(NS_LITERAL_CSTRING("js-main-runtime-gc-heap-committed/used/gc-things/regexp-shareds"),
+        KIND_OTHER, rtStats.zTotals.regExpSharedsGCHeap,
+        "Used regexpshared cells.");
 
     MOZ_ASSERT(gcThingTotal == rtStats.gcHeapGCThings);
 

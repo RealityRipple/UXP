@@ -35,24 +35,28 @@ RUN apt-get update \
     valgrind \
     zlib1g-dev \
     clang-format-3.9 \
+    sqlite3 \ 
+    libabigail-dev \
+    abigail-tools \
+    software-properties-common \ 
+ && add-apt-repository ppa:ubuntu-toolchain-r/test -y \ 
+ && apt-get update \
+ && apt-get install --no-install-recommends -y \ 
+    gcc-9 \ 
+    g++-9 \ 
+    gcc-9-multilib \
+    g++-9-multilib \ 
+    gcc-10 \
+    g++-10 \ 
+    gcc-10-multilib \
+    g++-10-multilib \
+    gcc-11-multilib \
+    g++-11-multilib \
  && rm -rf /var/lib/apt/lists/* \
  && apt-get autoremove -y && apt-get clean -y
 
 RUN update-alternatives --install /usr/bin/clang-format \
     clang-format $(which clang-format-3.9) 10
-
-# Latest version of abigail-tools
-RUN apt-get update \
- && apt-get install -y --no-install-recommends automake libtool libxml2-dev \
- && git clone git://sourceware.org/git/libabigail.git /tmp/libabigail \
- && cd /tmp/libabigail \
- && autoreconf -fi \
- && ./configure --prefix=/usr --disable-static --disable-apidoc --disable-manual \
- && make && make install \
- && rm -rf /tmp/libabigail \
- && apt-get remove -y automake libtool libxml2-dev \
- && rm -rf /var/lib/apt/lists/* \
- && apt-get autoremove -y && apt-get clean -y
 
 ENV SHELL /bin/bash
 ENV USER worker

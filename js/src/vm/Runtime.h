@@ -25,7 +25,7 @@
 # include "wasm/WasmSignalHandlers.h"
 #endif
 #include "builtin/AtomicsObject.h"
-#include "builtin/Intl.h"
+#include "builtin/intl/SharedIntlData.h"
 #include "builtin/Promise.h"
 #include "ds/FixedSizeHash.h"
 #include "frontend/NameCollections.h"
@@ -169,7 +169,7 @@ struct JSAtomState
 #define PROPERTYNAME_FIELD(idpart, id, text) js::ImmutablePropertyNamePtr id;
     FOR_EACH_COMMON_PROPERTYNAME(PROPERTYNAME_FIELD)
 #undef PROPERTYNAME_FIELD
-#define PROPERTYNAME_FIELD(name, code, init, clasp) js::ImmutablePropertyNamePtr name;
+#define PROPERTYNAME_FIELD(name, init, clasp) js::ImmutablePropertyNamePtr name;
     JS_FOR_EACH_PROTOTYPE(PROPERTYNAME_FIELD)
 #undef PROPERTYNAME_FIELD
 #define PROPERTYNAME_FIELD(name) js::ImmutablePropertyNamePtr name;
@@ -810,7 +810,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     const char* getDefaultLocale();
 
     /* Shared Intl data for this runtime. */
-    js::SharedIntlData sharedIntlData;
+    js::intl::SharedIntlData sharedIntlData;
 
     void traceSharedIntlData(JSTracer* trc);
 

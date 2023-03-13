@@ -86,7 +86,6 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/dom/HTMLObjectElementBinding.h"
 #include "mozilla/dom/HTMLSharedObjectElement.h"
-#include "nsChannelClassifier.h"
 
 #ifdef XP_WIN
 // Thanks so much, Microsoft! :(

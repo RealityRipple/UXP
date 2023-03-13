@@ -57,6 +57,7 @@
 #endif
 
 #include "mozpkix/pkix.h"
+#include "mozpkix/pkixder.h"
 #include "mozpkix/test/pkixtestutil.h"
 
 // PrintTo must be in the same namespace as the type we're overloading it for.
@@ -71,8 +72,8 @@ inline void PrintTo(const Result& result, ::std::ostream* os) {
     *os << "mozilla::pkix::Result(" << static_cast<unsigned int>(result) << ")";
   }
 }
-}
-}  // namespace mozilla::pkix
+}  // namespace pkix
+}  // namespace mozilla
 
 namespace mozilla {
 namespace pkix {
@@ -100,7 +101,8 @@ class EverythingFailsByDefaultTrustDomain : public TrustDomain {
                       Result::FATAL_ERROR_LIBRARY_FAILURE);
   }
 
-  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Time, Duration,
+  Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
+                         /*optional*/ const Input*,
                          /*optional*/ const Input*,
                          /*optional*/ const Input*) override {
     ADD_FAILURE();
@@ -133,9 +135,9 @@ class EverythingFailsByDefaultTrustDomain : public TrustDomain {
                       Result::FATAL_ERROR_LIBRARY_FAILURE);
   }
 
-  Result VerifyECDSASignedDigest(const SignedDigest&, Input) override {
+  Result VerifyECDSASignedData(Input, DigestAlgorithm, Input, Input) override {
     ADD_FAILURE();
-    return NotReached("VerifyECDSASignedDigest should not be called",
+    return NotReached("VerifyECDSASignedData should not be called",
                       Result::FATAL_ERROR_LIBRARY_FAILURE);
   }
 
@@ -146,9 +148,16 @@ class EverythingFailsByDefaultTrustDomain : public TrustDomain {
                       Result::FATAL_ERROR_LIBRARY_FAILURE);
   }
 
-  Result VerifyRSAPKCS1SignedDigest(const SignedDigest&, Input) override {
+  Result VerifyRSAPKCS1SignedData(Input, DigestAlgorithm, Input,
+                                  Input) override {
     ADD_FAILURE();
-    return NotReached("VerifyRSAPKCS1SignedDigest should not be called",
+    return NotReached("VerifyRSAPKCS1SignedData should not be called",
+                      Result::FATAL_ERROR_LIBRARY_FAILURE);
+  }
+
+  Result VerifyRSAPSSSignedData(Input, DigestAlgorithm, Input, Input) override {
+    ADD_FAILURE();
+    return NotReached("VerifyRSAPSSSignedData should not be called",
                       Result::FATAL_ERROR_LIBRARY_FAILURE);
   }
 
@@ -185,9 +194,11 @@ class DefaultCryptoTrustDomain : public EverythingFailsByDefaultTrustDomain {
     return Success;
   }
 
-  Result VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                 Input subjectPublicKeyInfo) override {
-    return TestVerifyECDSASignedDigest(signedDigest, subjectPublicKeyInfo);
+  Result VerifyECDSASignedData(Input data, DigestAlgorithm digestAlgorithm,
+                               Input signature,
+                               Input subjectPublicKeyInfo) override {
+    return TestVerifyECDSASignedData(data, digestAlgorithm, signature,
+                                     subjectPublicKeyInfo);
   }
 
   Result CheckRSAPublicKeyModulusSizeInBits(EndEntityOrCA,
@@ -195,9 +206,11 @@ class DefaultCryptoTrustDomain : public EverythingFailsByDefaultTrustDomain {
     return Success;
   }
 
-  Result VerifyRSAPKCS1SignedDigest(const SignedDigest& signedDigest,
-                                    Input subjectPublicKeyInfo) override {
-    return TestVerifyRSAPKCS1SignedDigest(signedDigest, subjectPublicKeyInfo);
+  Result VerifyRSAPKCS1SignedData(Input data, DigestAlgorithm digestAlgorithm,
+                                  Input signature,
+                                  Input subjectPublicKeyInfo) override {
+    return TestVerifyRSAPKCS1SignedData(data, digestAlgorithm, signature,
+                                        subjectPublicKeyInfo);
   }
 
   Result CheckValidityIsAcceptable(Time, Time, EndEntityOrCA,
@@ -222,8 +235,26 @@ class DefaultNameMatchingPolicy : public NameMatchingPolicy {
     return Success;
   }
 };
+
+// python DottedOIDToCode.py --tlv id-kp-clientAuth 1.3.6.1.5.5.7.3.2
+const uint8_t tlv_id_kp_clientAuth[] = {0x06, 0x08, 0x2b, 0x06, 0x01,
+                                        0x05, 0x05, 0x07, 0x03, 0x02};
+
+// python DottedOIDToCode.py --tlv id-kp-codeSigning 1.3.6.1.5.5.7.3.3
+const uint8_t tlv_id_kp_codeSigning[] = {0x06, 0x08, 0x2b, 0x06, 0x01,
+                                         0x05, 0x05, 0x07, 0x03, 0x03};
+
+// python DottedOIDToCode.py --tlv id-ce-extKeyUsage 2.5.29.37
+const uint8_t tlv_id_ce_extKeyUsage[] = {0x06, 0x03, 0x55, 0x1d, 0x25};
+
+inline ByteString CreateEKUExtension(ByteString ekuOIDs) {
+  return TLV(der::SEQUENCE,
+             BytesToByteString(tlv_id_ce_extKeyUsage) +
+                 TLV(der::OCTET_STRING, TLV(der::SEQUENCE, ekuOIDs)));
 }
-}
-}  // namespace mozilla::pkix::test
+
+}  // namespace test
+}  // namespace pkix
+}  // namespace mozilla
 
 #endif  // mozilla_pkix_pkixgtest_h

@@ -36,6 +36,7 @@ PRBool SSLInt_DamageEarlyTrafficSecret(PRFileDesc *fd);
 SECStatus SSLInt_Set0RttAlpn(PRFileDesc *fd, PRUint8 *data, unsigned int len);
 PRBool SSLInt_HasCertWithAuthType(PRFileDesc *fd, SSLAuthType authType);
 PRBool SSLInt_SendAlert(PRFileDesc *fd, uint8_t level, uint8_t type);
+SECStatus SSLInt_AdvanceDtls13DecryptFailures(PRFileDesc *fd, PRUint64 to);
 SECStatus SSLInt_AdvanceWriteSeqNum(PRFileDesc *fd, PRUint64 to);
 SECStatus SSLInt_AdvanceReadSeqNum(PRFileDesc *fd, PRUint64 to);
 SECStatus SSLInt_AdvanceWriteSeqByAWindow(PRFileDesc *fd, PRInt32 extra);
@@ -47,5 +48,9 @@ SECStatus SSLInt_TweakChannelInfoForDC(PRFileDesc *fd, PRBool changeAuthKeyBits,
 SECStatus SSLInt_SetDCAdvertisedSigSchemes(PRFileDesc *fd,
                                            const SSLSignatureScheme *schemes,
                                            uint32_t num_sig_schemes);
+SECStatus SSLInt_RemoveServerCertificates(PRFileDesc *fd);
+SECStatus SSLInt_SetRawEchConfigForRetry(PRFileDesc *fd, const uint8_t *buf,
+                                         size_t len);
+PRBool SSLInt_IsIp(PRUint8 *s, unsigned int len);
 
-#endif  // ndef libssl_internals_h_
+#endif  // ifndef libssl_internals_h_

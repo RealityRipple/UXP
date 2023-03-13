@@ -267,10 +267,10 @@ Wrapper::fun_toString(JSContext* cx, HandleObject proxy, bool isToSource) const
 }
 
 bool
-Wrapper::regexp_toShared(JSContext* cx, HandleObject proxy, RegExpGuard* g) const
+Wrapper::regexp_toShared(JSContext* cx, HandleObject proxy, MutableHandleRegExpShared shared) const
 {
     RootedObject target(cx, proxy->as<ProxyObject>().target());
-    return RegExpToShared(cx, target, g);
+    return RegExpToShared(cx, target, shared);
 }
 
 bool
@@ -408,12 +408,15 @@ ErrorCopier::~ErrorCopier()
     {
         RootedValue exc(cx);
         if (cx->getPendingException(&exc) && exc.isObject() && exc.toObject().is<ErrorObject>()) {
+            RootedSavedFrame stack(cx, cx->getPendingExceptionStack());
             cx->clearPendingException();
             ac.reset();
             Rooted<ErrorObject*> errObj(cx, &exc.toObject().as<ErrorObject>());
             JSObject* copyobj = CopyErrorObject(cx, errObj);
-            if (copyobj)
-                cx->setPendingException(ObjectValue(*copyobj));
+            if (copyobj) {
+                RootedValue rootedCopy(cx, ObjectValue(*copyobj));
+                cx->setPendingException(rootedCopy, stack);
+            }
         }
     }
 }

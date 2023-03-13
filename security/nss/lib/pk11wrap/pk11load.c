@@ -6,6 +6,7 @@
  * various PCKS #11 modules
  */
 #define FORCE_PR_LOG 1
+#include "base.h"
 #include "seccomon.h"
 #include "pkcs11.h"
 #include "secmod.h"
@@ -16,7 +17,7 @@
 #include "nssilock.h"
 #include "secerr.h"
 #include "prenv.h"
-#include "utilparst.h"
+#include "utilpars.h"
 #include "prio.h"
 #include "prprf.h"
 #include <stdio.h>
@@ -355,7 +356,7 @@ SECMOD_SetRootCerts(PK11SlotInfo *slot, SECMODModule *mod)
 
 #ifndef NSS_STATIC_SOFTOKEN
 static const char *my_shlib_name =
-    SHLIB_PREFIX "nss" SHLIB_VERSION "." SHLIB_SUFFIX;
+    SHLIB_PREFIX "nss" NSS_SHLIB_VERSION "." SHLIB_SUFFIX;
 static const char *softoken_shlib_name =
     SHLIB_PREFIX "softokn" SOFTOKEN_SHLIB_VERSION "." SHLIB_SUFFIX;
 static const PRCallOnceType pristineCallOnce;
@@ -408,6 +409,8 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
 
     if (mod->loaded)
         return SECSuccess;
+
+    mod->fipsIndicator = NULL;
 
     /* internal modules get loaded from their internal list */
     if (mod->internal && (mod->dllName == NULL)) {
@@ -462,10 +465,27 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
             return SECFailure;
         }
 
-        /* load the library. If this succeeds, then we have to remember to
+/* load the library. If this succeeds, then we have to remember to
          * unload the library if anything goes wrong from here on out...
          */
+#if defined(_WIN32)
+        if (nssUTF8_Length(mod->dllName, NULL)) {
+            wchar_t *dllNameWide = _NSSUTIL_UTF8ToWide(mod->dllName);
+            if (dllNameWide) {
+                PRLibSpec libSpec;
+                libSpec.type = PR_LibSpec_PathnameU;
+                libSpec.value.pathname_u = dllNameWide;
+                library = PR_LoadLibraryWithFlags(libSpec, 0);
+                PORT_Free(dllNameWide);
+            }
+        }
+        if (library == NULL) {
+            // fallback to system code page
+            library = PR_LoadLibrary(mod->dllName);
+        }
+#else
         library = PR_LoadLibrary(mod->dllName);
+#endif // defined(_WIN32)
         mod->library = (void *)library;
 
         if (library == NULL) {
@@ -514,6 +534,11 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
         }
         mod->functionList = interface->pFunctionList;
         mod->flags = interface->flags;
+        /* if we have a fips indicator, grab it */
+        if ((*ientry)((CK_UTF8CHAR_PTR) "Vendor NSS FIPS Interface", NULL,
+                      &interface, 0) == CKR_OK) {
+            mod->fipsIndicator = ((CK_NSS_FIPS_FUNCTIONS *)(interface->pFunctionList))->NSC_NSSGetFIPSStatus;
+        }
     } else {
         if ((*fentry)((CK_FUNCTION_LIST_PTR *)&mod->functionList) != CKR_OK)
             goto fail;
@@ -528,7 +553,10 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
     }
 #endif
 
-    mod->isThreadSafe = PR_TRUE;
+    /* This test operation makes sure our locking system is
+     * consistent even if we are using non-thread safe tokens by
+     * simulating unsafe tokens with safe ones. */
+    mod->isThreadSafe = !PR_GetEnvSecure("NSS_FORCE_TOKEN_LOCK");
 
     /* Now we initialize the module */
     rv = secmod_ModuleInit(mod, oldModule, &alreadyLoaded);

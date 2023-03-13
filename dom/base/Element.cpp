@@ -1122,18 +1122,6 @@ Element::AttachShadow(const ShadowRootInit& aInit, ErrorResult& aError)
     return nullptr;
   }
 
-  return AttachShadowInternal(aInit.mMode == ShadowRootMode::Closed, aError);
-}
-
-already_AddRefed<ShadowRoot>
-Element::CreateShadowRoot(ErrorResult& aError)
-{
-  return AttachShadowInternal(false, aError);
-}
-
-already_AddRefed<ShadowRoot>
-Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
-{
   /**
    * 3. If context object is a shadow host, then throw
    *    an "InvalidStateError" DOMException.
@@ -1179,8 +1167,9 @@ Element::AttachShadowInternal(bool aClosed, ErrorResult& aError)
    *    context object???s node document, host is context object,
    *    and mode is init???s mode.
    */
+  bool isClosed = (aInit.mMode == ShadowRootMode::Closed);
   RefPtr<ShadowRoot> shadowRoot =
-    new ShadowRoot(this, aClosed, nodeInfo.forget(), protoBinding);
+    new ShadowRoot(this, isClosed, nodeInfo.forget(), protoBinding);
 
   shadowRoot->SetIsComposedDocParticipant(IsInComposedDoc());
 
@@ -1717,10 +1706,11 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     if (!hadParent) {
       uint32_t editableDescendantChange = EditableInclusiveDescendantCount(this);
       if (editableDescendantChange != 0) {
-      // If we are binding a subtree root to the document, we need to update
-      // the editable descendant count of all the ancestors.
+        // If we are binding a subtree root to the document, we need to update
+        // the editable descendant count of all the ancestors. However, we don't
+        // cross the Shadow DOM boundary (expected behavior is unclear).
         nsIContent* parent = GetParent();
-        while (parent) {
+        while (parent && parent->IsElement()) {
           parent->ChangeEditableDescendantCount(editableDescendantChange);
           parent = parent->GetParent();
         }
@@ -3428,9 +3418,9 @@ Element::Closest(const nsAString& aSelector, ErrorResult& aResult)
   matchingContext.AddScopeElement(this);
   for (nsINode* node = this; node; node = node->GetParentNode()) {
     if (node->IsElement() &&
-        nsCSSRuleProcessor::SelectorListMatches(node->AsElement(),
-                                                matchingContext,
-                                                selectorList)) {
+        nsCSSRuleProcessor::RestrictedSelectorListMatches(node->AsElement(),
+                                                          matchingContext,
+                                                          selectorList)) {
       return node->AsElement();
     }
   }
@@ -3454,8 +3444,9 @@ Element::Matches(const nsAString& aSelector, ErrorResult& aError)
                                    TreeMatchContext::eNeverMatchVisited);
   matchingContext.SetHasSpecifiedScope();
   matchingContext.AddScopeElement(this);
-  return nsCSSRuleProcessor::SelectorListMatches(this, matchingContext,
-                                                 selectorList);
+  return nsCSSRuleProcessor::RestrictedSelectorListMatches(this,
+                                                           matchingContext,
+                                                           selectorList);
 }
 
 static const nsAttrValue::EnumTable kCORSAttributeTable[] = {

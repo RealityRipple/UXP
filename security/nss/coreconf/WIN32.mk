@@ -4,7 +4,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #
-# Configuration common to all versions of Windows
+# Configuration common to all versions of Windows NT
+# and Windows 95
 #
 
 DEFAULT_COMPILER = cl
@@ -55,6 +56,8 @@ else
 	_MSC_VER_GE_11 := $(shell expr $(_MSC_VER) \>= 1700)
 	# VC12 (2013).
 	_MSC_VER_GE_12 := $(shell expr $(_MSC_VER) \>= 1800)
+	# VC14 (2015).
+	_MSC_VER_GE_14 := $(shell expr $(_MSC_VER) \>= 1900)
 	ifeq ($(_CC_VMAJOR),14)
 	    # -DYNAMICBASE is only supported on VC8SP1 or newer,
 	    # so be very specific here!
@@ -84,15 +87,7 @@ NSINSTALL_DIR  = $(CORE_DEPTH)/coreconf/nsinstall
 endif
 NSINSTALL      = nsinstall
 
-MKDEPEND_DIR    = $(CORE_DEPTH)/coreconf/mkdepend
-MKDEPEND        = $(MKDEPEND_DIR)/$(OBJDIR_NAME)/mkdepend.exe
-# Note: MKDEPENDENCIES __MUST__ be a relative pathname, not absolute.
-# If it is absolute, gmake will crash unless the named file exists.
-MKDEPENDENCIES  = $(OBJDIR_NAME)/depend.mk
-
 INSTALL      = $(NSINSTALL)
-MAKE_OBJDIR  = mkdir
-MAKE_OBJDIR += $(OBJDIR)
 GARBAGE     += $(OBJDIR)/vc20.pdb $(OBJDIR)/vc40.pdb
 XP_DEFINE   += -DXP_PC
 ifdef NS_USE_GCC
@@ -101,6 +96,10 @@ else
 LIB_SUFFIX   = lib
 endif
 DLL_SUFFIX   = dll
+
+define MAKE_OBJDIR
+if test ! -d $(@D); then mkdir -p $(@D); fi
+endef
 
 ifdef NS_USE_GCC
     OS_CFLAGS += -mwindows
@@ -184,6 +183,8 @@ endif
 endif
 	# Purify requires /FIXED:NO when linking EXEs.
 	LDFLAGS    += /FIXED:NO
+	# So the linker will find main in the gtestutil library
+	LDFLAGS    += -SUBSYSTEM:CONSOLE
     endif
 ifneq ($(_MSC_VER),$(_MSC_VER_6))
     # NSS has too many of these to fix, downgrade the warning
@@ -207,8 +208,9 @@ endif
 ifeq (,$(filter-out x386 x86_64,$(CPU_ARCH)))
 ifdef USE_64
 	DEFINES += -D_AMD64_
+	# Use subsystem 5.02 to allow running on Windows XP.
 	ifeq ($(_MSC_VER_GE_11),1)
-		LDFLAGS += -SUBSYSTEM:CONSOLE,6.01
+		LDFLAGS += -SUBSYSTEM:CONSOLE,5.02
 	endif
 	CPU_ARCH = x86_64
 else
@@ -216,11 +218,12 @@ else
 	# VS2012 defaults to -arch:SSE2. Use -arch:IA32 to avoid requiring
 	# SSE2. Clang-cl gets confused by -arch:IA32, so don't add it.
 	# (See https://llvm.org/bugs/show_bug.cgi?id=24335)
+	# Use subsystem 5.01 to allow running on Windows XP.
 	ifeq ($(_MSC_VER_GE_11),1)
 		ifneq ($(CLANG_CL),1)
 			OS_CFLAGS += -arch:IA32
 		endif
-		LDFLAGS += -SUBSYSTEM:CONSOLE,6.01
+		LDFLAGS += -SUBSYSTEM:CONSOLE,5.01
 	endif
 	CPU_ARCH = x386
 endif
@@ -355,15 +358,6 @@ endif
 #
 ifneq ($(CPU_ARCH),x386)
     CPU_TAG = _$(CPU_ARCH)
-endif
-
-#
-# override ruleset.mk, removing the "lib" prefix for library names, and
-# adding the "32" after the LIBRARY_VERSION.
-#
-ifdef LIBRARY_NAME
-    SHARED_LIBRARY = $(OBJDIR)/$(LIBRARY_NAME)$(LIBRARY_VERSION)32$(JDK_DEBUG_SUFFIX).dll
-    IMPORT_LIBRARY = $(OBJDIR)/$(LIBRARY_NAME)$(LIBRARY_VERSION)32$(JDK_DEBUG_SUFFIX).lib
 endif
 
 #

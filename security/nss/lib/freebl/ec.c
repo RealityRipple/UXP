@@ -7,6 +7,7 @@
 #endif
 
 #include "blapi.h"
+#include "blapii.h"
 #include "prerr.h"
 #include "secerr.h"
 #include "secmpi.h"
@@ -62,7 +63,7 @@ ec_points_mul(const ECParams *params, const mp_int *k1, const mp_int *k2,
     ECGroup *group = NULL;
     SECStatus rv = SECFailure;
     mp_err err = MP_OKAY;
-    int len;
+    unsigned int len;
 
 #if EC_DEBUG
     int i;
@@ -96,7 +97,7 @@ ec_points_mul(const ECParams *params, const mp_int *k1, const mp_int *k2,
 #endif
 
     /* NOTE: We only support uncompressed points for now */
-    len = (params->fieldID.size + 7) >> 3;
+    len = (((unsigned int)params->fieldID.size) + 7) >> 3;
     if (pointP != NULL) {
         if ((pointP->data[0] != EC_POINT_FORM_UNCOMPRESSED) ||
             (pointP->len != (2 * len + 1))) {
@@ -145,6 +146,10 @@ ec_points_mul(const ECParams *params, const mp_int *k1, const mp_int *k2,
     } else {
         CHECK_MPI_OK(ECPoints_mul(group, k1, NULL, NULL, NULL, &Qx, &Qy));
     }
+
+    /* our ECC codes uses large stack variables to store intermediate results,
+     * clear our stack before returning to prevent CSP leakage */
+    BLAPI_CLEAR_STACK(2048)
 
     /* Construct the SECItem representation of point Q */
     pointQ->data[0] = EC_POINT_FORM_UNCOMPRESSED;
@@ -428,7 +433,7 @@ EC_ValidatePublicKey(ECParams *ecParams, SECItem *publicValue)
     ECGroup *group = NULL;
     SECStatus rv = SECFailure;
     mp_err err = MP_OKAY;
-    int len;
+    unsigned int len;
 
     if (!ecParams || ecParams->name == ECCurve_noName ||
         !publicValue || !publicValue->len) {
@@ -448,7 +453,7 @@ EC_ValidatePublicKey(ECParams *ecParams, SECItem *publicValue)
     }
 
     /* NOTE: We only support uncompressed points for now */
-    len = (ecParams->fieldID.size + 7) >> 3;
+    len = (((unsigned int)ecParams->fieldID.size) + 7) >> 3;
     if (publicValue->data[0] != EC_POINT_FORM_UNCOMPRESSED) {
         PORT_SetError(SEC_ERROR_UNSUPPORTED_EC_POINT_FORM);
         return SECFailure;
@@ -531,7 +536,6 @@ ECDH_Derive(SECItem *publicValue,
     unsigned int len = 0;
     SECItem pointQ = { siBuffer, NULL, 0 };
     mp_int k; /* to hold the private value */
-    mp_int cofactor;
     mp_err err = MP_OKAY;
 #if EC_DEBUG
     int i;
@@ -596,11 +600,13 @@ ECDH_Derive(SECItem *publicValue,
                                          (mp_size)privateValue->len));
 
     if (withCofactor && (ecParams->cofactor != 1)) {
+        mp_int cofactor;
         /* multiply k with the cofactor */
         MP_DIGITS(&cofactor) = 0;
         CHECK_MPI_OK(mp_init(&cofactor));
         mp_set(&cofactor, ecParams->cofactor);
         CHECK_MPI_OK(mp_mul(&k, &cofactor, &k));
+        mp_clear(&cofactor);
     }
 
     /* Multiply our private key and peer's public point */
@@ -721,27 +727,6 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
 #endif
         PORT_SetError(SEC_ERROR_NEED_RANDOM);
         goto cleanup;
-    }
-
-    /*
-    ** We do not want timing information to leak the length of k,
-    ** so we compute k*G using an equivalent scalar of fixed
-    ** bit-length.
-    ** Fix based on patch for ECDSA timing attack in the paper
-    ** by Billy Bob Brumley and Nicola Tuveri at
-    **   http://eprint.iacr.org/2011/232
-    **
-    ** How do we convert k to a value of a fixed bit-length?
-    ** k starts off as an integer satisfying 0 <= k < n.  Hence,
-    ** n <= k+n < 2n, which means k+n has either the same number
-    ** of bits as n or one more bit than n.  If k+n has the same
-    ** number of bits as n, the second addition ensures that the
-    ** final value has exactly one more bit than n.  Thus, we
-    ** always end up with a value that exactly one more bit than n.
-    */
-    CHECK_MPI_OK(mp_add(&k, &n, &k));
-    if (mpl_significant_bits(&k) <= mpl_significant_bits(&n)) {
-        CHECK_MPI_OK(mp_add(&k, &n, &k));
     }
 
     /*
@@ -879,7 +864,7 @@ cleanup:
     mp_clear(&ar);
 
     if (t2) {
-        PORT_Free(t2);
+        PORT_ZFree(t2, 2 * ecParams->order.len);
     }
 
     if (kGpoint.data) {

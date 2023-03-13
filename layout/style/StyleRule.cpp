@@ -149,11 +149,11 @@ nsPseudoClassList::nsPseudoClassList(CSSPseudoClassType aType,
     mNext(nullptr)
 {
   NS_ASSERTION(nsCSSPseudoClasses::HasSelectorListArg(aType) ||
-	       nsCSSPseudoClasses::HasOptionalSelectorListArg(aType),
+               nsCSSPseudoClasses::HasOptionalSelectorListArg(aType),
                "unexpected pseudo-class");
   NS_ASSERTION(aSelectorList, "selector list expected");
   MOZ_COUNT_CTOR(nsPseudoClassList);
-  u.mSelectors = aSelectorList;
+  u.mSelectorList = aSelectorList;
 }
 
 nsPseudoClassList*
@@ -170,7 +170,7 @@ nsPseudoClassList::Clone(bool aDeep) const
     NS_ASSERTION(nsCSSPseudoClasses::HasSelectorListArg(mType),
                  "unexpected pseudo-class");
     // This constructor adopts its selector list argument.
-    result = new nsPseudoClassList(mType, u.mSelectors->Clone());
+    result = new nsPseudoClassList(mType, u.mSelectorList->Clone());
   }
 
   if (aDeep)
@@ -199,7 +199,7 @@ nsPseudoClassList::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) cons
     } else {
       NS_ASSERTION(nsCSSPseudoClasses::HasSelectorListArg(p->mType),
                    "unexpected pseudo-class");
-      n += p->u.mSelectors->SizeOfIncludingThis(aMallocSizeOf);
+      n += p->u.mSelectorList->SizeOfIncludingThis(aMallocSizeOf);
     }
     p = p->mNext;
   }
@@ -210,7 +210,7 @@ nsPseudoClassList::~nsPseudoClassList(void)
 {
   MOZ_COUNT_DTOR(nsPseudoClassList);
   if (nsCSSPseudoClasses::HasSelectorListArg(mType)) {
-    delete u.mSelectors;
+    delete u.mSelectorList;
   } else if (u.mMemory) {
     free(u.mMemory);
   }
@@ -529,14 +529,35 @@ int32_t nsCSSSelector::CalcWeightWithoutNegations() const
     weight += 0x000100;
     list = list->mNext;
   }
-  // FIXME (bug 561154):  This is incorrect for :-moz-any(), which isn't
-  // really a pseudo-class.  In order to handle :-moz-any() correctly,
-  // we need to compute specificity after we match, based on which
-  // option we matched with (and thus also need to try the
-  // highest-specificity options first).
   nsPseudoClassList *plist = mPseudoClassList;
   while (nullptr != plist) {
-    weight += 0x000100;
+    int pseudoClassWeight = 0x000100;
+    // XXX(franklindm): Check for correctness.
+    if (nsCSSPseudoClasses::HasSelectorListArg(plist->mType) &&
+        plist->mType != CSSPseudoClassType::mozAny) {
+      // The specificity of :host() and :host-context is that of a
+      // pseudo-class, plus the specificity of its argument.
+      if (plist->mType != CSSPseudoClassType::host &&
+          plist->mType != CSSPseudoClassType::hostContext) {
+        pseudoClassWeight = 0;
+      }
+      // The specificity of the :where() pseudo-class is always zero.
+      if (plist->mType != CSSPseudoClassType::where) {
+        // The specificity of the :is() pseudo-class is replaced by the
+        // specificity of its most specific argument.
+        nsCSSSelectorList* slist = plist->u.mSelectorList;
+        while (slist) {
+          int currentWeight = slist->mSelectors ?
+                              slist->mWeight :
+                              0;
+          if (currentWeight > pseudoClassWeight) {
+            pseudoClassWeight = currentWeight;
+          }
+          slist = slist->mNext;
+        }
+      }
+    }
+    weight += pseudoClassWeight;
     plist = plist->mNext;
   }
   nsAttrSelector* attr = mAttrList;
@@ -887,9 +908,13 @@ nsCSSSelector::AppendToStringWithoutCombinatorsOrNegations
     // has a ":" that can't be escaped and (b) all pseudo-classes at
     // this point are known, and therefore we know they don't need
     // escaping.
-    aString.Append(temp);
+    if (!nsCSSPseudoClasses::IsHiddenFromSerialization(list->mType)) {
+      aString.Append(temp);
+    }
     if (list->u.mMemory) {
-      aString.Append(char16_t('('));
+      if (!nsCSSPseudoClasses::IsHiddenFromSerialization(list->mType)) {
+        aString.Append(char16_t('('));
+      }
       if (nsCSSPseudoClasses::HasStringArg(list->mType)) {
         nsStyleUtil::AppendEscapedCSSIdent(
           nsDependentString(list->u.mString), aString);
@@ -915,10 +940,12 @@ nsCSSSelector::AppendToStringWithoutCombinatorsOrNegations
         NS_ASSERTION(nsCSSPseudoClasses::HasSelectorListArg(list->mType),
                      "unexpected pseudo-class");
         nsString tmp;
-        list->u.mSelectors->ToString(tmp, aSheet);
+        list->u.mSelectorList->ToString(tmp, aSheet);
         aString.Append(tmp);
       }
-      aString.Append(char16_t(')'));
+      if (!nsCSSPseudoClasses::IsHiddenFromSerialization(list->mType)) {
+        aString.Append(char16_t(')'));
+      }
     }
   }
 }
@@ -1009,6 +1036,10 @@ nsCSSSelectorList::ToString(nsAString& aResult, CSSStyleSheet* aSheet)
 {
   aResult.Truncate();
   nsCSSSelectorList *p = this;
+  // Don't append anything if we're an empty selector list.
+  if (!mSelectors) {
+    return;
+  }
   for (;;) {
     p->mSelectors->ToString(aResult, aSheet, true);
     p = p->mNext;
@@ -1559,9 +1590,43 @@ StyleRule::GetSelectorText(nsAString& aSelectorText)
 void
 StyleRule::SetSelectorText(const nsAString& aSelectorText)
 {
-  // XXX TBI - get a parser and re-parse the selectors,
-  // XXX then need to re-compute the cascade
-  // XXX and dirty sheet
+  CSSStyleSheet* sheet = GetStyleSheet();
+
+  nsIDocument* doc = GetDocument();
+  RefPtr<css::Loader> loader;
+
+  if (doc) {
+    loader = doc->CSSLoader();
+  }
+
+  // NOTE: Passing a null loader means that the parser is always in
+  // standards mode and never in quirks mode.
+  nsCSSParser css(loader, sheet);
+
+  // StyleRule lives inside of the Inner, it is unsafe to call WillDirty
+  // if sheet does not already have a unique Inner.
+  sheet->AssertHasUniqueInner();
+  sheet->WillDirty();
+
+  nsCSSSelectorList* selectorList = nullptr;
+
+  nsresult result = css.ParseSelectorString(
+    aSelectorText, sheet->GetSheetURI(), 0, &selectorList);
+  if (NS_FAILED(result)) {
+    // Ignore parsing errors and continue to use the previous value.
+    return;
+  }
+
+  // Replace selector.
+  delete mSelector;
+  mSelector = selectorList;
+
+  sheet->DidDirty();
+
+  if (doc) {
+    mozAutoDocUpdate updateBatch(doc, UPDATE_STYLE, true);
+    doc->StyleRuleChanged(sheet, this);
+  }
 }
 
 /* virtual */ size_t

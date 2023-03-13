@@ -1334,8 +1334,8 @@ SettlePromiseNow(JSContext* cx, unsigned argc, Value* vp)
         return false;
     }
 
-    RootedNativeObject promise(cx, &args[0].toObject().as<NativeObject>());
-    int32_t flags = promise->getFixedSlot(PromiseSlot_Flags).toInt32();
+    Rooted<PromiseObject*> promise(cx, &args[0].toObject().as<PromiseObject>());
+    int32_t flags = promise->flags();
     promise->setFixedSlot(PromiseSlot_Flags,
                           Int32Value(flags | PROMISE_FLAG_RESOLVED | PROMISE_FLAG_FULFILLED));
     promise->setFixedSlot(PromiseSlot_ReactionsOrResult, UndefinedValue());
@@ -1398,6 +1398,11 @@ ResolvePromise(JSContext* cx, unsigned argc, Value* vp)
             return false;
     }
 
+    if (IsPromiseForAsync(promise)) {
+        JS_ReportErrorASCII(cx, "async function's promise shouldn't be manually resolved");
+        return false;
+    }
+
     bool result = JS::ResolvePromise(cx, promise, resolution);
     if (result)
         args.rval().setUndefined();
@@ -1423,6 +1428,11 @@ RejectPromise(JSContext* cx, unsigned argc, Value* vp)
         ac.emplace(cx, promise);
         if (!cx->compartment()->wrap(cx, &reason))
             return false;
+    }
+
+    if (IsPromiseForAsync(promise)) {
+        JS_ReportErrorASCII(cx, "async function's promise shouldn't be manually rejected");
+        return false;
     }
 
     bool result = JS::RejectPromise(cx, promise, reason);

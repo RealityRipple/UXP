@@ -24,7 +24,6 @@ CERT_AddCertToListHead
 CERT_AddCertToListTail
 CERT_AddExtension
 CERT_AddExtensionByOID
-__CERT_AddTempCertToPerm
 CERT_AsciiToName
 CERT_CacheOCSPResponseFromSideChannel
 CERT_CertChainFromCert
@@ -178,6 +177,7 @@ HASH_Destroy
 HASH_End
 HASH_GetHashObject
 HASH_GetHashOidTagByHashType
+HASH_GetHashTypeByOidTag
 HASH_GetType
 HASH_HashBuf
 HASH_ResultLenByOidTag
@@ -256,6 +256,7 @@ NSS_Get_SEC_IA5StringTemplate
 NSS_Get_SEC_IA5StringTemplate_Util
 NSS_Get_SEC_IntegerTemplate
 NSS_Get_SEC_IntegerTemplate_Util
+NSS_Get_SECKEY_EncryptedPrivateKeyInfoTemplate
 NSS_Get_SECKEY_RSAPSSParamsTemplate
 NSS_Get_SEC_NullTemplate_Util
 NSS_Get_SEC_ObjectIDTemplate_Util
@@ -268,7 +269,9 @@ NSS_Get_SEC_UTF8StringTemplate
 NSS_Get_SEC_UTF8StringTemplate_Util
 NSS_GetVersion
 NSS_Init
+NSS_InitContext
 NSS_Initialize
+NSS_InitReadWrite
 NSS_InitWithMerge
 NSS_IsInitialized
 NSS_OptionGet
@@ -278,6 +281,7 @@ NSS_SecureMemcmp
 NSS_SetAlgorithmPolicy
 NSS_SetDomesticPolicy
 NSS_Shutdown
+NSS_ShutdownContext
 NSSSMIME_GetVersion
 NSS_SMIMESignerInfo_SaveSMIMEProfile
 NSS_SMIMEUtil_FindBulkAlgForRecipients
@@ -285,6 +289,7 @@ NSSSSL_GetVersion
 #ifdef XP_WIN
 _NSSUTIL_Access
 #endif
+NSSUTIL_AddNSSFlagToModuleSpec
 NSSUTIL_ArgDecodeNumber
 NSSUTIL_ArgFetchValue
 NSSUTIL_ArgGetLabel
@@ -347,7 +352,6 @@ PK11_FindCertsFromNickname
 PK11_FindKeyByAnyCert
 PK11_FindKeyByDERCert
 PK11_FindKeyByKeyID
-PK11_FindRawCertsWithSubject
 PK11_FindSlotByName
 PK11_FindSlotsByNames
 PK11_FreeSlot
@@ -402,6 +406,7 @@ PK11_ImportCert
 PK11_ImportCertForKey
 PK11_ImportCRL
 PK11_ImportDERPrivateKeyInfoAndReturnKey
+PK11_ImportEncryptedPrivateKeyInfoAndReturnKey
 PK11_ImportPublicKey
 PK11_ImportSymKey
 PK11_InitPin
@@ -410,6 +415,7 @@ PK11_IsFIPS
 PK11_IsFriendly
 PK11_IsHW
 PK11_IsInternal
+PK11_IsInternalKeySlot
 PK11_IsLoggedIn
 PK11_IsPresent
 PK11_IsReadOnly
@@ -459,6 +465,7 @@ PK11_UnwrapSymKey
 PK11_UpdateSlotAttribute
 PK11_UserDisableSlot
 PK11_UserEnableSlot
+PK11_Verify
 PK11_VerifyWithMechanism
 PK11_WrapPrivKey
 PK11_WrapSymKey
@@ -583,6 +590,7 @@ SECMOD_HasRemovableSlots
 SECMOD_InternaltoPubMechFlags
 SECMOD_LoadModule
 SECMOD_LoadUserModule
+SECMOD_LockedModuleHasRemovableSlots
 SECMOD_OpenUserDB
 SECMOD_PubCipherFlagstoInternal
 SECMOD_PubMechFlagstoInternal
@@ -590,6 +598,7 @@ SECMOD_ReferenceModule
 SECMOD_ReleaseReadLock
 SECMOD_UnloadUserModule
 SECMOD_UpdateModule
+SECMOD_UpdateSlotList
 SECMOD_WaitForAnyTokenEvent
 SEC_NullTemplate_Util @DATA@
 SEC_ObjectIDTemplate_Util @DATA@
@@ -682,9 +691,11 @@ SSL_ForceHandshake
 SSL_GetChannelInfo
 SSL_GetCipherSuiteInfo
 SSL_GetClientAuthDataHook
+SSL_GetExperimentalAPI
 SSL_GetImplementedCiphers
 SSL_GetNextProto
 SSL_GetNumImplementedCiphers
+SSL_GetPreliminaryChannelInfo
 SSL_GetSRTPCipher
 SSL_GetStatistics
 SSL_HandshakeCallback
@@ -729,6 +740,7 @@ VFY_VerifyData
 VFY_VerifyDataWithAlgorithmID
 VFY_VerifyDigestDirect
 _SGN_VerifyPKCS1DigestInfo
+__CERT_AddTempCertToPerm
 __PK11_SetCertificateNickname
 # These symbols are not used by applications but are possibly used across
 # NSS library boundaries.
@@ -738,7 +750,7 @@ CERT_FindCertByNicknameOrEmailAddrCX
 SECKEY_GetPrivateKeyType
 SEC_DerSignDataWithAlgorithmID
 SEC_CreateSignatureAlgorithmParameters
-# These symbols are not used by applicatons themselves, but are used by
+# These symbols are not used by applications themselves, but are used by
 # Java's security libraries, which in turn are used by Java
 # applets/plugins/etc.  Provide them to make Java code happy.
 NSS_VersionCheck
