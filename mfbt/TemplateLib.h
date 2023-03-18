@@ -29,10 +29,7 @@ namespace tl {
 template<size_t Size, size_t... Rest>
 struct Min
 {
-  static const size_t value =
-    Size < Min<Rest...>::value
-    ? Size
-    : Min<Rest...>::value;
+  static const size_t value = Size < Min<Rest...>::value ? Size : Min<Rest...>::value;
 };
 
 template<size_t Size>
@@ -44,10 +41,7 @@ struct Min<Size>
 template<size_t Size, size_t... Rest>
 struct Max
 {
-  static const size_t value =
-    Size > Max<Rest...>::value
-    ? Size
-    : Max<Rest...>::value;
+  static const size_t value = Size > Max<Rest...>::value ? Size : Max<Rest...>::value;
 };
 
 template<size_t Size>
