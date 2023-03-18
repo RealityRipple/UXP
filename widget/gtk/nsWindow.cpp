@@ -773,15 +773,6 @@ nsWindow::Destroy()
     }
 #endif /* MOZ_X11 && MOZ_WIDGET_GTK == 2 && defined(MOZ_X11) */
 
-#if (MOZ_WIDGET_GTK == 3) && defined(MOZ_X11)
-    // We need to detach accessible object here because mContainer is a custom
-    // widget and doesn't call gtk_widget_real_destroy() from destroy handler
-    // as regular widgets.
-    if (AtkObject* ac = gtk_widget_get_accessible(GTK_WIDGET(mContainer))) {
-      gtk_accessible_set_widget(GTK_ACCESSIBLE(ac), nullptr);
-    }
-#endif
-
     GtkWidget *owningWidget = GetMozContainerWidget();
     if (mShell) {
         gtk_widget_destroy(mShell);
