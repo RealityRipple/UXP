@@ -9,11 +9,5 @@ DIRS += [
     'i18n',
 ]
 
-if CONFIG['MOZ_ICU_DATA_ARCHIVE']:
-    DIRS += ['stubdata']
-    USE_LIBS += ['icustubdata']
-    Library('icu')
-else:
-    USE_LIBS += ['icudata']
-    SharedLibrary('icu')
-    SHARED_LIBRARY_NAME = 'icu' + CONFIG['MOZ_ICU_VERSION']
+SharedLibrary('icu')
+SHARED_LIBRARY_NAME = 'icu' + CONFIG['MOZ_ICU_VERSION']
