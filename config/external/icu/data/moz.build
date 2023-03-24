@@ -3,10 +3,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Build a library containing the ICU data and fold it into the shared
-# ICU library.
+if CONFIG['MOZ_ICU_DATA_ARCHIVE']:
+    # Copy the pre-built ICU data file to dist/bin.
+    FINAL_TARGET_FILES += [CONFIG['ICU_DATA_FILE']]
+
+# Build a library containing the ICU data for use in the JS shell, so that
+# JSAPI consumers don't have to deal with setting ICU's data path.
 Library('icudata')
-FINAL_LIBRARY = 'icu'
 
 if CONFIG['OS_ARCH'] == 'WINNT':
     if CONFIG['CPU_ARCH'] == 'x86':

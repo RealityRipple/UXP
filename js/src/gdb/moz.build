@@ -32,9 +32,13 @@ LOCAL_INCLUDES += [
 ]
 
 USE_LIBS += [
-    'icu',
     'static:js',
 ]
+
+if CONFIG['MOZ_ICU_DATA_ARCHIVE']:
+    # The ICU libraries linked into libmozjs will not include the ICU data,
+    # so link it directly.
+    USE_LIBS += ['icudata']
 
 OS_LIBS += CONFIG['MOZ_ZLIB_LIBS']
 

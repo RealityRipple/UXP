@@ -37,7 +37,10 @@ LOCAL_INCLUDES += [
 OS_LIBS += CONFIG['EDITLINE_LIBS']
 OS_LIBS += CONFIG['MOZ_ZLIB_LIBS']
 
-USE_LIBS += ['icu']
+if CONFIG['MOZ_ICU_DATA_ARCHIVE']:
+    # The ICU libraries linked into libmozjs will not include the ICU data,
+    # so link it directly.
+    USE_LIBS += ['icudata']
 
 # Prepare module loader JS code for embedding
 GENERATED_FILES += ['shellmoduleloader.out.h']
