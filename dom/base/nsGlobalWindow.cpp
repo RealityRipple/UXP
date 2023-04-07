@@ -8898,6 +8898,17 @@ nsGlobalWindow::PostMessageMoz(JSContext* aCx,
                  aSubjectPrincipal, aRv);
 }
 
+void
+nsGlobalWindow::PostMessageMoz(JSContext* aCx,
+                               JS::Handle<JS::Value> aMessage,
+                               const WindowPostMessageOptions& aOptions,
+                               nsIPrincipal& aSubjectPrincipal,
+                               ErrorResult& aRv)
+{
+  PostMessageMoz(aCx, aMessage, aOptions.mTargetOrigin, aOptions.mTransfer,
+                 aSubjectPrincipal, aRv);
+}
+
 class nsCloseEvent : public Runnable {
 
   RefPtr<nsGlobalWindow> mWindow;
