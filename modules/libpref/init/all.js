@@ -1210,11 +1210,8 @@ pref("privacy.GPCheader.enabled",    false);
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
 
-// TODO: merge these two prefs!
 // Enable Google WebComponents?
 pref("dom.webcomponents.enabled",           true);
-// Whether WC getRootNode is available
-pref("dom.getRootNode.enabled",             true);
 
 pref("javascript.enabled",                  true);
 // Enable Array.prototype.values
