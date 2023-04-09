@@ -51,6 +51,7 @@ typedef any Transferable;
   [Throws] void stop();
   [Throws, CrossOriginCallable, UnsafeInPrerendering] void focus();
   [Throws, CrossOriginCallable] void blur();
+  [Replaceable, Pref="dom.window.event.enabled"] readonly attribute any event;
 
   // other browsing contexts
   [Replaceable, Throws, CrossOriginReadable] readonly attribute WindowProxy frames;
