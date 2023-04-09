@@ -135,6 +135,7 @@ class TabGroup;
 class Timeout;
 class U2F;
 class WakeLock;
+struct WindowPostMessageOptions;
 class Worklet;
 namespace cache {
 class CacheStorage;
@@ -934,7 +935,12 @@ public:
   void Print(mozilla::ErrorResult& aError);
   void PostMessageMoz(JSContext* aCx, JS::Handle<JS::Value> aMessage,
                       const nsAString& aTargetOrigin,
-                      const mozilla::dom::Optional<mozilla::dom::Sequence<JS::Value > >& aTransfer,
+                      const mozilla::dom::Sequence<JSObject*>& aTransfer,
+                      nsIPrincipal& aSubjectPrincipal,
+                      mozilla::ErrorResult& aRv);
+  void PostMessageMoz(JSContext* aCx,
+                      JS::Handle<JS::Value> aMessage,
+                      const mozilla::dom::WindowPostMessageOptions& aOptions,
                       nsIPrincipal& aSubjectPrincipal,
                       mozilla::ErrorResult& aError);
   int32_t SetTimeout(JSContext* aCx, mozilla::dom::Function& aFunction,
@@ -1178,6 +1184,10 @@ public:
                     const mozilla::dom::Sequence<mozilla::dom::ChannelPixelLayout>& aLayout,
                     mozilla::ErrorResult& aRv);
 
+  void StructuredClone(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                       const mozilla::dom::StructuredSerializeOptions& aOptions,
+                       JS::MutableHandle<JS::Value> aRv,
+                       mozilla::ErrorResult& aError);
 
   // ChromeWindow bits.  Do NOT call these unless your window is in
   // fact an nsGlobalChromeWindow.

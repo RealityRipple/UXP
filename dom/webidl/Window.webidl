@@ -22,7 +22,6 @@ interface IID;
 interface nsIBrowserDOMWindow;
 interface nsIMessageBroadcaster;
 interface nsIDOMCrypto;
-typedef any Transferable;
 
 // http://www.whatwg.org/specs/web-apps/current-work/
 [PrimaryGlobal, LegacyUnenumerableNamedProperties, NeedResolve]
@@ -81,7 +80,9 @@ typedef any Transferable;
   [Throws, UnsafeInPrerendering] void print();
 
   [Throws, CrossOriginCallable, NeedsSubjectPrincipal]
-  void postMessage(any message, DOMString targetOrigin, optional sequence<Transferable> transfer);
+  void postMessage(any message, DOMString targetOrigin, optional sequence<object> transfer = []);
+  [Throws, CrossOriginCallable, NeedsSubjectPrincipal]
+  void postMessage(any message, optional WindowPostMessageOptions options);
 
   // also has obsolete members
 };
@@ -486,4 +487,8 @@ callback IdleRequestCallback = void (IdleDeadline deadline);
  */
 partial interface Window {
   [ChromeOnly] readonly attribute boolean isSecureContextIfOpenerIgnored;
+};
+
+dictionary WindowPostMessageOptions : StructuredSerializeOptions {
+  USVString targetOrigin = "/";
 };
