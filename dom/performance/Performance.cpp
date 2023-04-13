@@ -262,9 +262,10 @@ already_AddRefed<PerformanceMark> Performance::Mark(
   const PerformanceMarkOptions& aMarkOptions,
   ErrorResult& aRv)
 {
-  // Don't add the entry if the buffer is full. XXX should be removed by bug 1159003.
+  // Clear the buffer if it is full and throw an error informing the web dev.
   if (mUserEntries.Length() >= mResourceTimingBufferSize) {
-    return nullptr;
+    aRv.Throw(NS_ERROR_DOM_UT_QUOTA_ERR);
+    mUserEntries.Clear();
   }
 
   nsCOMPtr<nsIGlobalObject> parent = GetParentObject();
@@ -490,10 +491,10 @@ Performance::Measure(JSContext* aCx,
                      const Optional<nsAString>& aEndMark,
                      ErrorResult& aRv)
 {
-  // Don't add the entry if the buffer is full. XXX should be removed by bug
-  // 1159003.
+  // Clear the buffer if it is full and throw an error informing the web dev.
   if (mUserEntries.Length() >= mResourceTimingBufferSize) {
-    return nullptr;
+    aRv.Throw(NS_ERROR_DOM_UT_QUOTA_ERR);
+    mUserEntries.Clear();
   }
 
   const PerformanceMeasureOptions* options = nullptr;

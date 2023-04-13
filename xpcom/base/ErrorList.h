@@ -991,6 +991,7 @@
   ERROR(NS_ERROR_DOM_UT_INVALID_TIMING_ATTR,          FAILURE(2)),
   ERROR(NS_ERROR_DOM_UT_UNAVAILABLE_ATTR,             FAILURE(3)),
   ERROR(NS_ERROR_DOM_UT_UNAVAILABLE_GLOBAL_OBJECT,    FAILURE(4)),
+  ERROR(NS_ERROR_DOM_UT_QUOTA_ERR,                    FAILURE(5)),
 #undef MODULE
 
   /* ======================================================================= */

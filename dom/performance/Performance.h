@@ -171,7 +171,7 @@ protected:
   nsTArray<RefPtr<PerformanceEntry>> mResourceEntries;
 
   uint64_t mResourceTimingBufferSize;
-  static const uint64_t kDefaultResourceTimingBufferSize = 1500;
+  static const uint64_t kDefaultResourceTimingBufferSize = 16384;
   bool mPendingNotificationObserversTask;
 
   RefPtr<PerformanceService> mPerformanceService;
