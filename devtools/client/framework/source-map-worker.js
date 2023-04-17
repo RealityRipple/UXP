@@ -87,8 +87,7 @@ async function _resolveAndFetch(generatedSource) : SourceMapConsumer {
   // Fetch the sourcemap over the network and create it.
   const sourceMapURL = _resolveSourceMapURL(generatedSource);
   const fetched = await fetch(
-    sourceMapURL, { loadFromCache: false,
-                    redirect: error }
+    sourceMapURL, { loadFromCache: false }
   );
 
   // Create the source map and fix it up.
