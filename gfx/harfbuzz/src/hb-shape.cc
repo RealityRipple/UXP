@@ -26,282 +26,65 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#include "hb-private.hh"
+#include "hb.hh"
 
-#include "hb-shaper-private.hh"
-#include "hb-shape-plan-private.hh"
-#include "hb-buffer-private.hh"
-#include "hb-font-private.hh"
+#include "hb-shaper.hh"
+#include "hb-shape-plan.hh"
+#include "hb-buffer.hh"
+#include "hb-font.hh"
+#include "hb-machinery.hh"
+
+
+#ifndef HB_NO_SHAPER
 
 /**
  * SECTION:hb-shape
- * @title: Shaping
+ * @title: hb-shape
  * @short_description: Conversion of text strings into positioned glyphs
  * @include: hb.h
  *
  * Shaping is the central operation of HarfBuzz. Shaping operates on buffers,
  * which are sequences of Unicode characters that use the same font and have
- * the same text direction, script and language. After shaping the buffer
+ * the same text direction, script, and language. After shaping the buffer
  * contains the output glyphs and their positions.
  **/
 
-static bool
-parse_space (const char **pp, const char *end)
+
+static inline void free_static_shaper_list ();
+
+static const char * const nil_shaper_list[] = {nullptr};
+
+static struct hb_shaper_list_lazy_loader_t : hb_lazy_loader_t<const char *,
+							      hb_shaper_list_lazy_loader_t>
 {
-  while (*pp < end && ISSPACE (**pp))
-    (*pp)++;
-  return true;
-}
-
-static bool
-parse_char (const char **pp, const char *end, char c)
-{
-  parse_space (pp, end);
-
-  if (*pp == end || **pp != c)
-    return false;
-
-  (*pp)++;
-  return true;
-}
-
-static bool
-parse_uint (const char **pp, const char *end, unsigned int *pv)
-{
-  char buf[32];
-  unsigned int len = MIN (ARRAY_LENGTH (buf) - 1, (unsigned int) (end - *pp));
-  strncpy (buf, *pp, len);
-  buf[len] = '\0';
-
-  char *p = buf;
-  char *pend = p;
-  unsigned int v;
-
-  /* Intentionally use strtol instead of strtoul, such that
-   * -1 turns into "big number"... */
-  errno = 0;
-  v = strtol (p, &pend, 0);
-  if (errno || p == pend)
-    return false;
-
-  *pv = v;
-  *pp += pend - p;
-  return true;
-}
-
-static bool
-parse_bool (const char **pp, const char *end, unsigned int *pv)
-{
-  parse_space (pp, end);
-
-  const char *p = *pp;
-  while (*pp < end && ISALPHA(**pp))
-    (*pp)++;
-
-  /* CSS allows on/off as aliases 1/0. */
-  if (*pp - p == 2 || 0 == strncmp (p, "on", 2))
-    *pv = 1;
-  else if (*pp - p == 3 || 0 == strncmp (p, "off", 2))
-    *pv = 0;
-  else
-    return false;
-
-  return true;
-}
-
-static bool
-parse_feature_value_prefix (const char **pp, const char *end, hb_feature_t *feature)
-{
-  if (parse_char (pp, end, '-'))
-    feature->value = 0;
-  else {
-    parse_char (pp, end, '+');
-    feature->value = 1;
-  }
-
-  return true;
-}
-
-static bool
-parse_feature_tag (const char **pp, const char *end, hb_feature_t *feature)
-{
-  parse_space (pp, end);
-
-  char quote = 0;
-
-  if (*pp < end && (**pp == '\'' || **pp == '"'))
+  static const char ** create ()
   {
-    quote = **pp;
-    (*pp)++;
+    const char **shaper_list = (const char **) hb_calloc (1 + HB_SHAPERS_COUNT, sizeof (const char *));
+    if (unlikely (!shaper_list))
+      return nullptr;
+
+    const hb_shaper_entry_t *shapers = _hb_shapers_get ();
+    unsigned int i;
+    for (i = 0; i < HB_SHAPERS_COUNT; i++)
+      shaper_list[i] = shapers[i].name;
+    shaper_list[i] = nullptr;
+
+    hb_atexit (free_static_shaper_list);
+
+    return shaper_list;
   }
+  static void destroy (const char **l)
+  { hb_free (l); }
+  static const char * const * get_null ()
+  { return nil_shaper_list; }
+} static_shaper_list;
 
-  const char *p = *pp;
-  while (*pp < end && ISALNUM(**pp))
-    (*pp)++;
-
-  if (p == *pp || *pp - p > 4)
-    return false;
-
-  feature->tag = hb_tag_from_string (p, *pp - p);
-
-  if (quote)
-  {
-    /* CSS expects exactly four bytes.  And we only allow quotations for
-     * CSS compatibility.  So, enforce the length. */
-     if (*pp - p != 4)
-       return false;
-    if (*pp == end || **pp != quote)
-      return false;
-    (*pp)++;
-  }
-
-  return true;
-}
-
-static bool
-parse_feature_indices (const char **pp, const char *end, hb_feature_t *feature)
+static inline
+void free_static_shaper_list ()
 {
-  parse_space (pp, end);
-
-  bool has_start;
-
-  feature->start = 0;
-  feature->end = (unsigned int) -1;
-
-  if (!parse_char (pp, end, '['))
-    return true;
-
-  has_start = parse_uint (pp, end, &feature->start);
-
-  if (parse_char (pp, end, ':')) {
-    parse_uint (pp, end, &feature->end);
-  } else {
-    if (has_start)
-      feature->end = feature->start + 1;
-  }
-
-  return parse_char (pp, end, ']');
+  static_shaper_list.free_instance ();
 }
 
-static bool
-parse_feature_value_postfix (const char **pp, const char *end, hb_feature_t *feature)
-{
-  bool had_equal = parse_char (pp, end, '=');
-  bool had_value = parse_uint (pp, end, &feature->value) ||
-                   parse_bool (pp, end, &feature->value);
-  /* CSS doesn't use equal-sign between tag and value.
-   * If there was an equal-sign, then there *must* be a value.
-   * A value without an eqaul-sign is ok, but not required. */
-  return !had_equal || had_value;
-}
-
-
-static bool
-parse_one_feature (const char **pp, const char *end, hb_feature_t *feature)
-{
-  return parse_feature_value_prefix (pp, end, feature) &&
-	 parse_feature_tag (pp, end, feature) &&
-	 parse_feature_indices (pp, end, feature) &&
-	 parse_feature_value_postfix (pp, end, feature) &&
-	 parse_space (pp, end) &&
-	 *pp == end;
-}
-
-/**
- * hb_feature_from_string:
- * @str: (array length=len) (element-type uint8_t): a string to parse
- * @len: length of @str, or -1 if string is %NULL terminated
- * @feature: (out): the #hb_feature_t to initialize with the parsed values
- *
- * Parses a string into a #hb_feature_t.
- *
- * TODO: document the syntax here.
- *
- * Return value:
- * %true if @str is successfully parsed, %false otherwise.
- *
- * Since: 0.9.5
- **/
-hb_bool_t
-hb_feature_from_string (const char *str, int len,
-			hb_feature_t *feature)
-{
-  hb_feature_t feat;
-
-  if (len < 0)
-    len = strlen (str);
-
-  if (likely (parse_one_feature (&str, str + len, &feat)))
-  {
-    if (feature)
-      *feature = feat;
-    return true;
-  }
-
-  if (feature)
-    memset (feature, 0, sizeof (*feature));
-  return false;
-}
-
-/**
- * hb_feature_to_string:
- * @feature: an #hb_feature_t to convert
- * @buf: (array length=size) (out): output string
- * @size: the allocated size of @buf
- *
- * Converts a #hb_feature_t into a %NULL-terminated string in the format
- * understood by hb_feature_from_string(). The client in responsible for
- * allocating big enough size for @buf, 128 bytes is more than enough.
- *
- * Since: 0.9.5
- **/
-void
-hb_feature_to_string (hb_feature_t *feature,
-		      char *buf, unsigned int size)
-{
-  if (unlikely (!size)) return;
-
-  char s[128];
-  unsigned int len = 0;
-  if (feature->value == 0)
-    s[len++] = '-';
-  hb_tag_to_string (feature->tag, s + len);
-  len += 4;
-  while (len && s[len - 1] == ' ')
-    len--;
-  if (feature->start != 0 || feature->end != (unsigned int) -1)
-  {
-    s[len++] = '[';
-    if (feature->start)
-      len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->start));
-    if (feature->end != feature->start + 1) {
-      s[len++] = ':';
-      if (feature->end != (unsigned int) -1)
-	len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->end));
-    }
-    s[len++] = ']';
-  }
-  if (feature->value > 1)
-  {
-    s[len++] = '=';
-    len += MAX (0, snprintf (s + len, ARRAY_LENGTH (s) - len, "%u", feature->value));
-  }
-  assert (len < ARRAY_LENGTH (s));
-  len = MIN (len, size - 1);
-  memcpy (buf, s, len);
-  buf[len] = '\0';
-}
-
-
-static const char **static_shaper_list;
-
-#ifdef HB_USE_ATEXIT
-static
-void free_static_shaper_list (void)
-{
-  free (static_shaper_list);
-}
-#endif
 
 /**
  * hb_shape_list_shapers:
@@ -314,37 +97,9 @@ void free_static_shaper_list (void)
  * Since: 0.9.2
  **/
 const char **
-hb_shape_list_shapers (void)
+hb_shape_list_shapers ()
 {
-retry:
-  const char **shaper_list = (const char **) hb_atomic_ptr_get (&static_shaper_list);
-
-  if (unlikely (!shaper_list))
-  {
-    /* Not found; allocate one. */
-    shaper_list = (const char **) calloc (1 + HB_SHAPERS_COUNT, sizeof (const char *));
-    if (unlikely (!shaper_list)) {
-      static const char *nil_shaper_list[] = {NULL};
-      return nil_shaper_list;
-    }
-
-    const hb_shaper_pair_t *shapers = _hb_shapers_get ();
-    unsigned int i;
-    for (i = 0; i < HB_SHAPERS_COUNT; i++)
-      shaper_list[i] = shapers[i].name;
-    shaper_list[i] = NULL;
-
-    if (!hb_atomic_ptr_cmpexch (&static_shaper_list, NULL, shaper_list)) {
-      free (shaper_list);
-      goto retry;
-    }
-
-#ifdef HB_USE_ATEXIT
-    atexit (free_static_shaper_list); /* First person registers atexit() callback. */
-#endif
-  }
-
-  return shaper_list;
+  return static_shaper_list.get_unconst ();
 }
 
 
@@ -352,17 +107,17 @@ retry:
  * hb_shape_full:
  * @font: an #hb_font_t to use for shaping
  * @buffer: an #hb_buffer_t to shape
- * @features: (array length=num_features) (allow-none): an array of user
- *    specified #hb_feature_t or %NULL
+ * @features: (array length=num_features) (nullable): an array of user
+ *    specified #hb_feature_t or `NULL`
  * @num_features: the length of @features array
- * @shaper_list: (array zero-terminated=1) (allow-none): a %NULL-terminated
- *    array of shapers to use or %NULL
+ * @shaper_list: (array zero-terminated=1) (nullable): a `NULL`-terminated
+ *    array of shapers to use or `NULL`
  *
- * See hb_shape() for details. If @shaper_list is not %NULL, the specified
+ * See hb_shape() for details. If @shaper_list is not `NULL`, the specified
  * shapers will be used in the given order, otherwise the default shapers list
  * will be used.
  *
- * Return value: %FALSE if all shapers failed, %TRUE otherwise
+ * Return value: false if all shapers failed, true otherwise
  *
  * Since: 0.9.2
  **/
@@ -373,15 +128,45 @@ hb_shape_full (hb_font_t          *font,
 	       unsigned int        num_features,
 	       const char * const *shaper_list)
 {
+  if (unlikely (!buffer->len))
+    return true;
+
+  buffer->enter ();
+
+  hb_buffer_t *text_buffer = nullptr;
+  if (buffer->flags & HB_BUFFER_FLAG_VERIFY)
+  {
+    text_buffer = hb_buffer_create ();
+    hb_buffer_append (text_buffer, buffer, 0, -1);
+  }
+
   hb_shape_plan_t *shape_plan = hb_shape_plan_create_cached2 (font->face, &buffer->props,
 							      features, num_features,
 							      font->coords, font->num_coords,
 							      shaper_list);
+
   hb_bool_t res = hb_shape_plan_execute (shape_plan, font, buffer, features, num_features);
+
+  if (buffer->max_ops <= 0)
+    buffer->shaping_failed = true;
+
   hb_shape_plan_destroy (shape_plan);
 
-  if (res)
-    buffer->content_type = HB_BUFFER_CONTENT_TYPE_GLYPHS;
+  if (text_buffer)
+  {
+    if (res && buffer->successful && !buffer->shaping_failed
+	    && text_buffer->successful
+	    && !buffer->verify (text_buffer,
+				font,
+				features,
+				num_features,
+				shaper_list))
+      res = false;
+    hb_buffer_destroy (text_buffer);
+  }
+
+  buffer->leave ();
+
   return res;
 }
 
@@ -389,13 +174,15 @@ hb_shape_full (hb_font_t          *font,
  * hb_shape:
  * @font: an #hb_font_t to use for shaping
  * @buffer: an #hb_buffer_t to shape
- * @features: (array length=num_features) (allow-none): an array of user
- *    specified #hb_feature_t or %NULL
+ * @features: (array length=num_features) (nullable): an array of user
+ *    specified #hb_feature_t or `NULL`
  * @num_features: the length of @features array
  *
  * Shapes @buffer using @font turning its Unicode characters content to
- * positioned glyphs. If @features is not %NULL, it will be used to control the
- * features applied during shaping.
+ * positioned glyphs. If @features is not `NULL`, it will be used to control the
+ * features applied during shaping. If two @features have the same tag but
+ * overlapping ranges the value of the feature with the higher index takes
+ * precedence.
  *
  * Since: 0.9.2
  **/
@@ -405,5 +192,242 @@ hb_shape (hb_font_t           *font,
 	  const hb_feature_t  *features,
 	  unsigned int         num_features)
 {
-  hb_shape_full (font, buffer, features, num_features, NULL);
+  hb_shape_full (font, buffer, features, num_features, nullptr);
 }
+
+
+#ifdef HB_EXPERIMENTAL_API
+
+static float
+buffer_advance (hb_buffer_t *buffer)
+{
+  float a = 0;
+  auto *pos = buffer->pos;
+  unsigned count = buffer->len;
+  if (HB_DIRECTION_IS_HORIZONTAL (buffer->props.direction))
+    for (unsigned i = 0; i < count; i++)
+      a += pos[i].x_advance;
+  else
+    for (unsigned i = 0; i < count; i++)
+      a += pos[i].y_advance;
+  return a;
+}
+
+static void
+reset_buffer (hb_buffer_t *buffer,
+	      hb_array_t<const hb_glyph_info_t> text)
+{
+  assert (buffer->ensure (text.length));
+  buffer->have_positions = false;
+  buffer->len = text.length;
+  memcpy (buffer->info, text.arrayZ, text.length * sizeof (buffer->info[0]));
+  hb_buffer_set_content_type (buffer, HB_BUFFER_CONTENT_TYPE_UNICODE);
+}
+
+/**
+ * hb_shape_justify:
+ * @font: a mutable #hb_font_t to use for shaping
+ * @buffer: an #hb_buffer_t to shape
+ * @features: (array length=num_features) (nullable): an array of user
+ *    specified #hb_feature_t or `NULL`
+ * @num_features: the length of @features array
+ * @shaper_list: (array zero-terminated=1) (nullable): a `NULL`-terminated
+ *    array of shapers to use or `NULL`
+ * @min_target_advance: Minimum advance width/height to aim for.
+ * @max_target_advance: Maximum advance width/height to aim for.
+ * @advance: (inout): Input/output advance width/height of the buffer.
+ * @var_tag: (out): Variation-axis tag used for justification.
+ * @var_value: (out): Variation-axis value used to reach target justification.
+ *
+ * See hb_shape_full() for basic details. If @shaper_list is not `NULL`, the specified
+ * shapers will be used in the given order, otherwise the default shapers list
+ * will be used.
+ *
+ * In addition, justify the shaping results such that the shaping results reach
+ * the target advance width/height, depending on the buffer direction.
+ *
+ * If the advance of the buffer shaped with hb_shape_full() is already known,
+ * put that in *advance. Otherwise set *advance to zero.
+ *
+ * This API is currently experimental and will probably change in the future.
+ *
+ * Return value: false if all shapers failed, true otherwise
+ *
+ * XSince: EXPERIMENTAL
+ **/
+hb_bool_t
+hb_shape_justify (hb_font_t          *font,
+		  hb_buffer_t        *buffer,
+		  const hb_feature_t *features,
+		  unsigned int        num_features,
+		  const char * const *shaper_list,
+		  float               min_target_advance,
+		  float               max_target_advance,
+		  float              *advance, /* IN/OUT */
+		  hb_tag_t           *var_tag, /* OUT */
+		  float              *var_value /* OUT */)
+{
+  // TODO Negative font scales?
+
+  /* If default advance already matches target, nothing to do. Shape and return. */
+  if (min_target_advance <= *advance && *advance <= max_target_advance)
+    return hb_shape_full (font, buffer,
+			  features, num_features,
+			  shaper_list);
+
+  hb_face_t *face = font->face;
+
+  /* Choose variation tag to use for justification. */
+
+  hb_tag_t tag = HB_TAG_NONE;
+  hb_ot_var_axis_info_t axis_info;
+
+  hb_tag_t tags[] =
+  {
+    HB_TAG ('j','s','t','f'),
+    HB_TAG ('w','d','t','h'),
+  };
+  for (unsigned i = 0; i < ARRAY_LENGTH (tags); i++)
+    if (hb_ot_var_find_axis_info (face, tags[i], &axis_info))
+    {
+      tag = *var_tag = tags[i];
+      break;
+    }
+
+  /* If no suitable variation axis found, can't justify.  Just shape and return. */
+  if (!tag)
+  {
+    if (hb_shape_full (font, buffer,
+		       features, num_features,
+		       shaper_list))
+    {
+      *advance = buffer_advance (buffer);
+      return true;
+    }
+    else
+      return false;
+  }
+
+  /* Copy buffer text as we need it so we can shape multiple times. */
+  unsigned text_len = buffer->len;
+  auto *text_info = (hb_glyph_info_t *) hb_malloc (text_len * sizeof (buffer->info[0]));
+  if (unlikely (text_len && !text_info))
+    return false;
+  hb_memcpy (text_info, buffer->info, text_len * sizeof (buffer->info[0]));
+  auto text = hb_array<const hb_glyph_info_t> (text_info, text_len);
+
+  /* If default advance was not provided to us, calculate it. */
+  if (!*advance)
+  {
+    hb_font_set_variation (font, tag, axis_info.default_value);
+    if (!hb_shape_full (font, buffer,
+			features, num_features,
+			shaper_list))
+      return false;
+    *advance = buffer_advance (buffer);
+  }
+
+  /* If default advance already matches target, nothing to do. Shape and return.
+   * Do this again, in case advance was just calculated.
+   */
+  if (min_target_advance <= *advance && *advance <= max_target_advance)
+    return true;
+
+  /* Prepare for running the solver. */
+  double a, b, ya, yb;
+  if (*advance < min_target_advance)
+  {
+    /* Need to expand. */
+    ya = (double) *advance;
+    a = (double) axis_info.default_value;
+    b = (double) axis_info.max_value;
+
+    /* Shape buffer for maximum expansion to use as other
+     * starting point for the solver. */
+    hb_font_set_variation (font, tag, (float) b);
+    reset_buffer (buffer, text);
+    if (!hb_shape_full (font, buffer,
+			features, num_features,
+			shaper_list))
+      return false;
+    yb = (double) buffer_advance (buffer);
+    /* If the maximum expansion is less than max target,
+     * there's nothing to solve for. Just return it. */
+    if (yb <= (double) max_target_advance)
+    {
+      *advance = (float) yb;
+      return true;
+    }
+  }
+  else
+  {
+    /* Need to shrink. */
+    yb = (double) *advance;
+    a = (double) axis_info.min_value;
+    b = (double) axis_info.default_value;
+
+    /* Shape buffer for maximum shrinkate to use as other
+     * starting point for the solver. */
+    hb_font_set_variation (font, tag, (float) a);
+    reset_buffer (buffer, text);
+    if (!hb_shape_full (font, buffer,
+			features, num_features,
+			shaper_list))
+      return false;
+    ya = (double) buffer_advance (buffer);
+    /* If the maximum shrinkate is more than min target,
+     * there's nothing to solve for. Just return it. */
+    if (ya >= (double) min_target_advance)
+    {
+      *advance = (float) ya;
+      return true;
+    }
+  }
+
+  /* Run the solver to find a var axis value that hits
+   * the desired width. */
+
+  double epsilon = (b - a) / (1<<14);
+  bool failed = false;
+
+  auto f = [&] (double x)
+  {
+    hb_font_set_variation (font, tag, (float) x);
+    reset_buffer (buffer, text);
+    if (unlikely (!hb_shape_full (font, buffer,
+				  features, num_features,
+				  shaper_list)))
+    {
+      failed = true;
+      return (double) min_target_advance;
+    }
+
+    double w = (double) buffer_advance (buffer);
+    DEBUG_MSG (JUSTIFY, nullptr, "Trying '%c%c%c%c' axis parameter %f. Advance %g. Target: min %g max %g",
+	       HB_UNTAG (tag), x, w,
+	       (double) min_target_advance, (double) max_target_advance);
+    return w;
+  };
+
+  double y = 0;
+  double itp = solve_itp (f,
+			  a, b,
+			  epsilon,
+			  (double) min_target_advance, (double) max_target_advance,
+			  ya, yb, y);
+
+  hb_free (text_info);
+
+  if (failed)
+    return false;
+
+  *var_value = (float) itp;
+  *advance = (float) y;
+
+  return true;
+}
+
+#endif
+
+
+#endif

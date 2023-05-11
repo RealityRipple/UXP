@@ -26,7 +26,7 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_H_IN
+#if !defined(HB_H_IN) && !defined(HB_NO_SINGLE_HEADER_ERROR)
 #error "Include <hb.h> instead."
 #endif
 
@@ -38,22 +38,6 @@
 #include "hb-font.h"
 
 HB_BEGIN_DECLS
-
-
-typedef struct hb_feature_t {
-  hb_tag_t      tag;
-  uint32_t      value;
-  unsigned int  start;
-  unsigned int  end;
-} hb_feature_t;
-
-HB_EXTERN hb_bool_t
-hb_feature_from_string (const char *str, int len,
-			hb_feature_t *feature);
-
-HB_EXTERN void
-hb_feature_to_string (hb_feature_t *feature,
-		      char *buf, unsigned int size);
 
 
 HB_EXTERN void
@@ -68,6 +52,18 @@ hb_shape_full (hb_font_t          *font,
 	       const hb_feature_t *features,
 	       unsigned int        num_features,
 	       const char * const *shaper_list);
+
+HB_EXTERN hb_bool_t
+hb_shape_justify (hb_font_t          *font,
+		  hb_buffer_t        *buffer,
+		  const hb_feature_t *features,
+		  unsigned int        num_features,
+		  const char * const *shaper_list,
+		  float               min_target_advance,
+		  float               max_target_advance,
+		  float              *advance, /* IN/OUT */
+		  hb_tag_t           *var_tag, /* OUT */
+		  float              *var_value /* OUT */);
 
 HB_EXTERN const char **
 hb_shape_list_shapers (void);

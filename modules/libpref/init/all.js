@@ -185,7 +185,7 @@ pref("dom.enable_resource_timing", true);
 pref("dom.enable_user_timing", true);
 
 // Whether performance.GetEntries* will contain an entry for the active document
-pref("dom.enable_performance_navigation_timing", false);
+pref("dom.enable_performance_navigation_timing", true);
 
 // Enable printing performance marks/measures to log
 pref("dom.performance.enable_user_timing_logging", false);
@@ -1210,11 +1210,8 @@ pref("privacy.GPCheader.enabled",    false);
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
 
-// TODO: merge these two prefs!
 // Enable Google WebComponents?
 pref("dom.webcomponents.enabled",           true);
-// Whether WC getRootNode is available
-pref("dom.getRootNode.enabled",             true);
 
 pref("javascript.enabled",                  true);
 // Enable Array.prototype.values
@@ -1295,6 +1292,8 @@ pref("javascript.options.main_thread_stack_quota_cap", 6291456);
 pref("javascript.options.main_thread_stack_quota_cap", 2097152);
 #endif
 
+// Dynamic module import.
+pref("javascript.options.dynamicImport", true);
 
 // advanced prefs
 pref("advanced.mailftp",                    false);
@@ -1363,6 +1362,8 @@ pref("network.protocol-handler.external.shell", false);
 pref("network.protocol-handler.external.vbscript", false);
 pref("network.protocol-handler.external.vnd.ms.radio", false);
 #ifdef XP_WIN
+pref("network.protocol-handler.external.ms-cxh", false);
+pref("network.protocol-handler.external.ms-cxh-full", false);
 pref("network.protocol-handler.external.ms-help", false);
 pref("network.protocol-handler.external.ms-msdt", false);
 pref("network.protocol-handler.external.search", false);
@@ -2523,6 +2524,9 @@ pref("layout.css.legacy-negation-pseudo.enabled", false);
 
 // Is support for the :is() and :where() selectors enabled?
 pref("layout.css.is-where-pseudo.enabled", true);
+
+// Is support for the ::slotted() selector enabled?
+pref("layout.css.slotted-pseudo.enabled", true);
 
 // Is support for the :scope selector enabled?
 pref("layout.css.scope-pseudo.enabled", true);
@@ -4063,13 +4067,7 @@ pref("intl.ime.use_simple_context_on_password_field", true);
 pref("intl.ime.use_simple_context_on_password_field", false);
 #endif
 
-# enable new platform fontlist for linux on GTK platforms
-# temporary pref to allow flipping back to the existing
-# gfxPangoFontGroup/gfxFontconfigUtils code for handling system fonts
-
 #ifdef MOZ_WIDGET_GTK
-pref("gfx.font_rendering.fontconfig.fontlist.enabled", true);
-
 // maximum number of fonts to substitute for a generic
 pref("gfx.font_rendering.fontconfig.max_generic_substitutions", 3);
 #endif
@@ -5078,6 +5076,9 @@ pref("prompts.content_handling_dialog_modal.enabled", false);
 
 // Whether module scripts (<script type="module">) are enabled for content.
 pref("dom.moduleScripts.enabled", true);
+
+// Whether read-only Window property event is enabled for content.
+pref("dom.window.event.enabled", false);
 
 // Report details when a media source error occurs?
 // Enabled by default in debug builds, otherwise should be explicitly enabled

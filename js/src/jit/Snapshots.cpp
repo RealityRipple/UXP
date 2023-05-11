@@ -123,8 +123,7 @@ using namespace js::jit;
 //
 
 const RValueAllocation::Layout&
-RValueAllocation::layoutFromMode(Mode mode)
-{
+RValueAllocation::layoutFromMode(Mode mode) {
     switch (mode) {
       case CONSTANT: {
         static const RValueAllocation::Layout layout = {
@@ -284,9 +283,10 @@ RValueAllocation::layoutFromMode(Mode mode)
 static const size_t ALLOCATION_TABLE_ALIGNMENT = 2; /* bytes */
 
 void
-RValueAllocation::readPayload(CompactBufferReader& reader, PayloadType type,
-                              uint8_t* mode, Payload* p)
-{
+RValueAllocation::readPayload(CompactBufferReader& reader,
+                              PayloadType type,
+                              uint8_t* mode,
+                              Payload* p) {
     switch (type) {
       case PAYLOAD_NONE:
         break;
@@ -310,8 +310,7 @@ RValueAllocation::readPayload(CompactBufferReader& reader, PayloadType type,
 }
 
 RValueAllocation
-RValueAllocation::read(CompactBufferReader& reader)
-{
+RValueAllocation::read(CompactBufferReader& reader) {
     uint8_t mode = reader.readByte();
     const Layout& layout = layoutFromMode(Mode(mode & MODE_BITS_MASK));
     Payload arg1, arg2;
@@ -322,8 +321,7 @@ RValueAllocation::read(CompactBufferReader& reader)
 }
 
 void
-RValueAllocation::writePayload(CompactBufferWriter& writer, PayloadType type, Payload p)
-{
+RValueAllocation::writePayload(CompactBufferWriter& writer, PayloadType type, Payload p) {
     switch (type) {
       case PAYLOAD_NONE:
         break;
@@ -358,16 +356,14 @@ RValueAllocation::writePayload(CompactBufferWriter& writer, PayloadType type, Pa
 }
 
 void
-RValueAllocation::writePadding(CompactBufferWriter& writer)
-{
+RValueAllocation::writePadding(CompactBufferWriter& writer) {
     // Write 0x7f in all padding bytes.
     while (writer.length() % ALLOCATION_TABLE_ALIGNMENT)
         writer.writeByte(0x7f);
 }
 
 void
-RValueAllocation::write(CompactBufferWriter& writer) const
-{
+RValueAllocation::write(CompactBufferWriter& writer) const {
     const Layout& layout = layoutFromMode(mode());
     MOZ_ASSERT(layout.type2 != PAYLOAD_PACKED_TAG);
     MOZ_ASSERT(writer.length() % ALLOCATION_TABLE_ALIGNMENT == 0);
@@ -398,8 +394,7 @@ RValueAllocation::hash() const {
 }
 
 static const char*
-ValTypeToString(JSValueType type)
-{
+ValTypeToString(JSValueType type) {
     switch (type) {
       case JSVAL_TYPE_INT32:
         return "int32_t";
@@ -421,8 +416,7 @@ ValTypeToString(JSValueType type)
 }
 
 void
-RValueAllocation::dumpPayload(GenericPrinter& out, PayloadType type, Payload p)
-{
+RValueAllocation::dumpPayload(GenericPrinter& out, PayloadType type, Payload p) {
     switch (type) {
       case PAYLOAD_NONE:
         break;
@@ -445,8 +439,7 @@ RValueAllocation::dumpPayload(GenericPrinter& out, PayloadType type, Payload p)
 }
 
 void
-RValueAllocation::dump(GenericPrinter& out) const
-{
+RValueAllocation::dump(GenericPrinter& out) const {
     const Layout& layout = layoutFromMode(mode());
     out.printf("%s", layout.name);
 
@@ -461,8 +454,7 @@ RValueAllocation::dump(GenericPrinter& out) const
 }
 
 bool
-RValueAllocation::equalPayloads(PayloadType type, Payload lhs, Payload rhs)
-{
+RValueAllocation::equalPayloads(PayloadType type, Payload lhs, Payload rhs) {
     switch (type) {
       case PAYLOAD_NONE:
         return true;
@@ -481,12 +473,14 @@ RValueAllocation::equalPayloads(PayloadType type, Payload lhs, Payload rhs)
     return false;
 }
 
-SnapshotReader::SnapshotReader(const uint8_t* snapshots, uint32_t offset,
-                               uint32_t RVATableSize, uint32_t listSize)
-  : reader_(snapshots + offset, snapshots + listSize),
-    allocReader_(snapshots + listSize, snapshots + listSize + RVATableSize),
-    allocTable_(snapshots + listSize),
-    allocRead_(0)
+SnapshotReader::SnapshotReader(const uint8_t* snapshots,
+                               uint32_t offset,
+                               uint32_t RVATableSize,
+                               uint32_t listSize)
+  : reader_(snapshots + offset, snapshots + listSize)
+  , allocReader_(snapshots + listSize, snapshots + listSize + RVATableSize)
+  , allocTable_(snapshots + listSize)
+  , allocRead_(0)
 {
     if (!snapshots)
         return;
@@ -519,8 +513,7 @@ static const uint32_t RECOVER_RINSCOUNT_MASK = COMPUTE_MASK_(RECOVER_RINSCOUNT);
 #undef COMPUTE_SHIFT_AFTER_
 
 void
-SnapshotReader::readSnapshotHeader()
-{
+SnapshotReader::readSnapshotHeader() {
     uint32_t bits = reader_.readUnsigned();
 
     bailoutKind_ = BailoutKind((bits & SNAPSHOT_BAILOUTKIND_MASK) >> SNAPSHOT_BAILOUTKIND_SHIFT);
@@ -536,8 +529,7 @@ SnapshotReader::readSnapshotHeader()
 
 #ifdef TRACK_SNAPSHOTS
 void
-SnapshotReader::readTrackSnapshot()
-{
+SnapshotReader::readTrackSnapshot() {
     pcOpcode_  = reader_.readUnsigned();
     mirOpcode_ = reader_.readUnsigned();
     mirId_     = reader_.readUnsigned();
@@ -546,8 +538,7 @@ SnapshotReader::readTrackSnapshot()
 }
 
 void
-SnapshotReader::spewBailingFrom() const
-{
+SnapshotReader::spewBailingFrom() const {
     if (JitSpewEnabled(JitSpew_IonBailouts)) {
         JitSpewHeader(JitSpew_IonBailouts);
         Fprinter& out = JitSpewPrinter();
@@ -562,15 +553,13 @@ SnapshotReader::spewBailingFrom() const
 #endif
 
 uint32_t
-SnapshotReader::readAllocationIndex()
-{
+SnapshotReader::readAllocationIndex() {
     allocRead_++;
     return reader_.readUnsigned();
 }
 
 RValueAllocation
-SnapshotReader::readAllocation()
-{
+SnapshotReader::readAllocation() {
     JitSpew(JitSpew_IonSnapshots, "Reading slot %u", allocRead_);
     uint32_t offset = readAllocationIndex() * ALLOCATION_TABLE_ALIGNMENT;
     allocReader_.seek(allocTable_, offset);
@@ -578,8 +567,7 @@ SnapshotReader::readAllocation()
 }
 
 bool
-SnapshotWriter::init()
-{
+SnapshotWriter::init() {
     // Based on the measurements made in Bug 962555 comment 20, this should be
     // enough to prevent the reallocation of the hash table for at least half of
     // the compilations.
@@ -587,9 +575,10 @@ SnapshotWriter::init()
 }
 
 RecoverReader::RecoverReader(SnapshotReader& snapshot, const uint8_t* recovers, uint32_t size)
-  : reader_(nullptr, nullptr),
-    numInstructions_(0),
-    numInstructionsRead_(0)
+  : reader_(nullptr, nullptr)
+  , numInstructions_(0)
+  , numInstructionsRead_(0)
+  , resumeAfter_(false)
 {
     if (!recovers)
         return;
@@ -598,9 +587,29 @@ RecoverReader::RecoverReader(SnapshotReader& snapshot, const uint8_t* recovers, 
     readInstruction();
 }
 
-void
-RecoverReader::readRecoverHeader()
+RecoverReader::RecoverReader(const RecoverReader& rr)
+  : reader_(rr.reader_)
+  , numInstructions_(rr.numInstructions_)
+  , numInstructionsRead_(rr.numInstructionsRead_)
+  , resumeAfter_(rr.resumeAfter_)
 {
+    if (reader_.currentPosition())
+        rr.instruction()->cloneInto(&rawData_);
+}
+
+RecoverReader&
+RecoverReader::operator=(const RecoverReader& rr) {
+    reader_ = rr.reader_;
+    numInstructions_ = rr.numInstructions_;
+    numInstructionsRead_ = rr.numInstructionsRead_;
+    resumeAfter_ = rr.resumeAfter_;
+    if (reader_.currentPosition())
+        rr.instruction()->cloneInto(&rawData_);
+    return *this;
+}
+
+void
+RecoverReader::readRecoverHeader() {
     uint32_t bits = reader_.readUnsigned();
 
     numInstructions_ = (bits & RECOVER_RINSCOUNT_MASK) >> RECOVER_RINSCOUNT_SHIFT;
@@ -612,16 +621,14 @@ RecoverReader::readRecoverHeader()
 }
 
 void
-RecoverReader::readInstruction()
-{
+RecoverReader::readInstruction() {
     MOZ_ASSERT(moreInstructions());
     RInstruction::readRecoverData(reader_, &rawData_);
     numInstructionsRead_++;
 }
 
 SnapshotOffset
-SnapshotWriter::startSnapshot(RecoverOffset recoverOffset, BailoutKind kind)
-{
+SnapshotWriter::startSnapshot(RecoverOffset recoverOffset, BailoutKind kind) {
     lastStart_ = writer_.length();
     allocWritten_ = 0;
 
@@ -640,9 +647,11 @@ SnapshotWriter::startSnapshot(RecoverOffset recoverOffset, BailoutKind kind)
 
 #ifdef TRACK_SNAPSHOTS
 void
-SnapshotWriter::trackSnapshot(uint32_t pcOpcode, uint32_t mirOpcode, uint32_t mirId,
-                              uint32_t lirOpcode, uint32_t lirId)
-{
+SnapshotWriter::trackSnapshot(uint32_t pcOpcode,
+                              uint32_t mirOpcode,
+                              uint32_t mirId,
+                              uint32_t lirOpcode,
+                              uint32_t lirId) {
     writer_.writeUnsigned(pcOpcode);
     writer_.writeUnsigned(mirOpcode);
     writer_.writeUnsigned(mirId);
@@ -652,8 +661,7 @@ SnapshotWriter::trackSnapshot(uint32_t pcOpcode, uint32_t mirOpcode, uint32_t mi
 #endif
 
 bool
-SnapshotWriter::add(const RValueAllocation& alloc)
-{
+SnapshotWriter::add(const RValueAllocation& alloc) {
     MOZ_ASSERT(allocMap_.initialized());
 
     uint32_t offset;
@@ -683,8 +691,7 @@ SnapshotWriter::add(const RValueAllocation& alloc)
 }
 
 void
-SnapshotWriter::endSnapshot()
-{
+SnapshotWriter::endSnapshot() {
     // Place a sentinel for asserting on the other end.
 #ifdef DEBUG
     writer_.writeSigned(-1);
@@ -695,8 +702,7 @@ SnapshotWriter::endSnapshot()
 }
 
 RecoverOffset
-RecoverWriter::startRecover(uint32_t instructionCount, bool resumeAfter)
-{
+RecoverWriter::startRecover(uint32_t instructionCount, bool resumeAfter) {
     MOZ_ASSERT(instructionCount);
     instructionCount_ = instructionCount;
     instructionsWritten_ = 0;
@@ -716,15 +722,13 @@ RecoverWriter::startRecover(uint32_t instructionCount, bool resumeAfter)
 }
 
 void
-RecoverWriter::writeInstruction(const MNode* rp)
-{
+RecoverWriter::writeInstruction(const MNode* rp) {
     if (!rp->writeRecoverData(writer_))
         writer_.setOOM();
     instructionsWritten_++;
 }
 
 void
-RecoverWriter::endRecover()
-{
+RecoverWriter::endRecover() {
     MOZ_ASSERT(instructionCount_ == instructionsWritten_);
 }

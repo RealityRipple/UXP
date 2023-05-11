@@ -1,5 +1,4 @@
 # -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -128,7 +127,23 @@ DEFINES["JPEGXL_ENABLE_TRANSCODE_JPEG"] = "0"
 FINAL_LIBRARY = "gkmedias"
 
 # We allow warnings for third-party code that can be updated from upstream.
-ALLOW_COMPILER_WARNINGS = True
+# XXX: libjxl produces way too many compiler warnings.
+#      Silence them in the meantime.
+ALLOW_COMPILER_WARNINGS = False
+
+if CONFIG['_MSC_VER']:
+    CFLAGS += [
+        '-wd4646', # function declared with 'noreturn' has non-void return type
+        '-wd4334', # result of 32-bit shift implicitly converted to 64 bits
+        '-wd4305', # truncation from 'type' to 'type'
+        '-wd4146', # unary minus operator applied to unsigned type, result still unsigned
+    ]
+    CXXFLAGS += [
+        '-wd4646', # function declared with 'noreturn' has non-void return type
+        '-wd4334', # result of 32-bit shift implicitly converted to 64 bits
+        '-wd4305', # truncation from 'type' to 'type'
+        '-wd4146', # unary minus operator applied to unsigned type, result still unsigned
+    ]
 
 # Clang 5.0 has a compiler bug that prevents build in c++17
 # See https://gitlab.com/wg1/jpeg-xl/-/issues/227

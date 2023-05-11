@@ -157,6 +157,13 @@ DOM4_MSG_DEF(NotSupportedError, "The media resource indicated by the src attribu
 DOM4_MSG_DEF(SyntaxError, "The URI is malformed.", NS_ERROR_DOM_MALFORMED_URI)
 DOM4_MSG_DEF(SyntaxError, "Invalid header name.", NS_ERROR_DOM_INVALID_HEADER_NAME)
 
+/* User Timing API errors */
+DOM4_MSG_DEF(SyntaxError, "An unknown mark name was provided.", NS_ERROR_DOM_UT_UNKNOWN_MARK_NAME)
+DOM4_MSG_DEF(SyntaxError, "markName cannot be a performance timing attribute.", NS_ERROR_DOM_UT_INVALID_TIMING_ATTR)
+DOM4_MSG_DEF(InvalidAccessError, "A PerformanceTiming attribute which isn't available yet was provided.", NS_ERROR_DOM_UT_UNAVAILABLE_ATTR)
+DOM4_MSG_DEF(InvalidStateError, "Global object is unavailable.", NS_ERROR_DOM_UT_UNAVAILABLE_GLOBAL_OBJECT)
+DOM4_MSG_DEF(QuotaExceededError, "Performance measurements exceeded the allotted space limitations.", NS_ERROR_DOM_UT_QUOTA_ERR)
+
 /* XMLHttpRequest errors. */
 DOM4_MSG_DEF(InvalidStateError, "XMLHttpRequest has an invalid context.", NS_ERROR_DOM_INVALID_STATE_XHR_HAS_INVALID_CONTEXT)
 DOM4_MSG_DEF(InvalidStateError, "XMLHttpRequest state must be OPENED.", NS_ERROR_DOM_INVALID_STATE_XHR_MUST_BE_OPENED)

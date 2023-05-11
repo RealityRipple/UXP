@@ -595,6 +595,7 @@ class JSFunction : public js::NativeObject
     }
 
     bool isDerivedClassConstructor();
+    bool isFieldInitializer() const;
 
     static unsigned offsetOfNativeOrScript() {
         static_assert(offsetof(U, n.native) == offsetof(U, i.s.script_),
@@ -879,7 +880,7 @@ JSString* FunctionToString(JSContext* cx, HandleFunction fun, bool isToSource);
 template<XDRMode mode>
 bool
 XDRInterpretedFunction(XDRState<mode>* xdr, HandleScope enclosingScope,
-                       HandleScript enclosingScript, MutableHandleFunction objp);
+                       HandleScriptSource sourceObject, MutableHandleFunction objp);
 
 /*
  * Report an error that call.thisv is not compatible with the specified class,

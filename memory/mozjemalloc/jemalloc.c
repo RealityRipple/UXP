@@ -1,5 +1,4 @@
 /* -*- Mode: C; tab-width: 8; c-basic-offset: 8; indent-tabs-mode: t -*- */
-/* vim:set softtabstop=8 shiftwidth=8 noet: */
 /*-
  * Copyright (C) 2006-2008 Jason Evans <jasone@FreeBSD.org>.
  * Copyright (C) 2015-2019 Mark Straver <moonchild@palemoon.org>
@@ -411,7 +410,7 @@ void *_mmap(void *addr, size_t length, int prot, int flags,
  */
 #define	CHUNK_2POW_DEFAULT	20
 /* Maximum number of dirty pages per arena. */
-#define	DIRTY_MAX_DEFAULT	(1U << 8)
+#define	DIRTY_MAX_DEFAULT	(1U << 12)
 
 /*
  * Maximum size of L1 cache line.  This is used to avoid cache line aliasing,

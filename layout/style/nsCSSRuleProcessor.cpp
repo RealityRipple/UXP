@@ -1,5 +1,4 @@
 /* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-// vim:cindent:tabstop=2:expandtab:shiftwidth=2:
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -48,6 +47,7 @@
 #include "nsCSSRules.h"
 #include "nsStyleSet.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "nsNthIndexCache.h"
 #include "mozilla/ArrayUtils.h"
@@ -684,6 +684,7 @@ void RuleHash::EnumerateAllRules(Element* aElement, ElementDependentRuleProcesso
       filter->AssertHasAllAncestors(aElement);
     }
 #endif
+    bool isForAssignedSlot = aData->mTreeMatchContext.mForAssignedSlot;
     // Merge the lists while there are still multiple lists to merge.
     while (valueCount > 1) {
       int32_t valueIndex = 0;
@@ -696,6 +697,7 @@ void RuleHash::EnumerateAllRules(Element* aElement, ElementDependentRuleProcesso
         }
       }
       const RuleValue *cur = mEnumList[valueIndex].mCurValue;
+      aData->mTreeMatchContext.mForAssignedSlot = isForAssignedSlot;
       ContentEnumFunc(*cur, cur->mSelector, aData, aNodeContext, filter);
       cur++;
       if (cur == mEnumList[valueIndex].mEnd) {
@@ -709,6 +711,7 @@ void RuleHash::EnumerateAllRules(Element* aElement, ElementDependentRuleProcesso
     for (const RuleValue *value = mEnumList[0].mCurValue,
                          *end = mEnumList[0].mEnd;
          value != end; ++value) {
+      aData->mTreeMatchContext.mForAssignedSlot = isForAssignedSlot;
       ContentEnumFunc(*value, value->mSelector, aData, aNodeContext, filter);
     }
   }
@@ -1359,8 +1362,9 @@ enum class SelectorMatchesFlags : uint8_t {
   // pseudo-element.
   IS_PSEUDO_CLASS_ARGUMENT = 1 << 2,
   
-  // The selector should be blocked from matching the :host pseudo-class.
-  IS_HOST_INACCESSIBLE = 1 << 3
+  // The selector should be blocked from matching because it is called
+  // from outside the shadow tree.
+  IS_OUTSIDE_SHADOW_TREE = 1 << 3
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SelectorMatchesFlags)
 
@@ -1372,13 +1376,14 @@ static inline bool ActiveHoverQuirkMatches(nsCSSSelector* aSelector,
   if (aSelector->HasTagSelector() || aSelector->mAttrList ||
       aSelector->mIDList || aSelector->mClassList ||
       aSelector->IsPseudoElement() ||
+      aSelector->IsHybridPseudoElement() ||
       // Having this quirk means that some selectors will no longer match,
       // so it's better to return false when we aren't sure (i.e., the
       // flags are unknown).
       aSelectorFlags & (SelectorMatchesFlags::UNKNOWN |
                         SelectorMatchesFlags::HAS_PSEUDO_ELEMENT |
                         SelectorMatchesFlags::IS_PSEUDO_CLASS_ARGUMENT |
-                        SelectorMatchesFlags::IS_HOST_INACCESSIBLE)) {
+                        SelectorMatchesFlags::IS_OUTSIDE_SHADOW_TREE)) {
     return false;
   }
 
@@ -1704,24 +1709,29 @@ static bool SelectorMatches(Element* aElement,
     return false;
   }
 
+  Element* targetElement = aElement;
+  if (aTreeMatchContext.mForAssignedSlot) {
+    targetElement = aElement->GetAssignedSlot()->AsElement();
+  }
+
   // namespace/tag match
   // optimization : bail out early if we can
   if ((kNameSpaceID_Unknown != aSelector->mNameSpace &&
-       aElement->GetNameSpaceID() != aSelector->mNameSpace))
+       targetElement->GetNameSpaceID() != aSelector->mNameSpace))
     return false;
 
   if (aSelector->mLowercaseTag) {
     nsIAtom* selectorTag =
-      (aTreeMatchContext.mIsHTMLDocument && aElement->IsHTMLElement()) ?
+      (aTreeMatchContext.mIsHTMLDocument && targetElement->IsHTMLElement()) ?
         aSelector->mLowercaseTag : aSelector->mCasedTag;
-    if (selectorTag != aElement->NodeInfo()->NameAtom()) {
+    if (selectorTag != targetElement->NodeInfo()->NameAtom()) {
       return false;
     }
   }
 
   nsAtomList* IDList = aSelector->mIDList;
   if (IDList) {
-    nsIAtom* id = aElement->GetID();
+    nsIAtom* id = targetElement->GetID();
     if (id) {
       // case sensitivity: bug 93371
       const bool isCaseSensitive =
@@ -1756,7 +1766,7 @@ static bool SelectorMatches(Element* aElement,
   nsAtomList* classList = aSelector->mClassList;
   if (classList) {
     // test for class match
-    const nsAttrValue *elementClasses = aElement->GetClasses();
+    const nsAttrValue *elementClasses = targetElement->GetClasses();
     if (!elementClasses) {
       // Element has no classes but we have a class selector
       return false;
@@ -1776,6 +1786,8 @@ static bool SelectorMatches(Element* aElement,
     }
   }
 
+  const bool isOutsideShadowTree =
+    !!(aSelectorFlags & SelectorMatchesFlags::IS_OUTSIDE_SHADOW_TREE);
   const bool isNegated = (aDependence != nullptr);
   // The selectors for which we set node bits are, unfortunately, early
   // in this function (because they're pseudo-classes, which are
@@ -1942,16 +1954,64 @@ static bool SelectorMatches(Element* aElement,
         }
         break;
 
+      case CSSPseudoClassType::slotted:
+        {
+          if (aTreeMatchContext.mForAssignedSlot) {
+            aTreeMatchContext.mForAssignedSlot = false;
+          }
+
+          // Slottables cannot be matched from the outer tree.
+          if (isOutsideShadowTree) {
+            return false;
+          }
+          
+          // Slot elements cannot be matched.
+          if (aElement->IsHTMLElement(nsGkAtoms::slot)) {
+            return false;
+          }
+
+          // The current element must have an assigned slot.
+          if (!aElement->GetAssignedSlot()) {
+            return false;
+          }
+
+          if (!SelectorListMatches(aElement,
+                                   pseudoClass,
+                                   aNodeMatchContext,
+                                   aTreeMatchContext)) {
+            return false;
+          }
+        }
+        break;
+
       case CSSPseudoClassType::host:
         {
+          ShadowRoot* shadow = aElement->GetShadowRoot();
           // In order to match :host, the element must be a shadow root host,
           // we must be matching only against host pseudo selectors, and the 
           // selector's context must be the shadow root (the selector must be 
           // featureless, the left-most selector, and be in a shadow root 
           // style). 
-          if (!aElement->GetShadowRoot() ||
+          if (!shadow ||
               aSelector->HasFeatureSelectors() ||
-              aSelectorFlags & SelectorMatchesFlags::IS_HOST_INACCESSIBLE) {
+              isOutsideShadowTree) {
+            return false;
+          }
+
+          // We're matching :host from inside the shadow root.
+          if (!aTreeMatchContext.mOnlyMatchHostPseudo) {
+            // Check if the element has the same shadow root.
+            if (aTreeMatchContext.mScopedRoot) {
+              if (shadow !=
+                  aTreeMatchContext.mScopedRoot->GetShadowRoot()) {
+                return false;
+              }
+            }
+            // We were called elsewhere.
+          }
+
+          // Reject if the next selector is an explicit universal selector.
+          if (aSelector->mNext && aSelector->mNext->mExplicitUniversal) {
             return false;
           }
 
@@ -1965,7 +2025,7 @@ static bool SelectorMatches(Element* aElement,
           // Match if any selector in the argument list matches.
           // FIXME: What this effectively does is bypass the "featureless"
           // selector check under SelectorMatches.
-          NodeMatchContext nodeContext(EventStates(),
+          NodeMatchContext nodeContext(aNodeMatchContext.mStateMask,
                                        aNodeMatchContext.mIsRelevantLink);
           if (!SelectorListMatches(aElement,
                                    pseudoClass,
@@ -2299,7 +2359,7 @@ static bool SelectorMatches(Element* aElement,
   bool result = true;
   if (aSelector->mAttrList) {
     // test for attribute match
-    if (!aElement->HasAttrs()) {
+    if (!targetElement->HasAttrs()) {
       // if no attributes on the content, no match
       return false;
     } else {
@@ -2309,7 +2369,7 @@ static bool SelectorMatches(Element* aElement,
 
       do {
         bool isHTML =
-          (aTreeMatchContext.mIsHTMLDocument && aElement->IsHTMLElement());
+          (aTreeMatchContext.mIsHTMLDocument && targetElement->IsHTMLElement());
         matchAttribute = isHTML ? attr->mLowercaseAttr : attr->mCasedAttr;
         if (attr->mNameSpace == kNameSpaceID_Unknown) {
           // Attr selector with a wildcard namespace.  We have to examine all
@@ -2321,7 +2381,7 @@ static bool SelectorMatches(Element* aElement,
           // actually has attributes in), short-circuiting if we ever match.
           result = false;
           const nsAttrName* attrName;
-          for (uint32_t i = 0; (attrName = aElement->GetAttrNameAt(i)); ++i) {
+          for (uint32_t i = 0; (attrName = targetElement->GetAttrNameAt(i)); ++i) {
             if (attrName->LocalName() != matchAttribute) {
               continue;
             }
@@ -2332,7 +2392,7 @@ static bool SelectorMatches(Element* aElement,
 #ifdef DEBUG
               bool hasAttr =
 #endif
-                aElement->GetAttr(attrName->NamespaceID(),
+                targetElement->GetAttr(attrName->NamespaceID(),
                                   attrName->LocalName(), value);
               NS_ASSERTION(hasAttr, "GetAttrNameAt lied");
               result = AttrMatchesValue(attr, value, isHTML);
@@ -2350,12 +2410,12 @@ static bool SelectorMatches(Element* aElement,
         }
         else if (attr->mFunction == NS_ATTR_FUNC_EQUALS) {
           result =
-            aElement->
+            targetElement->
               AttrValueIs(attr->mNameSpace, matchAttribute, attr->mValue,
                           attr->IsValueCaseSensitive(isHTML) ? eCaseMatters
                                                              : eIgnoreCase);
         }
-        else if (!aElement->HasAttr(attr->mNameSpace, matchAttribute)) {
+        else if (!targetElement->HasAttr(attr->mNameSpace, matchAttribute)) {
           result = false;
         }
         else if (attr->mFunction != NS_ATTR_FUNC_SET) {
@@ -2363,7 +2423,7 @@ static bool SelectorMatches(Element* aElement,
 #ifdef DEBUG
           bool hasAttr =
 #endif
-              aElement->GetAttr(attr->mNameSpace, matchAttribute, value);
+              targetElement->GetAttr(attr->mNameSpace, matchAttribute, value);
           NS_ASSERTION(hasAttr, "HasAttr lied");
           result = AttrMatchesValue(attr, value, isHTML);
         }
@@ -2378,7 +2438,7 @@ static bool SelectorMatches(Element* aElement,
     for (nsCSSSelector *negation = aSelector->mNegations;
          result && negation; negation = negation->mNegations) {
       bool dependence = false;
-      result = !SelectorMatches(aElement, negation, aNodeMatchContext,
+      result = !SelectorMatches(targetElement, negation, aNodeMatchContext,
                                 aTreeMatchContext,
                                 SelectorMatchesFlags::IS_PSEUDO_CLASS_ARGUMENT,
                                 &dependence);
@@ -2503,6 +2563,11 @@ SelectorMatchesTree(Element* aPrevElement,
       // The relevant link must be an ancestor of the node being matched.
       aFlags = SelectorMatchesTreeFlags(aFlags & ~eLookForRelevantLink);
       nsIContent* parent = prevElement->GetParent();
+      // Operate on the flattened element tree when matching the
+      // ::slotted() pseudo-element.
+      if (aTreeMatchContext.mRestrictToSlottedPseudo) {
+        parent = prevElement->GetFlattenedTreeParent();
+      }
       if (parent) {
         if (aTreeMatchContext.mForStyling)
           parent->SetFlags(NODE_HAS_SLOW_SELECTOR_LATER_SIBLINGS);
@@ -2513,7 +2578,12 @@ SelectorMatchesTree(Element* aPrevElement,
     // for descendant combinators and child combinators, the element
     // to test against is the parent
     else {
-      nsIContent *content = prevElement->GetParent();
+      nsIContent* content = prevElement->GetParent();
+      // Operate on the flattened element tree when matching the
+      // ::slotted() pseudo-element.
+      if (aTreeMatchContext.mRestrictToSlottedPseudo) {
+        content = prevElement->GetFlattenedTreeParent();
+      }
 
       // In the shadow tree, the shadow host behaves as if it
       // is a featureless parent of top-level elements of the shadow
@@ -2521,11 +2591,12 @@ SelectorMatchesTree(Element* aPrevElement,
       // left most selector because ancestors of the host are not in
       // the selector match list.
       ShadowRoot* shadowRoot = content ?
-        ShadowRoot::FromNode(content) : nullptr;
+                               ShadowRoot::FromNode(content) :
+                               nullptr;
       if (shadowRoot && !selector->mNext && !crossedShadowRootBoundary) {
-      content = shadowRoot->GetHost();
-      crossedShadowRootBoundary = true;
-      contentIsFeatureless = true;
+        content = shadowRoot->GetHost();
+        crossedShadowRootBoundary = true;
+        contentIsFeatureless = true;
       }
 
       // GetParent could return a document fragment; we only want
@@ -2623,6 +2694,12 @@ SelectorMatchesTree(Element* aPrevElement,
         aTreeMatchContext.mCurrentStyleScope = styleScope;
       }
       selector = selector->mNext;
+      if (!selector &&
+          !aTreeMatchContext.mIsTopmostScope &&
+          aTreeMatchContext.mRestrictToSlottedPseudo &&
+          aTreeMatchContext.mScopedRoot != element) {
+        return false;
+      }
     }
     else {
       // for adjacent sibling and child combinators, if we didn't find
@@ -2701,6 +2778,52 @@ static bool SelectorListMatches(Element* aElement,
                              aPreventComplexSelectors);
 }
 
+static
+inline bool LookForTargetPseudo(nsCSSSelector* aSelector,
+                                TreeMatchContext* aMatchContext,
+                                nsRestyleHint* possibleChange) {
+  if (aMatchContext->mOnlyMatchHostPseudo) {
+    while (aSelector && aSelector->mNext != nullptr) {
+      aSelector = aSelector->mNext;
+    }
+
+    for (nsPseudoClassList* pseudoClass = aSelector->mPseudoClassList;
+         pseudoClass;
+         pseudoClass = pseudoClass->mNext) {
+      if (pseudoClass->mType == CSSPseudoClassType::host ||
+          pseudoClass->mType == CSSPseudoClassType::hostContext) {
+        if (possibleChange) {
+          // :host-context will walk ancestors looking for a match of a
+          // compound selector, thus any changes to ancestors may require
+          // restyling the subtree.
+          *possibleChange |= eRestyle_Subtree;
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+  else if (aMatchContext->mRestrictToSlottedPseudo) {
+    for (nsCSSSelector* selector = aSelector;
+         selector;
+         selector = selector->mNext) {
+      if (!selector->mPseudoClassList) {
+        continue;
+      }
+      for (nsPseudoClassList* pseudoClass = selector->mPseudoClassList;
+         pseudoClass;
+         pseudoClass = pseudoClass->mNext) {
+        if (pseudoClass->mType == CSSPseudoClassType::slotted) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  // We're not restricted to a specific pseudo-class.
+  return true;
+}
+
 static inline
 void ContentEnumFunc(const RuleValue& value, nsCSSSelector* aSelector,
                      ElementDependentRuleProcessorData* data, NodeMatchContext& nodeContext,
@@ -2709,35 +2832,19 @@ void ContentEnumFunc(const RuleValue& value, nsCSSSelector* aSelector,
   if (nodeContext.mIsRelevantLink) {
     data->mTreeMatchContext.SetHaveRelevantLink();
   }
-  if (ancestorFilter &&
+  // XXX: Ignore the ancestor filter if we're testing the assigned slot.
+  bool useAncestorFilter = !(data->mTreeMatchContext.mForAssignedSlot);
+  if (useAncestorFilter && ancestorFilter &&
       !ancestorFilter->MightHaveMatchingAncestor<RuleValue::eMaxAncestorHashes>(
           value.mAncestorSelectorHashes)) {
     // We won't match; nothing else to do here
     return;
   }
-  // If mOnlyMatchHostPseudo is set, then we only want to match against
-  // selectors that contain a :host-context pseudo class.
-  if (data->mTreeMatchContext.mOnlyMatchHostPseudo) {
-    nsCSSSelector* selector = aSelector;
-    while (selector && selector->mNext != nullptr) {
-      selector = selector->mNext;
-    }
 
-    bool seenHostPseudo = false;
-    for (nsPseudoClassList* pseudoClass = selector->mPseudoClassList;
-         pseudoClass;
-         pseudoClass = pseudoClass->mNext) {
-      if (pseudoClass->mType == CSSPseudoClassType::host ||
-	        pseudoClass->mType == CSSPseudoClassType::hostContext) {
-        seenHostPseudo = true;
-        break;
-      }
-    }
-
-    if (!seenHostPseudo) {
-      return;
-    }
+  if (!LookForTargetPseudo(aSelector, &data->mTreeMatchContext, nullptr)) {
+    return;
   }
+
   if (!data->mTreeMatchContext.SetStyleScopeForSelectorMatching(data->mElement,
                                                                 data->mScope)) {
     // The selector is for a rule in a scoped style sheet, and the subject
@@ -2799,7 +2906,13 @@ nsCSSRuleProcessor::RulesMatching(ElementRuleProcessorData *aData)
     NodeMatchContext nodeContext(EventStates(),
                                  nsCSSRuleProcessor::IsLink(aData->mElement),
 				 aData->mElementIsFeatureless);
-    cascade->mRuleHash.EnumerateAllRules(aData->mElement, aData, nodeContext);
+    // Test against the assigned slot rather than the slottable if we're
+    // matching the ::slotted() pseudo.
+    Element* targetElement = aData->mElement;
+    if (aData->mTreeMatchContext.mForAssignedSlot) {
+      targetElement = aData->mElement->GetAssignedSlot()->AsElement();
+    }
+    cascade->mRuleHash.EnumerateAllRules(targetElement, aData, nodeContext);
   }
 }
 
@@ -3080,34 +3193,10 @@ AttributeEnumFunc(nsCSSSelector* aSelector,
   nsRestyleHint possibleChange =
     RestyleHintForSelectorWithAttributeChange(aData->change,
                                               aSelector, aRightmostSelector);
-  // If mOnlyMatchHostPseudo is set, then we only want to match against
-  // selectors that contain a :host-context pseudo class.
-  if (data->mTreeMatchContext.mOnlyMatchHostPseudo) {
-    nsCSSSelector* selector = aSelector;
-    while (selector && selector->mNext != nullptr) {
-      selector = selector->mNext;
-    }
 
-    bool seenHostPseudo = false;
-    for (nsPseudoClassList* pseudoClass = selector->mPseudoClassList;
-         pseudoClass;
-         pseudoClass = pseudoClass->mNext) {
-      if (pseudoClass->mType == CSSPseudoClassType::host ||
-	        pseudoClass->mType == CSSPseudoClassType::hostContext) {
-        // :host-context will walk ancestors looking for a match of a compound 
-        // selector, thus any changes to ancestors may require restyling the 
-        // subtree.
-        possibleChange |= eRestyle_Subtree;
-        seenHostPseudo = true;
-        break;
-      }
-    }
-
-    if (!seenHostPseudo) {
-      return;
-    }
+  if (!LookForTargetPseudo(aSelector, &data->mTreeMatchContext, &possibleChange)) {
+    return;
   }
-
 
   // If, ignoring eRestyle_SomeDescendants, enumData->change already includes
   // all the bits of possibleChange, don't bother calling SelectorMatches, since
@@ -4142,7 +4231,7 @@ nsCSSRuleProcessor::RestrictedSelectorListMatches(Element* aElement,
   NodeMatchContext nodeContext(EventStates(), false);
   SelectorMatchesFlags flags = aElement->IsInShadowTree() ?
                                SelectorMatchesFlags::NONE :
-                               SelectorMatchesFlags::IS_HOST_INACCESSIBLE;
+                               SelectorMatchesFlags::IS_OUTSIDE_SHADOW_TREE;
   return SelectorListMatches(aElement,
                              aSelectorList,
                              nodeContext,

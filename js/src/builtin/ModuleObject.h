@@ -24,6 +24,8 @@ class ModuleEnvironmentObject;
 class ModuleObject;
 
 namespace frontend {
+class BinaryNode;
+class ListNode;
 class ParseNode;
 class TokenStream;
 } /* namespace frontend */
@@ -219,7 +221,8 @@ class ModuleObject : public NativeObject
         NamespaceSlot,
         StatusSlot,
         EvaluationErrorSlot,
-        HostDefinedSlot,
+        ScriptSourceObjectSlot,
+        MetaObjectSlot,
         RequestedModulesSlot,
         ImportEntriesSlot,
         LocalExportEntriesSlot,
@@ -263,6 +266,7 @@ class ModuleObject : public NativeObject
 #endif
     void fixEnvironmentsAfterCompartmentMerge();
 
+    JSScript* maybeScript() const;
     JSScript* script() const;
     Scope* enclosingScope() const;
     ModuleEnvironmentObject& initialEnvironment() const;
@@ -271,7 +275,8 @@ class ModuleObject : public NativeObject
     ModuleStatus status() const;
     bool hadEvaluationError() const;
     Value evaluationError() const;
-    Value hostDefinedField() const;
+    ScriptSourceObject* scriptSourceObject() const;
+    JSObject* metaObject() const;
     ArrayObject& requestedModules() const;
     ArrayObject& importEntries() const;
     ArrayObject& localExportEntries() const;
@@ -284,7 +289,10 @@ class ModuleObject : public NativeObject
     static bool Instantiate(JSContext* cx, HandleModuleObject self);
     static bool Evaluate(JSContext* cx, HandleModuleObject self);
 
-    void setHostDefinedField(const JS::Value& value);
+    static ModuleNamespaceObject* GetOrCreateModuleNamespace(JSContext* cx,
+                                                             HandleModuleObject self);
+
+    void setMetaObject(JSObject* obj);
 
     // For BytecodeEmitter.
     bool noteFunctionDeclaration(ExclusiveContext* cx, HandleAtom name, HandleFunction fun);
@@ -305,7 +313,6 @@ class ModuleObject : public NativeObject
     static void trace(JSTracer* trc, JSObject* obj);
     static void finalize(js::FreeOp* fop, JSObject* obj);
 
-    bool hasScript() const;
     bool hasImportBindings() const;
     FunctionDeclarationVector* functionDeclarations();
 };
@@ -318,9 +325,9 @@ class MOZ_STACK_CLASS ModuleBuilder
     explicit ModuleBuilder(ExclusiveContext* cx, HandleModuleObject module,
                            const frontend::TokenStream& tokenStream);
 
-    bool processImport(frontend::ParseNode* pn);
-    bool processExport(frontend::ParseNode* pn);
-    bool processExportFrom(frontend::ParseNode* pn);
+    bool processImport(frontend::BinaryNode* importNode);
+    bool processExport(frontend::ParseNode* exportNode);
+    bool processExportFrom(frontend::BinaryNode* exportNode);
 
     bool hasExportedName(JSAtom* name) const;
 
@@ -352,6 +359,10 @@ class MOZ_STACK_CLASS ModuleBuilder
 
     ImportEntryObject* importEntryFor(JSAtom* localName) const;
 
+    bool processExportBinding(frontend::ParseNode* pn);
+    bool processExportArrayBinding(frontend::ListNode* pn);
+    bool processExportObjectBinding(frontend::ListNode* pn);
+
     bool appendExportEntry(HandleAtom exportName, HandleAtom localName,
                            frontend::ParseNode* node = nullptr);
     bool appendExportFromEntry(HandleAtom exportName, HandleAtom moduleRequest,
@@ -362,6 +373,19 @@ class MOZ_STACK_CLASS ModuleBuilder
     template <typename T>
     ArrayObject* createArray(const GCVector<T>& vector);
 };
+
+JSObject*
+GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
+
+JSObject*
+CallModuleResolveHook(JSContext* cx, HandleValue referencingPrivate, HandleString specifier);
+
+JSObject*
+StartDynamicModuleImport(JSContext* cx, HandleValue referencingPrivate, HandleValue specifier);
+
+bool
+FinishDynamicModuleImport(JSContext* cx, HandleValue referencingPrivate, HandleString specifier,
+                          HandleObject promise);
 
 } // namespace js
 

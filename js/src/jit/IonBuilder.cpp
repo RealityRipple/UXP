@@ -19,6 +19,7 @@
 #include "jit/Lowering.h"
 #include "jit/MIRGraph.h"
 #include "vm/ArgumentsObject.h"
+#include "vm/EnvironmentObject.h"
 #include "vm/Opcodes.h"
 #include "vm/RegExpStatics.h"
 #include "vm/TraceLogging.h"
@@ -1650,9 +1651,10 @@ IonBuilder::snoopControlFlow(JSOp op)
             return whileOrForInLoop(sn);
 
           case SRC_OPTCHAIN:
-            // XXX Instead of aborting early, breaking at this point works.
-            // However, I'm not sure if we still need to further process
-            // optional chains under IonBuilder.
+          case SRC_LOGICASSIGN:
+            // These notes exist only for the benefit of CFG (ie. this function) and
+            // don't need any special handling. The associated GOTOs are all simple 
+            // unconditional near jumps, not loops etc.
             break;
 
           default:
@@ -2204,6 +2206,12 @@ IonBuilder::inspectOpcode(JSOp op)
 
       case JSOP_CHECKOBJCOERCIBLE:
         return jsop_checkobjcoercible();
+
+      case JSOP_IMPORTMETA:
+        return jsop_importmeta();
+
+      case JSOP_DYNAMIC_IMPORT:
+        return jsop_dynamic_import();
 
       case JSOP_DEBUGCHECKSELFHOSTED:
       {
@@ -4436,7 +4444,7 @@ IonBuilder::jsop_logical(JSOp op)
         MIsNullOrUndefined* isNullOrUndefined =
             MIsNullOrUndefined::New(alloc(), lhs);
         current->add(isNullOrUndefined);
-        test = newTest(isNullOrUndefined, evalLhs, evalRhs);
+        test = newTest(isNullOrUndefined, evalRhs, evalLhs);
         break;
       }
 
@@ -14244,6 +14252,32 @@ IonBuilder::jsop_debugger()
     // cx->compartment()->isDebuggee(). Resume in-place and have baseline
     // handle the details.
     return resumeAt(debugger, pc);
+}
+
+bool
+IonBuilder::jsop_importmeta()
+{
+    ModuleObject* module = GetModuleObjectForScript(script());
+    MOZ_ASSERT(module);
+
+    MModuleMetadata* meta = MModuleMetadata::New(alloc(), module);
+    current->add(meta);
+    current->push(meta);
+    return resumeAfter(meta);
+}
+
+bool
+IonBuilder::jsop_dynamic_import()
+{
+    Value referencingPrivate = FindScriptOrModulePrivateForScript(script());
+    MConstant* ref = constant(referencingPrivate);
+
+    MDefinition* specifier = current->pop();
+
+    MDynamicImport* ins = MDynamicImport::New(alloc(), ref, specifier);
+    current->add(ins);
+    current->push(ins);
+    return resumeAfter(ins);
 }
 
 MInstruction*

@@ -5,11 +5,15 @@
 
 #include "builtin/ModuleObject.h"
 
+#include "builtin/Promise.h"
 #include "builtin/SelfHostingDefines.h"
 #include "frontend/ParseNode.h"
 #include "frontend/SharedContext.h"
 #include "gc/Policy.h"
 #include "gc/Tracer.h"
+#include "vm/SelfHosting.h"
+#include "vm/AsyncFunction.h"
+#include "vm/AsyncIteration.h"
 
 #include "jsobjinlines.h"
 #include "jsscriptinlines.h"
@@ -725,6 +729,12 @@ ModuleObject::namespace_()
     return &value.toObject().as<ModuleNamespaceObject>();
 }
 
+ScriptSourceObject*
+ModuleObject::scriptSourceObject() const
+{
+    return &getReservedSlot(ScriptSourceObjectSlot).toObject().as<ScriptSourceObject>();
+}
+
 FunctionDeclarationVector*
 ModuleObject::functionDeclarations()
 {
@@ -738,8 +748,10 @@ ModuleObject::functionDeclarations()
 void
 ModuleObject::init(HandleScript script)
 {
+    MOZ_ASSERT(script);
     initReservedSlot(ScriptSlot, PrivateValue(script));
     initReservedSlot(StatusSlot, Int32Value(MODULE_STATUS_UNINSTANTIATED));
+    initReservedSlot(ScriptSourceObjectSlot, ObjectValue(script->scriptSourceUnwrap()));
 }
 
 void
@@ -826,18 +838,22 @@ ModuleObject::fixEnvironmentsAfterCompartmentMerge()
     AssertModuleScopesMatch(this);
 }
 
-bool
-ModuleObject::hasScript() const
+JSScript*
+ModuleObject::maybeScript() const
 {
-    // When modules are parsed via the Reflect.parse() API, the module object
-    // doesn't have a script.
-    return !getReservedSlot(ScriptSlot).isUndefined();
+    Value value = getReservedSlot(ScriptSlot);
+    if (value.isUndefined())
+        return nullptr;
+
+    return static_cast<JSScript*>(value.toPrivate());
 }
 
 JSScript*
 ModuleObject::script() const
 {
-    return static_cast<JSScript*>(getReservedSlot(ScriptSlot).toPrivate());
+    JSScript* ptr = maybeScript();
+    MOZ_RELEASE_ASSERT(ptr);
+    return ptr;
 }
 
 static inline void
@@ -868,16 +884,23 @@ ModuleObject::evaluationError() const
     return getReservedSlot(EvaluationErrorSlot);
 }
 
-Value
-ModuleObject::hostDefinedField() const
+JSObject*
+ModuleObject::metaObject() const
 {
-    return getReservedSlot(HostDefinedSlot);
+    Value value = getReservedSlot(MetaObjectSlot);
+    if (value.isObject())
+        return &value.toObject();
+
+    MOZ_ASSERT(value.isUndefined());
+    return nullptr;
 }
 
 void
-ModuleObject::setHostDefinedField(const JS::Value& value)
+ModuleObject::setMetaObject(JSObject* obj)
 {
-    setReservedSlot(HostDefinedSlot, value);
+    MOZ_ASSERT(obj);
+    MOZ_ASSERT(!metaObject());
+    setReservedSlot(MetaObjectSlot, ObjectValue(*obj));
 }
 
 Scope*
@@ -890,8 +913,8 @@ ModuleObject::enclosingScope() const
 ModuleObject::trace(JSTracer* trc, JSObject* obj)
 {
     ModuleObject& module = obj->as<ModuleObject>();
-    if (module.hasScript()) {
-        JSScript* script = module.script();
+    JSScript* script = module.maybeScript();
+    if (script) {
         TraceManuallyBarrieredEdge(trc, &script, "Module script");
         module.setReservedSlot(ScriptSlot, PrivateValue(script));
     }
@@ -933,15 +956,27 @@ ModuleObject::instantiateFunctionDeclarations(JSContext* cx, HandleModuleObject 
 
     RootedModuleEnvironmentObject env(cx, &self->initialEnvironment());
     RootedFunction fun(cx);
+    RootedObject obj(cx);
     RootedValue value(cx);
 
     for (const auto& funDecl : *funDecls) {
         fun = funDecl.fun;
-        RootedObject obj(cx, Lambda(cx, fun, env));
+        obj = Lambda(cx, fun, env);
         if (!obj)
             return false;
 
-        value = ObjectValue(*fun);
+        if (fun->isAsync()) {
+            if (fun->isStarGenerator()) {
+                obj = WrapAsyncGenerator(cx, obj.as<JSFunction>());
+            } else {
+                obj = WrapAsyncFunction(cx, obj.as<JSFunction>());
+            }
+        }
+
+        if (!obj)
+            return false;
+
+        value = ObjectValue(*obj);
         if (!SetProperty(cx, env, funDecl.name->asPropertyName(), value))
             return false;
     }
@@ -960,6 +995,11 @@ ModuleObject::execute(JSContext* cx, HandleModuleObject self, MutableHandleValue
 #endif
 
     RootedScript script(cx, self->script());
+
+    // The top-level script if a module is only ever executed once. Clear the
+    // reference to prevent us keeping this alive unnecessarily.
+    self->setReservedSlot(ScriptSlot, UndefinedValue());
+
     RootedModuleEnvironmentObject scope(cx, self->environment());
     if (!scope) {
         JS_ReportErrorASCII(cx, "Module declarations have not yet been instantiated");
@@ -1013,6 +1053,22 @@ ModuleObject::Instantiate(JSContext* cx, HandleModuleObject self)
 ModuleObject::Evaluate(JSContext* cx, HandleModuleObject self)
 {
     return InvokeSelfHostedMethod(cx, self, cx->names().ModuleEvaluate);
+}
+
+/* static */ ModuleNamespaceObject*
+ModuleObject::GetOrCreateModuleNamespace(JSContext* cx, HandleModuleObject self)
+{
+    FixedInvokeArgs<1> args(cx);
+    args[0].setObject(*self);
+
+    RootedValue result(cx);
+    if (!CallSelfHostedFunction(cx, cx->names().GetModuleNamespace, UndefinedHandleValue, args,
+                                &result))
+    {
+        return nullptr;
+    }
+
+    return &result.toObject().as<ModuleNamespaceObject>();
 }
 
 DEFINE_GETTER_FUNCTIONS(ModuleObject, namespace_, NamespaceSlot)
@@ -1161,31 +1217,38 @@ ModuleBuilder::initModule()
 }
 
 bool
-ModuleBuilder::processImport(frontend::ParseNode* pn)
+ModuleBuilder::processImport(frontend::BinaryNode* importNode)
 {
-    MOZ_ASSERT(pn->isKind(PNK_IMPORT));
-    MOZ_ASSERT(pn->isArity(PN_BINARY));
-    MOZ_ASSERT(pn->pn_left->isKind(PNK_IMPORT_SPEC_LIST));
-    MOZ_ASSERT(pn->pn_right->isKind(PNK_STRING));
+    MOZ_ASSERT(importNode->isKind(PNK_IMPORT));
+    
+    ListNode* specList = &importNode->left()->as<ListNode>();
+    MOZ_ASSERT(specList->isKind(PNK_IMPORT_SPEC_LIST));
+    
+    NameNode* moduleSpec = &importNode->right()->as<NameNode>();
+    MOZ_ASSERT(moduleSpec->isKind(PNK_STRING));
 
-    RootedAtom module(cx_, pn->pn_right->pn_atom);
+    RootedAtom module(cx_, moduleSpec->atom());
     if (!maybeAppendRequestedModule(module))
         return false;
 
-    for (ParseNode* spec = pn->pn_left->pn_head; spec; spec = spec->pn_next) {
+    RootedAtom importName(cx_);
+    RootedAtom localName(cx_);
+    for (ParseNode* item : specList->contents()) {
+        BinaryNode* spec = &item->as<BinaryNode>();
         MOZ_ASSERT(spec->isKind(PNK_IMPORT_SPEC));
-        MOZ_ASSERT(spec->pn_left->isArity(PN_NAME));
-        MOZ_ASSERT(spec->pn_right->isArity(PN_NAME));
 
-        RootedAtom importName(cx_, spec->pn_left->pn_atom);
-        RootedAtom localName(cx_, spec->pn_right->pn_atom);
+        NameNode* importNameNode = &spec->left()->as<NameNode>();
+        NameNode* localNameNode = &spec->right()->as<NameNode>();
+
+        importName = importNameNode->atom();
+        localName = localNameNode->atom();
 
         if (!importedBoundNames_.append(localName))
             return false;
 
         uint32_t line;
         uint32_t column;
-        tokenStream_.srcCoords.lineNumAndColumnIndex(spec->pn_left->pn_pos.begin, &line, &column);
+        tokenStream_.srcCoords.lineNumAndColumnIndex(importNameNode->pn_pos.begin, &line, &column);
 
         RootedImportEntryObject importEntry(cx_);
         importEntry = ImportEntryObject::create(cx_, module, importName, localName, line, column);
@@ -1197,15 +1260,17 @@ ModuleBuilder::processImport(frontend::ParseNode* pn)
 }
 
 bool
-ModuleBuilder::processExport(frontend::ParseNode* pn)
+ModuleBuilder::processExport(frontend::ParseNode* exportNode)
 {
-    MOZ_ASSERT(pn->isKind(PNK_EXPORT) || pn->isKind(PNK_EXPORT_DEFAULT));
-    MOZ_ASSERT(pn->getArity() == (pn->isKind(PNK_EXPORT) ? PN_UNARY : PN_BINARY));
+    MOZ_ASSERT(exportNode->isKind(PNK_EXPORT) ||
+               exportNode->isKind(PNK_EXPORT_DEFAULT));
 
-    bool isDefault = pn->getKind() == PNK_EXPORT_DEFAULT;
-    ParseNode* kid = isDefault ? pn->pn_left : pn->pn_kid;
+    bool isDefault = exportNode->isKind(PNK_EXPORT_DEFAULT);
+    ParseNode* kid = isDefault
+                     ? exportNode->as<BinaryNode>().left()
+                     : exportNode->as<UnaryNode>().kid();
 
-    if (isDefault && pn->pn_right) {
+    if (isDefault && exportNode->as<BinaryNode>().right()) {
         // This is an export default containing an expression.
         RootedAtom localName(cx_, cx_->names().starDefaultStar);
         RootedAtom exportName(cx_, cx_->names().default_);
@@ -1213,21 +1278,28 @@ ModuleBuilder::processExport(frontend::ParseNode* pn)
     }
 
     switch (kid->getKind()) {
-      case PNK_EXPORT_SPEC_LIST:
+      case PNK_EXPORT_SPEC_LIST: {
         MOZ_ASSERT(!isDefault);
-        for (ParseNode* spec = kid->pn_head; spec; spec = spec->pn_next) {
+        RootedAtom localName(cx_);
+        RootedAtom exportName(cx_);
+        for (ParseNode* item : kid->as<ListNode>().contents()) {
+            BinaryNode* spec = &item->as<BinaryNode>();
             MOZ_ASSERT(spec->isKind(PNK_EXPORT_SPEC));
-            RootedAtom localName(cx_, spec->pn_left->pn_atom);
-            RootedAtom exportName(cx_, spec->pn_right->pn_atom);
+
+            NameNode* localNameNode = &spec->left()->as<NameNode>();
+            NameNode* exportNameNode = &spec->right()->as<NameNode>();
+            localName = localNameNode->atom();
+            exportName = exportNameNode->atom();
             if (!appendExportEntry(exportName, localName, spec))
                 return false;
         }
         break;
+      }
 
       case PNK_CLASS: {
         const ClassNode& cls = kid->as<ClassNode>();
         MOZ_ASSERT(cls.names());
-        RootedAtom localName(cx_, cls.names()->innerBinding()->pn_atom);
+        RootedAtom localName(cx_, cls.names()->innerBinding()->atom());
         RootedAtom exportName(cx_, isDefault ? cx_->names().default_ : localName.get());
         if (!appendExportEntry(exportName, localName))
             return false;
@@ -1237,21 +1309,33 @@ ModuleBuilder::processExport(frontend::ParseNode* pn)
       case PNK_VAR:
       case PNK_CONST:
       case PNK_LET: {
-        MOZ_ASSERT(kid->isArity(PN_LIST));
-        for (ParseNode* var = kid->pn_head; var; var = var->pn_next) {
-            if (var->isKind(PNK_ASSIGN))
-                var = var->pn_left;
-            MOZ_ASSERT(var->isKind(PNK_NAME));
-            RootedAtom localName(cx_, var->pn_atom);
-            RootedAtom exportName(cx_, isDefault ? cx_->names().default_ : localName.get());
-            if (!appendExportEntry(exportName, localName))
-                return false;
+        RootedAtom localName(cx_);
+        RootedAtom exportName(cx_);
+        for (ParseNode* binding : kid->as<ListNode>().contents()) {
+            if (binding->isKind(PNK_ASSIGN))
+                binding = binding->as<AssignmentNode>().left();
+            else
+                MOZ_ASSERT(binding->isKind(PNK_NAME));
+
+            if (binding->isKind(PNK_NAME)) {
+                localName = binding->as<NameNode>().atom();
+                exportName = isDefault ? cx_->names().default_ : localName.get();
+                if (!appendExportEntry(exportName, localName))
+                    return false;
+            } else if (binding->isKind(PNK_ARRAY)) {
+                if (!processExportArrayBinding(&binding->as<ListNode>()))
+                    return false;
+            } else {
+                MOZ_ASSERT(binding->isKind(PNK_OBJECT));
+                if (!processExportObjectBinding(&binding->as<ListNode>()))
+                    return false;
+            }
         }
         break;
       }
 
       case PNK_FUNCTION: {
-        RootedFunction func(cx_, kid->pn_funbox->function());
+        RootedFunction func(cx_, kid->as<FunctionNode>().funbox()->function());
         MOZ_ASSERT(!func->isArrow());
         RootedAtom localName(cx_, func->explicitName());
         RootedAtom exportName(cx_, isDefault ? cx_->names().default_ : localName.get());
@@ -1269,27 +1353,101 @@ ModuleBuilder::processExport(frontend::ParseNode* pn)
 }
 
 bool
-ModuleBuilder::processExportFrom(frontend::ParseNode* pn)
+ModuleBuilder::processExportBinding(frontend::ParseNode* binding)
 {
-    MOZ_ASSERT(pn->isKind(PNK_EXPORT_FROM));
-    MOZ_ASSERT(pn->isArity(PN_BINARY));
-    MOZ_ASSERT(pn->pn_left->isKind(PNK_EXPORT_SPEC_LIST));
-    MOZ_ASSERT(pn->pn_right->isKind(PNK_STRING));
+    if (binding->isKind(PNK_NAME)) {
+        RootedAtom name(cx_, binding->as<NameNode>().atom());
+        return appendExportEntry(name, name);
+    }
 
-    RootedAtom module(cx_, pn->pn_right->pn_atom);
+    if (binding->isKind(PNK_ARRAY))
+        return processExportArrayBinding(&binding->as<ListNode>());
+
+    MOZ_ASSERT(binding->isKind(PNK_OBJECT));
+    return processExportObjectBinding(&binding->as<ListNode>());
+}
+
+bool
+ModuleBuilder::processExportArrayBinding(frontend::ListNode* array)
+{
+    MOZ_ASSERT(array->isKind(PNK_ARRAY));
+
+    for (ParseNode* node : array->contents()) {
+        if (node->isKind(PNK_ELISION))
+            continue;
+
+        if (node->isKind(PNK_SPREAD))
+            node = node->as<UnaryNode>().kid();
+        else if (node->isKind(PNK_ASSIGN))
+            node = node->as<AssignmentNode>().left();
+
+        if (!processExportBinding(node))
+            return false;
+    }
+
+    return true;
+}
+
+bool
+ModuleBuilder::processExportObjectBinding(frontend::ListNode* obj)
+{
+    MOZ_ASSERT(obj->isKind(PNK_OBJECT));
+
+    for (ParseNode* node : obj->contents()) {
+        MOZ_ASSERT(node->isKind(PNK_MUTATEPROTO) ||
+                   node->isKind(PNK_COLON) ||
+                   node->isKind(PNK_SHORTHAND) ||
+                   node->isKind(PNK_SPREAD));
+
+        ParseNode* target;
+        if (node->isKind(PNK_SPREAD)) {
+            target = node->as<UnaryNode>().kid();
+        } else {
+            if (node->isKind(PNK_MUTATEPROTO))
+                target = node->as<UnaryNode>().kid();
+            else
+                target = node->as<BinaryNode>().right();
+
+            if (target->isKind(PNK_ASSIGN))
+                target = target->as<AssignmentNode>().left();
+        }
+
+        if (!processExportBinding(target))
+            return false;
+    }
+
+    return true;
+}
+
+bool
+ModuleBuilder::processExportFrom(frontend::BinaryNode* exportNode)
+{
+    MOZ_ASSERT(exportNode->isKind(PNK_EXPORT_FROM));
+
+    ListNode* specList = &exportNode->left()->as<ListNode>();
+    MOZ_ASSERT(specList->isKind(PNK_EXPORT_SPEC_LIST));
+
+    NameNode* moduleSpec = &exportNode->right()->as<NameNode>();
+    MOZ_ASSERT(moduleSpec->isKind(PNK_STRING));
+
+    RootedAtom module(cx_, moduleSpec->atom());
     if (!maybeAppendRequestedModule(module))
         return false;
 
-    for (ParseNode* spec = pn->pn_left->pn_head; spec; spec = spec->pn_next) {
+    RootedAtom bindingName(cx_);
+    RootedAtom exportName(cx_);
+    for (ParseNode* spec : specList->contents()) {
         if (spec->isKind(PNK_EXPORT_SPEC)) {
-            RootedAtom bindingName(cx_, spec->pn_left->pn_atom);
-            RootedAtom exportName(cx_, spec->pn_right->pn_atom);
-            if (!appendExportFromEntry(exportName, module, bindingName, spec->pn_left))
+            NameNode* localNameNode = &spec->as<BinaryNode>().left()->as<NameNode>();
+            NameNode* exportNameNode = &spec->as<BinaryNode>().right()->as<NameNode>();
+            bindingName = localNameNode->atom();
+            exportName = exportNameNode->atom();
+            if (!appendExportFromEntry(exportName, module, bindingName, localNameNode))
                 return false;
         } else {
             MOZ_ASSERT(spec->isKind(PNK_EXPORT_BATCH_SPEC));
-            RootedAtom importName(cx_, cx_->names().star);
-            if (!appendExportFromEntry(nullptr, module, importName, spec))
+            exportName = cx_->names().star;
+            if (!appendExportFromEntry(nullptr, module, exportName, spec))
                 return false;
         }
     }
@@ -1380,4 +1538,110 @@ ArrayObject* ModuleBuilder::createArray(const GCVector<T>& vector)
         array->initDenseElement(i, MakeElementValue(vector[i]));
 
     return array;
+}
+
+JSObject*
+js::GetOrCreateModuleMetaObject(JSContext* cx, HandleObject moduleArg)
+{
+    HandleModuleObject module = moduleArg.as<ModuleObject>();
+    if (JSObject* obj = module->metaObject())
+        return obj;
+
+    RootedObject metaObject(cx, NewObjectWithGivenProto<PlainObject>(cx, nullptr));
+    if (!metaObject)
+        return nullptr;
+
+    JS::ModuleMetadataHook func = cx->runtime()->moduleMetadataHook;
+    MOZ_ASSERT(func);
+    if (!func(cx, module, metaObject))
+        return nullptr;
+
+    module->setMetaObject(metaObject);
+
+    return metaObject;
+}
+
+JSObject*
+js::CallModuleResolveHook(JSContext* cx, HandleValue referencingPrivate, HandleString specifier)
+{
+    JS::ModuleResolveHook moduleResolveHook = cx->runtime()->moduleResolveHook;
+    if (!moduleResolveHook) {
+        JS_ReportErrorASCII(cx, "Module resolve hook not set");
+        return nullptr;
+    }
+
+    RootedObject result(cx, moduleResolveHook(cx, referencingPrivate, specifier));
+    if (!result) {
+        return nullptr;
+    }
+
+    if (!result->is<ModuleObject>()) {
+        JS_ReportErrorASCII(cx, "Module resolve hook did not return Module object");
+        return nullptr;
+    }
+
+    return result;
+}
+
+JSObject*
+js::StartDynamicModuleImport(JSContext* cx, HandleValue referencingPrivate, HandleValue specifierArg)
+{
+    RootedObject promiseConstructor(cx, JS::GetPromiseConstructor(cx));
+    if (!promiseConstructor) {
+        return nullptr;
+    }
+
+    RootedObject promiseObject(cx, JS::NewPromiseObject(cx, nullptr));
+    if (!promiseObject) {
+        return nullptr;
+    }
+
+    Handle<PromiseObject*> promise = promiseObject.as<PromiseObject>();
+
+    RootedString specifier(cx, ToString(cx, specifierArg));
+    if (!specifier) {
+        if (!RejectPromiseWithPendingError(cx, promise))
+            return nullptr;
+        return promise;
+    }
+
+    JS::ModuleDynamicImportHook importHook = cx->runtime()->moduleDynamicImportHook;
+    MOZ_ASSERT(importHook);
+    if (!importHook(cx, referencingPrivate, specifier, promise)) {
+        if (!RejectPromiseWithPendingError(cx, promise))
+            return nullptr;
+        return promise;
+    }
+
+    return promise;
+}
+
+bool
+js::FinishDynamicModuleImport(JSContext* cx, HandleValue referencingPrivate, HandleString specifier,
+                              HandleObject promiseArg)
+{
+    Handle<PromiseObject*> promise = promiseArg.as<PromiseObject>();
+
+    if (cx->isExceptionPending()) {
+        return RejectPromiseWithPendingError(cx, promise);
+    }
+
+    RootedObject result(cx, CallModuleResolveHook(cx, referencingPrivate, specifier));
+    if (!result) {
+        return RejectPromiseWithPendingError(cx, promise);
+    }
+
+    RootedModuleObject module(cx, &result->as<ModuleObject>());
+    if (module->status() != MODULE_STATUS_EVALUATED) {
+        JS_ReportErrorASCII(cx, "Unevaluated or errored module returned by module resolve hook");
+        return RejectPromiseWithPendingError(cx, promise);
+    }
+
+    RootedObject ns(cx, ModuleObject::GetOrCreateModuleNamespace(cx, module));
+    if (!ns) {
+        return RejectPromiseWithPendingError(cx, promise);
+    }
+
+    RootedValue value(cx, ObjectValue(*ns));
+    return PromiseObject::resolve(cx, promise, value);
 }
