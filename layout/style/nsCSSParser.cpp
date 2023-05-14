@@ -137,6 +137,22 @@ struct CSSParserInputState {
   bool mHavePushBack;
 };
 
+struct ReduceNumberCalcOps : public mozilla::css::BasicFloatCalcOps,
+                             public mozilla::css::CSSValueInputCalcOps
+{
+  result_type ComputeLeafValue(const nsCSSValue& aValue)
+  {
+    // FIXME: Restore this assertion once ParseColor no longer uses this class.
+    //MOZ_ASSERT(aValue.GetUnit() == eCSSUnit_Number, "unexpected unit");
+    return aValue.GetFloatValue();
+  }
+
+  float ComputeNumber(const nsCSSValue& aValue)
+  {
+    return mozilla::css::ComputeCalc(aValue, *this);
+  }
+};
+
 static_assert(css::eAuthorSheetFeatures == 0 &&
               css::eUserSheetFeatures == 1 &&
               css::eAgentSheetFeatures == 2,
@@ -660,6 +676,11 @@ protected:
   bool SkipAtRule(bool aInsideBlock);
   bool SkipDeclaration(bool aCheckForBraces);
 
+  // Returns true when the target token type is found, and false for the
+  // end of declaration, start of !important flag, end of declaration
+  // block, or EOF.
+  bool LookForTokenType(nsCSSTokenType aType);
+
   void PushGroup(css::GroupRule* aRule);
   void PopGroup();
 
@@ -895,6 +916,7 @@ protected:
   };
 
   bool IsFunctionTokenValidForImageLayerImage(const nsCSSToken& aToken) const;
+  bool IsCalcFunctionToken(const nsCSSToken& aToken) const;
   bool ParseImageLayersItem(ImageLayersShorthandParseState& aState,
                             const nsCSSPropertyID aTable[]);
 
@@ -5402,6 +5424,32 @@ CSSParserImpl::SkipDeclaration(bool aCheckForBraces)
   return true;
 }
 
+bool
+CSSParserImpl::LookForTokenType(nsCSSTokenType aType) {
+  bool rv = false;
+  CSSParserInputState stateBeforeValue;
+  SaveInputState(stateBeforeValue);
+
+  const char16_t stopChars[] = { ';', '!', '}', 0 };
+  nsDependentString stopSymbolChars(stopChars);
+  while (GetToken(true)) {
+    if (mToken.mType == aType) {
+      rv = true;
+      break;
+    }
+    // Stop looking if we're at the end of the declaration, encountered an
+    // !important flag, or at the end of the declaration block.
+    if (mToken.mType == eCSSToken_Symbol &&
+        stopSymbolChars.FindChar(mToken.mSymbol) != -1) {
+      rv = false;
+      break;
+    }
+  }
+
+  RestoreSavedInputState(stateBeforeValue);
+  return rv;
+}
+
 void
 CSSParserImpl::SkipRuleSet(bool aInsideBraces)
 {
@@ -6983,7 +7031,15 @@ CSSParserImpl::ParseColor(nsCSSValue& aValue)
         if (GetToken(true)) {
           UngetToken();
         }
-        if (mToken.mType == eCSSToken_Number) { // <number>
+
+        bool isNumber = mToken.mType == eCSSToken_Number;
+
+        // Check first if we have percentage values inside the function.
+        if (mToken.mType == eCSSToken_Function) {
+          isNumber = !LookForTokenType(eCSSToken_Percentage);
+        }
+
+        if (isNumber) { // <number>
           uint8_t r, g, b, a;
 
           if (ParseRGBColor(r, g, b, a)) {
@@ -7090,13 +7146,21 @@ CSSParserImpl::ParseColorComponent(uint8_t& aComponent, Maybe<char> aSeparator)
     return false;
   }
 
-  if (mToken.mType != eCSSToken_Number) {
+  float value;
+  if (mToken.mType == eCSSToken_Number) {
+    value = mToken.mNumber;
+  } else if (IsCalcFunctionToken(mToken)) {
+    nsCSSValue aValue;
+    if (!ParseCalc(aValue, VARIANT_LPN | VARIANT_CALC)) {
+      return false;
+    }
+    ReduceNumberCalcOps ops;
+    value = mozilla::css::ComputeCalc(aValue, ops);
+  } else {
     REPORT_UNEXPECTED_TOKEN(PEExpectedNumber);
     UngetToken();
     return false;
   }
-
-  float value = mToken.mNumber;
 
   if (aSeparator && !ExpectSymbol(*aSeparator, true)) {
     REPORT_UNEXPECTED_TOKEN_CHAR(PEColorComponentBadTerm, *aSeparator);
@@ -7118,13 +7182,21 @@ CSSParserImpl::ParseColorComponent(float& aComponent, Maybe<char> aSeparator)
     return false;
   }
 
-  if (mToken.mType != eCSSToken_Percentage) {
+  float value;
+  if (mToken.mType == eCSSToken_Percentage) {
+    value = mToken.mNumber;
+  } else if (IsCalcFunctionToken(mToken)) {
+    nsCSSValue aValue;
+    if (!ParseCalc(aValue, VARIANT_LPN | VARIANT_CALC)) {
+      return false;
+    }
+    ReduceNumberCalcOps ops;
+    value = mozilla::css::ComputeCalc(aValue, ops);
+  } else {
     REPORT_UNEXPECTED_TOKEN(PEExpectedPercent);
     UngetToken();
     return false;
   }
-
-  float value = mToken.mNumber;
 
   if (aSeparator && !ExpectSymbol(*aSeparator, true)) {
     REPORT_UNEXPECTED_TOKEN_CHAR(PEColorComponentBadTerm, *aSeparator);
@@ -7867,14 +7939,6 @@ CSSParserImpl::ParseOneOrLargerVariant(nsCSSValue& aValue,
   return result;
 }
 
-static bool
-IsCSSTokenCalcFunction(const nsCSSToken& aToken)
-{
-  return aToken.mType == eCSSToken_Function &&
-         (aToken.mIdent.LowerCaseEqualsLiteral("calc") ||
-          aToken.mIdent.LowerCaseEqualsLiteral("-moz-calc"));
-}
-
 // Assigns to aValue iff it returns CSSParseResult::Ok.
 CSSParseResult
 CSSParserImpl::ParseVariant(nsCSSValue& aValue,
@@ -8174,7 +8238,7 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
     }
   }
   if ((aVariantMask & VARIANT_CALC) &&
-      IsCSSTokenCalcFunction(*tk)) {
+      IsCalcFunctionToken(*tk)) {
     // calc() currently allows only lengths and percents and number inside it.
     // And note that in current implementation, number cannot be mixed with
     // length and percent.
@@ -12438,6 +12502,14 @@ CSSParserImpl::IsFunctionTokenValidForImageLayerImage(
       funcName.LowerCaseEqualsLiteral("-webkit-repeating-radial-gradient")));
 }
 
+bool
+CSSParserImpl::IsCalcFunctionToken(const nsCSSToken& aToken) const
+{
+  return aToken.mType == eCSSToken_Function &&
+         (aToken.mIdent.LowerCaseEqualsLiteral("calc") ||
+          aToken.mIdent.LowerCaseEqualsLiteral("-moz-calc"));
+}
+
 // Parse one item of the background shorthand property.
 bool
 CSSParserImpl::ParseImageLayersItem(
@@ -13830,21 +13902,6 @@ CSSParserImpl::ParseCalcAdditiveExpression(nsCSSValue& aValue,
   }
 }
 
-struct ReduceNumberCalcOps : public mozilla::css::BasicFloatCalcOps,
-                             public mozilla::css::CSSValueInputCalcOps
-{
-  result_type ComputeLeafValue(const nsCSSValue& aValue)
-  {
-    MOZ_ASSERT(aValue.GetUnit() == eCSSUnit_Number, "unexpected unit");
-    return aValue.GetFloatValue();
-  }
-
-  float ComputeNumber(const nsCSSValue& aValue)
-  {
-    return mozilla::css::ComputeCalc(aValue, *this);
-  }
-};
-
 //  * If aVariantMask is VARIANT_NUMBER, this function parses the
 //    <number-multiplicative-expression> production.
 //  * If aVariantMask does not contain VARIANT_NUMBER, this function
@@ -13965,7 +14022,7 @@ CSSParserImpl::ParseCalcTerm(nsCSSValue& aValue, uint32_t& aVariantMask)
   // Either an additive expression in parentheses...
   if (mToken.IsSymbol('(') ||
       // Treat nested calc() as plain parenthesis.
-      IsCSSTokenCalcFunction(mToken)) {
+      IsCalcFunctionToken(mToken)) {
     if (!ParseCalcAdditiveExpression(aValue, aVariantMask) ||
         !ExpectSymbol(')', true)) {
       SkipUntil(')');
