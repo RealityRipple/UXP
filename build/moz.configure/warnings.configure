@@ -18,9 +18,6 @@ add_old_configure_assignment(
 # lots of useful warnings
 add_gcc_warning('-Wall')
 
-# catches C++ version forward-compat issues
-add_gcc_warning('-Wc++11-compat', cxx_compiler)
-
 # catches bugs, e.g. "if (c); foo();", few false positives
 add_gcc_warning('-Wempty-body')
 
@@ -55,9 +52,6 @@ check_and_add_gcc_warning('-Wclass-varargs')
 check_and_add_gcc_warning('-Wloop-analysis')
 
 # catches C++ version forward-compat issues
-check_and_add_gcc_warning('-Wc++11-compat-pedantic', cxx_compiler)
-check_and_add_gcc_warning('-Wc++14-compat', cxx_compiler)
-check_and_add_gcc_warning('-Wc++14-compat-pedantic', cxx_compiler)
 check_and_add_gcc_warning('-Wc++1z-compat', cxx_compiler)
 
 # catches unintentional switch case fallthroughs
