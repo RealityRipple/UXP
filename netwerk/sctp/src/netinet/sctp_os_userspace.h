@@ -5,6 +5,7 @@
  * Copyright (c) 2008-2011, by Randall Stewart. All rights reserved.
  * Copyright (c) 2008-2011, by Michael Tuexen. All rights reserved.
  * Copyright (c) 2008-2011, by Brad Penoff. All rights reserved.
+ * Copyright (c) 2020 by Moonchild Productions. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -51,46 +52,13 @@
 #include <windows.h>
 #include "user_environment.h"
 typedef CRITICAL_SECTION userland_mutex_t;
-#if WINVER < 0x0600
-enum {
-	C_SIGNAL = 0,
-	C_BROADCAST = 1,
-	C_MAX_EVENTS = 2
-};
-typedef struct
-{
-	u_int waiters_count;
-	CRITICAL_SECTION waiters_count_lock;
-	HANDLE events_[C_MAX_EVENTS];
-} userland_cond_t;
-void InitializeXPConditionVariable(userland_cond_t *);
-void DeleteXPConditionVariable(userland_cond_t *);
-int SleepXPConditionVariable(userland_cond_t *, userland_mutex_t *);
-void WakeAllXPConditionVariable(userland_cond_t *);
-#define InitializeConditionVariable(cond) InitializeXPConditionVariable(cond)
-#define DeleteConditionVariable(cond) DeleteXPConditionVariable(cond)
-#define SleepConditionVariableCS(cond, mtx, time) SleepXPConditionVariable(cond, mtx)
-#define WakeAllConditionVariable(cond) WakeAllXPConditionVariable(cond)
-#else
 #define DeleteConditionVariable(cond)
 typedef CONDITION_VARIABLE userland_cond_t;
-#endif
 typedef HANDLE userland_thread_t;
 #define ADDRESS_FAMILY	unsigned __int8
 #define IPVERSION  4
 #define MAXTTL     255
-/* VS2010 comes with stdint.h */
-#if !defined(_MSC_VER) || (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-typedef unsigned __int64 uint64_t;
-typedef unsigned __int32 uint32_t;
-typedef __int32          int32_t;
-typedef unsigned __int16 uint16_t;
-typedef __int16          int16_t;
-typedef unsigned __int8  uint8_t;
-typedef __int8           int8_t;
-#endif
 #ifndef _SIZE_T_DEFINED
 #typedef __int32         size_t;
 #endif
@@ -218,17 +186,10 @@ typedef char* caddr_t;
 #define bzero(buf, len) memset(buf, 0, len)
 #define bcopy(srcKey, dstKey, len) memcpy(dstKey, srcKey, len)
 
-#if defined(_MSC_VER) && (_MSC_VER < 1900) && !defined(__MINGW32__)
-#define SCTP_SNPRINTF(data, size, format, ...) 					\
-	if (_snprintf_s(data, size, _TRUNCATE, format, __VA_ARGS__) < 0) {	\
-		data[0] = '\0';							\
-	}
-#else
 #define SCTP_SNPRINTF(data, ...)						\
 	if (snprintf(data, __VA_ARGS__) < 0 ) {					\
 		data[0] = '\0';							\
 	}
-#endif
 
 #define inline __inline
 #define __inline__ __inline
