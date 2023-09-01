@@ -21,6 +21,7 @@
 #include "js/SliceBudget.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayObject.h"
+#include "vm/BigIntType.h"
 #include "vm/Debugger.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/Scope.h"
@@ -787,7 +788,8 @@ ShouldMark<JSObject*>(GCMarker* gcmarker, JSObject* obj)
     // Don't mark things outside a zone if we are in a per-zone GC. It is
     // faster to check our own arena, which we can do since we know that
     // the object is tenured.
-    return obj->asTenured().zone()->shouldMarkInZone();
+    Zone* zone = obj->asTenured().zone();
+    return (zone && zone->shouldMarkInZone());
 }
 
 template <typename T>
@@ -875,6 +877,7 @@ js::GCMarker::markAndTraceChildren(T* thing)
 namespace js {
 template <> void GCMarker::traverse(BaseShape* thing) { markAndTraceChildren(thing); }
 template <> void GCMarker::traverse(JS::Symbol* thing) { markAndTraceChildren(thing); }
+template <> void GCMarker::traverse(JS::BigInt* thing) { markAndTraceChildren(thing); }
 template <> void GCMarker::traverse(RegExpShared* thing) { markAndTraceChildren(thing); }
 } // namespace js
 
@@ -1458,6 +1461,12 @@ js::GCMarker::lazilyMarkChildren(ObjectGroup* group)
         traverseEdge(group, static_cast<JSObject*>(fun));
 }
 
+void
+JS::BigInt::traceChildren(JSTracer* trc)
+{
+    return;
+}
+
 struct TraverseObjectFunctor
 {
     template <typename T>
@@ -1704,6 +1713,8 @@ GCMarker::processMarkStackTop(SliceBudget& budget)
             }
         } else if (v.isSymbol()) {
             traverseEdge(obj, v.toSymbol());
+        } else if (v.isBigInt()) {
+            traverseEdge(obj, v.toBigInt());
         } else if (v.isPrivateGCThing()) {
             traverseEdge(obj, v.toGCCellPtr());
         }

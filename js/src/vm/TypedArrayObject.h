@@ -24,7 +24,9 @@
     macro(uint32_t, Uint32) \
     macro(float, Float32) \
     macro(double, Float64) \
-    macro(uint8_clamped, Uint8Clamped)
+    macro(uint8_clamped, Uint8Clamped) \
+    macro(int64_t, BigInt64) \
+    macro(uint64_t, BigUint64)
 
 typedef struct JSProperty JSProperty;
 
@@ -183,8 +185,12 @@ class TypedArrayObject : public NativeObject
     void assertZeroLengthArrayData() const {};
 #endif
 
-    Value getElement(uint32_t index);
-    static void setElement(TypedArrayObject& obj, uint32_t index, double d);
+    template <AllowGC allowGC>
+    bool getElement(ExclusiveContext* cx, uint32_t index,
+                    typename MaybeRooted<Value, allowGC>::MutableHandleType val);
+    bool getElementPure(uint32_t index, Value* vp);
+
+    static bool getElements(JSContext* cx, Handle<TypedArrayObject*> tarray, Value* vp);
 
     void notifyBufferDetached(JSContext* cx, void* newData);
 
@@ -306,6 +312,8 @@ class TypedArrayObject : public NativeObject
     static bool is(HandleValue v);
 
     static bool set(JSContext* cx, unsigned argc, Value* vp);
+
+    bool convertForSideEffect(JSContext* cx, HandleValue v) const;
 };
 
 MOZ_MUST_USE bool TypedArray_bufferGetter(JSContext* cx, unsigned argc, Value* vp);
@@ -373,6 +381,10 @@ IsTypedArrayIndex(jsid id, uint64_t* indexp)
     return StringIsTypedArrayIndex(s, length, indexp);
 }
 
+bool SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
+                          uint64_t index, HandleValue v,
+                          ObjectOpResult& result);
+
 /*
  * Implements [[DefineOwnProperty]] for TypedArrays when the property
  * key is a TypedArray index.
@@ -396,6 +408,8 @@ TypedArrayShift(Scalar::Type viewType)
       case Scalar::Uint32:
       case Scalar::Float32:
         return 2;
+      case Scalar::BigInt64:
+      case Scalar::BigUint64:
       case Scalar::Int64:
       case Scalar::Float64:
         return 3;
@@ -442,7 +456,7 @@ class DataViewObject : public NativeObject
 
     template <typename NativeType>
     static uint8_t*
-    getDataPointer(JSContext* cx, Handle<DataViewObject*> obj, double offset);
+    getDataPointer(JSContext* cx, Handle<DataViewObject*> obj, uint64_t offset);
 
     template<Value ValueGetter(DataViewObject* view)>
     static bool
@@ -521,6 +535,12 @@ class DataViewObject : public NativeObject
     static bool getUint32Impl(JSContext* cx, const CallArgs& args);
     static bool fun_getUint32(JSContext* cx, unsigned argc, Value* vp);
 
+    static bool getBigInt64Impl(JSContext* cx, const CallArgs& args);
+    static bool fun_getBigInt64(JSContext* cx, unsigned argc, Value* vp);
+
+    static bool getBigUint64Impl(JSContext* cx, const CallArgs& args);
+    static bool fun_getBigUint64(JSContext* cx, unsigned argc, Value* vp);
+
     static bool getFloat32Impl(JSContext* cx, const CallArgs& args);
     static bool fun_getFloat32(JSContext* cx, unsigned argc, Value* vp);
 
@@ -545,6 +565,12 @@ class DataViewObject : public NativeObject
     static bool setUint32Impl(JSContext* cx, const CallArgs& args);
     static bool fun_setUint32(JSContext* cx, unsigned argc, Value* vp);
 
+    static bool setBigInt64Impl(JSContext* cx, const CallArgs& args);
+    static bool fun_setBigInt64(JSContext* cx, unsigned argc, Value* vp);
+
+    static bool setBigUint64Impl(JSContext* cx, const CallArgs& args);
+    static bool fun_setBigUint64(JSContext* cx, unsigned argc, Value* vp);
+
     static bool setFloat32Impl(JSContext* cx, const CallArgs& args);
     static bool fun_setFloat32(JSContext* cx, unsigned argc, Value* vp);
 
@@ -564,6 +590,10 @@ class DataViewObject : public NativeObject
 
   private:
     static const JSFunctionSpec jsfuncs[];
+
+    static const JSFunctionSpec bigIntMethods[];
+    static bool finishInit(JSContext* cx, JS::HandleObject ctor,
+                           JS::HandleObject proto);
 };
 
 static inline int32_t

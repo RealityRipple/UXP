@@ -36,6 +36,8 @@
     macro(AsyncWrapped, AsyncWrapped, "AsyncWrapped") \
     macro(async, async, "async") \
     macro(await, await, "await") \
+    macro(bigint64, bigint64, "bigint64") \
+    macro(biguint64, biguint64, "biguint64") \
     macro(Bool8x16, Bool8x16, "Bool8x16") \
     macro(Bool16x8, Bool16x8, "Bool16x8") \
     macro(Bool32x4, Bool32x4, "Bool32x4") \
@@ -275,6 +277,7 @@
     macro(objectArguments, objectArguments, "[object Arguments]") \
     macro(objectArray, objectArray, "[object Array]") \
     macro(objectBoolean, objectBoolean, "[object Boolean]") \
+    macro(objectBigInt, objectBigInt, "[object BigInt]") \
     macro(objectDate, objectDate, "[object Date]") \
     macro(objectError, objectError, "[object Error]") \
     macro(objectFunction, objectFunction, "[object Function]") \
@@ -424,5 +427,6 @@
     macro(boolean, boolean, "boolean") \
     macro(null, null, "null") \
     macro(symbol, symbol, "symbol") \
+    macro(bigint, bigint, "bigint") \
 
 #endif /* vm_CommonPropertyNames_h */

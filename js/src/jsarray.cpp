@@ -376,6 +376,13 @@ js::GetElements(JSContext* cx, HandleObject aobj, uint32_t length, Value* vp)
         }
     }
 
+    if (aobj->is<TypedArrayObject>()) {
+        Handle<TypedArrayObject*> typedArray = aobj.as<TypedArrayObject>();
+        if (typedArray->length() == length) {
+            return TypedArrayObject::getElements(cx, typedArray, vp);
+        }
+    }
+
     if (js::GetElementsOp op = aobj->getOpsGetElements()) {
         ElementAdder adder(cx, vp, length, ElementAdder::GetElement);
         return op(cx, aobj, 0, length, &adder);
@@ -1098,6 +1105,12 @@ ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_
              * Symbol stringifying is a TypeError, so into the slow path
              * with those as well.
              */
+            break;
+        } else if (elem.isBigInt()) {
+            // ToString(bigint) doesn't access bigint.toString or
+            // anything like that, so it can't mutate the array we're
+            // walking through, so it *could* be handled here. We don't
+            // do so yet for reasons of initial-implementation economy.
             break;
         } else {
             MOZ_ASSERT(elem.isMagic(JS_ELEMENTS_HOLE) || elem.isNullOrUndefined());

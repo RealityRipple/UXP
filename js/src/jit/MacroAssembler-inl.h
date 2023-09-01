@@ -545,6 +545,7 @@ MacroAssembler::branchTestMIRType(Condition cond, const Value& val, MIRType type
       case MIRType::Int32:     return branchTestInt32(cond, val, label);
       case MIRType::String:    return branchTestString(cond, val, label);
       case MIRType::Symbol:    return branchTestSymbol(cond, val, label);
+      case MIRType::BigInt:    return branchTestBigInt(cond, val, label);
       case MIRType::Object:    return branchTestObject(cond, val, label);
       case MIRType::Double:    return branchTestDouble(cond, val, label);
       case MIRType::MagicOptimizedArguments: // Fall through.
@@ -643,7 +644,7 @@ void
 MacroAssembler::canonicalizeFloatIfDeterministic(FloatRegister reg)
 {
 #ifdef JS_MORE_DETERMINISTIC
-    // See the comment in TypedArrayObjectTemplate::getIndexValue.
+    // See the comment in TypedArrayObjectTemplate::getElement.
     canonicalizeFloat(reg);
 #endif // JS_MORE_DETERMINISTIC
 }
@@ -661,7 +662,7 @@ void
 MacroAssembler::canonicalizeDoubleIfDeterministic(FloatRegister reg)
 {
 #ifdef JS_MORE_DETERMINISTIC
-    // See the comment in TypedArrayObjectTemplate::getIndexValue.
+    // See the comment in TypedArrayObjectTemplate::getElement.
     canonicalizeDouble(reg);
 #endif // JS_MORE_DETERMINISTIC
 }

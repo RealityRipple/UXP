@@ -31,6 +31,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/RangedPtr.h"
 
 #include <algorithm>
 
@@ -38,6 +39,8 @@
 #include "jscntxt.h"
 #include "jsdate.h"
 #include "jswrapper.h"
+
+#include "vm/BigIntType.h"
 
 #include "builtin/MapObject.h"
 #include "js/Date.h"
@@ -57,6 +60,7 @@ using mozilla::IsNaN;
 using mozilla::LittleEndian;
 using mozilla::NativeEndian;
 using mozilla::NumbersAreIdentical;
+using mozilla::RangedPtr;
 using JS::CanonicalizeNaN;
 
 // When you make updates here, make sure you consider whether you need to bump the
@@ -104,6 +108,9 @@ enum StructuredDataType : uint32_t {
 
     SCTAG_SHARED_ARRAY_BUFFER_OBJECT,
 
+    SCTAG_BIGINT,
+    SCTAG_BIGINT_OBJECT,
+
     SCTAG_TYPED_ARRAY_V1_MIN = 0xFFFF0100,
     SCTAG_TYPED_ARRAY_V1_INT8 = SCTAG_TYPED_ARRAY_V1_MIN + Scalar::Int8,
     SCTAG_TYPED_ARRAY_V1_UINT8 = SCTAG_TYPED_ARRAY_V1_MIN + Scalar::Uint8,
@@ -114,7 +121,8 @@ enum StructuredDataType : uint32_t {
     SCTAG_TYPED_ARRAY_V1_FLOAT32 = SCTAG_TYPED_ARRAY_V1_MIN + Scalar::Float32,
     SCTAG_TYPED_ARRAY_V1_FLOAT64 = SCTAG_TYPED_ARRAY_V1_MIN + Scalar::Float64,
     SCTAG_TYPED_ARRAY_V1_UINT8_CLAMPED = SCTAG_TYPED_ARRAY_V1_MIN + Scalar::Uint8Clamped,
-    SCTAG_TYPED_ARRAY_V1_MAX = SCTAG_TYPED_ARRAY_V1_MIN + Scalar::MaxTypedArrayViewType - 1,
+    // BigInt64 and BigUint64 are not supported in the v1 format.
+    SCTAG_TYPED_ARRAY_V1_MAX = SCTAG_TYPED_ARRAY_V1_UINT8_CLAMPED,
 
     /*
      * Define a separate range of numbers for Transferable-only tags, since
@@ -349,6 +357,8 @@ struct JSStructuredCloneReader {
     JSString* readStringImpl(uint32_t nchars);
     JSString* readString(uint32_t data);
 
+    BigInt* readBigInt(uint32_t data);
+
     bool checkDouble(double d);
     bool readTypedArray(uint32_t arrayType, uint32_t nelems, MutableHandleValue vp,
                         bool v1Read = false);
@@ -438,6 +448,8 @@ struct JSStructuredCloneWriter {
     bool traverseMap(HandleObject obj);
     bool traverseSet(HandleObject obj);
     bool traverseSavedFrame(HandleObject obj);
+
+    bool writeBigInt(uint32_t tag, BigInt* bi);
 
     bool reportDataCloneError(uint32_t errorId);
 
@@ -1055,6 +1067,23 @@ JSStructuredCloneWriter::writeString(uint32_t tag, JSString* str)
            : out.writeChars(linear->twoByteChars(nogc), length);
 }
 
+bool
+JSStructuredCloneWriter::writeBigInt(uint32_t tag, BigInt* bi)
+{
+    bool signBit = bi->isNegative();
+    size_t length = bi->digitLength();
+    // The length must fit in 31 bits to leave room for a sign bit.
+    if (length > size_t(INT32_MAX)) {
+        return false;
+    }
+    uint32_t lengthAndSign = length | (static_cast<uint32_t>(signBit) << 31);
+
+    if (!out.writePair(tag, lengthAndSign)) {
+         return false;
+    }
+    return out.writeArray(bi->digits().data(), length);
+}
+
 inline void
 JSStructuredCloneWriter::checkStack()
 {
@@ -1388,6 +1417,8 @@ JSStructuredCloneWriter::startWrite(HandleValue v)
         return out.writePair(SCTAG_NULL, 0);
     } else if (v.isUndefined()) {
         return out.writePair(SCTAG_UNDEFINED, 0);
+    } else if (v.isBigInt()) {
+        return writeBigInt(SCTAG_BIGINT, v.toBigInt());
     } else if (v.isObject()) {
         RootedObject obj(context(), &v.toObject());
 
@@ -1441,6 +1472,12 @@ JSStructuredCloneWriter::startWrite(HandleValue v)
             return writeString(SCTAG_STRING_OBJECT, unboxed.toString());
         } else if (cls == ESClass::Map) {
             return traverseMap(obj);
+        } else if (cls == ESClass::BigInt) {
+            RootedValue unboxed(context());
+            if (!Unbox(context(), obj, &unboxed)) {
+                return false;
+            }
+            return writeBigInt(SCTAG_BIGINT_OBJECT, unboxed.toBigInt());
         } else if (cls == ESClass::Set) {
             return traverseSet(obj);
         } else if (SavedFrame::isSavedFrameOrWrapperAndNotProto(*obj)) {
@@ -1745,6 +1782,22 @@ JSStructuredCloneReader::readString(uint32_t data)
     return latin1 ? readStringImpl<Latin1Char>(nchars) : readStringImpl<char16_t>(nchars);
 }
 
+BigInt* JSStructuredCloneReader::readBigInt(uint32_t data) {
+    size_t length = data & JS_BITMASK(31);
+    bool isNegative = data & (1 << 31);
+    if (length == 0) {
+        return BigInt::zero(context());
+    }
+    BigInt* result = BigInt::createUninitialized(context(), length, isNegative);
+    if (!result) {
+        return nullptr;
+    }
+    if (!in.readArray(result->digits().data(), length)) {
+        return nullptr;
+    }
+    return result;
+}
+
 static uint32_t
 TagToV1ArrayType(uint32_t tag)
 {
@@ -1756,7 +1809,7 @@ bool
 JSStructuredCloneReader::readTypedArray(uint32_t arrayType, uint32_t nelems, MutableHandleValue vp,
                                         bool v1Read)
 {
-    if (arrayType > Scalar::Uint8Clamped) {
+    if (arrayType > (v1Read ? Scalar::Uint8Clamped : Scalar::BigUint64)) {
         JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr, JSMSG_SC_BAD_SERIALIZED_DATA,
                                   "unhandled typed array element type");
         return false;
@@ -1819,6 +1872,12 @@ JSStructuredCloneReader::readTypedArray(uint32_t arrayType, uint32_t nelems, Mut
         break;
       case Scalar::Uint8Clamped:
         obj = JS_NewUint8ClampedArrayWithBuffer(context(), buffer, byteOffset, nelems);
+        break;
+      case Scalar::BigInt64:
+        obj = JS_NewBigInt64ArrayWithBuffer(context(), buffer, byteOffset, nelems);
+        break;
+      case Scalar::BigUint64:
+        obj = JS_NewBigUint64ArrayWithBuffer(context(), buffer, byteOffset, nelems);
         break;
       default:
         MOZ_CRASH("Can't happen: arrayType range checked above");
@@ -1955,6 +2014,8 @@ JSStructuredCloneReader::readV1ArrayBuffer(uint32_t arrayType, uint32_t nelems,
       case Scalar::Float32:
         return in.readArray((uint32_t*) buffer.dataPointer(), nelems);
       case Scalar::Float64:
+      case Scalar::BigInt64:
+      case Scalar::BigUint64:
         return in.readArray((uint64_t*) buffer.dataPointer(), nelems);
       default:
         MOZ_CRASH("Can't happen: arrayType range checked by caller");
@@ -2018,6 +2079,19 @@ JSStructuredCloneReader::startRead(MutableHandleValue vp)
         vp.setDouble(d);
         if (!PrimitiveToObject(context(), vp))
             return false;
+        break;
+      }
+
+      case SCTAG_BIGINT:
+      case SCTAG_BIGINT_OBJECT: {
+        RootedBigInt bi(context(), readBigInt(data));
+        if (!bi) {
+            return false;
+        }
+        vp.setBigInt(bi);
+        if (tag == SCTAG_BIGINT_OBJECT && !PrimitiveToObject(context(), vp)) {
+            return false;
+        }
         break;
       }
 

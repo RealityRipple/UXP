@@ -35,6 +35,7 @@
 #include "jswin.h"
 #include "jswrapper.h"
 
+#include "builtin/BigInt.h"
 #include "builtin/Eval.h"
 #include "builtin/Object.h"
 #include "builtin/SymbolObject.h"
@@ -2355,15 +2356,15 @@ js::LookupOwnPropertyPure(ExclusiveContext* cx, JSObject* obj, jsid id, Property
 }
 
 static inline bool
-NativeGetPureInline(NativeObject* pobj, jsid id, PropertyResult prop, Value* vp)
+NativeGetPureInline(NativeObject* pobj, jsid id, PropertyResult prop, Value* vp,
+                    ExclusiveContext* cx)
 {
     if (prop.isDenseOrTypedArrayElement()) {
         // For simplicity we ignore the TypedArray with string index case.
         if (!JSID_IS_INT(id))
             return false;
 
-        *vp = pobj->getDenseOrTypedArrayElement(JSID_TO_INT(id));
-        return true;
+        return pobj->getDenseOrTypedArrayElement<NoGC>(cx, JSID_TO_INT(id), vp);
     }
 
     // Fail if we have a custom getter.
@@ -2394,7 +2395,7 @@ js::GetPropertyPure(ExclusiveContext* cx, JSObject* obj, jsid id, Value* vp)
         return true;
     }
 
-    return pobj->isNative() && NativeGetPureInline(&pobj->as<NativeObject>(), id, prop, vp);
+    return pobj->isNative() && NativeGetPureInline(&pobj->as<NativeObject>(), id, prop, vp, cx);
 }
 
 static inline bool
@@ -3104,9 +3105,13 @@ js::PrimitiveToObject(JSContext* cx, const Value& v)
         return NumberObject::create(cx, v.toNumber());
     if (v.isBoolean())
         return BooleanObject::create(cx, v.toBoolean());
-    MOZ_ASSERT(v.isSymbol());
-    RootedSymbol symbol(cx, v.toSymbol());
-    return SymbolObject::create(cx, symbol);
+    if (v.isSymbol()) {
+        RootedSymbol symbol(cx, v.toSymbol());
+        return SymbolObject::create(cx, symbol);
+    }
+    MOZ_ASSERT(v.isBigInt());
+    RootedBigInt bigInt(cx, v.toBigInt());
+    return BigIntObject::create(cx, bigInt);
 }
 
 /*
