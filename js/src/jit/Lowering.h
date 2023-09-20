@@ -325,6 +325,7 @@ class LIRGenerator : public LIRGeneratorSpecific
     void visitDebugCheckSelfHosted(MDebugCheckSelfHosted* ins);
     void visitModuleMetadata(MModuleMetadata* ins);
     void visitDynamicImport(MDynamicImport* ins);
+    void visitToNumeric(MToNumeric* ins);
 };
 
 } // namespace jit

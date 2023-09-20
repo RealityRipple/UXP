@@ -217,6 +217,7 @@
     _(GuardClass)                   \
     _(GuardUnboxedExpando)          \
     _(LoadUnboxedExpando)           \
+    _(ToNumeric)                    \
     _(TypeBarrierV)                 \
     _(TypeBarrierO)                 \
     _(MonitorTypes)                 \
