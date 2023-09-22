@@ -349,7 +349,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				                                NULL,
 				                                pAdapt->IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
-												pAdapt->AdapterName,
+				                                pAdapt->AdapterName,
 				                                NULL,
 				                                pUnicast->Address.lpSockaddr,
 				                                pAdapt->Flags,
