@@ -32,9 +32,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
+#ifdef __FreeBSD__
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 366426 2020-10-04 15:37:34Z tuexen $");
+__FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 276914 2015-01-10 20:49:57Z tuexen $");
 #endif
 
 #include <netinet/sctp_os.h>
@@ -50,7 +50,8 @@ __FBSDID("$FreeBSD: head/sys/netinet/sctp_bsd_addr.c 366426 2020-10-04 15:37:34Z
 #include <netinet/sctp_asconf.h>
 #include <netinet/sctp_sysctl.h>
 #include <netinet/sctp_indata.h>
-#if defined(__FreeBSD__) && !defined(__Userspace__)
+
+#if defined(__FreeBSD__)
 #include <sys/unistd.h>
 #endif
 
@@ -78,8 +79,8 @@ MALLOC_DEFINE(SCTP_M_MCORE, "sctp_mcore", "sctp mcore queue");
 
 /* Global NON-VNET structure that controls the iterator */
 struct iterator_control sctp_it_ctl;
-#if !(defined(__FreeBSD__) && !defined(__Userspace__))
 
+#if !defined(__FreeBSD__)
 static void
 sctp_cleanup_itqueue(void)
 {
@@ -107,7 +108,7 @@ void
 sctp_wakeup_iterator(void)
 {
 #if defined(SCTP_PROCESS_LEVEL_LOCKS)
-#if defined(_WIN32)
+#if defined(__Userspace_os_Windows)
 	WakeAllConditionVariable(&sctp_it_ctl.iterator_wakeup);
 #else
 	pthread_cond_broadcast(&sctp_it_ctl.iterator_wakeup);
@@ -129,7 +130,7 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 #endif
 	SCTP_IPI_ITERATOR_WQ_LOCK();
 	/* In FreeBSD this thread never terminates. */
-#if defined(__FreeBSD__) && !defined(__Userspace__)
+#if defined(__FreeBSD__)
 	for (;;) {
 #else
 	while ((sctp_it_ctl.iterator_flags & SCTP_ITERATOR_MUST_EXIT) == 0) {
@@ -138,25 +139,25 @@ sctp_iterator_thread(void *v SCTP_UNUSED)
 		msleep(&sctp_it_ctl.iterator_running,
 #if defined(__FreeBSD__)
 		       &sctp_it_ctl.ipi_iterator_wq_mtx,
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__Userspace_os_Darwin)
 		       sctp_it_ctl.ipi_iterator_wq_mtx,
 #endif
 		       0, "waiting_for_work", 0);
 #else
-#if defined(_WIN32)
+#if defined(__Userspace_os_Windows)
 		SleepConditionVariableCS(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx, INFINITE);
 #else
 		pthread_cond_wait(&sctp_it_ctl.iterator_wakeup, &sctp_it_ctl.ipi_iterator_wq_mtx);
 #endif
 #endif
-#if !(defined(__FreeBSD__) && !defined(__Userspace__))
+#if !defined(__FreeBSD__)
 		if (sctp_it_ctl.iterator_flags & SCTP_ITERATOR_MUST_EXIT) {
 			break;
 		}
 #endif
 		sctp_iterator_worker();
 	}
-#if !(defined(__FreeBSD__) && !defined(__Userspace__))
+#if !defined(__FreeBSD__)
 	/* Now this thread needs to be terminated */
 	sctp_cleanup_itqueue();
 	sctp_it_ctl.iterator_flags |= SCTP_ITERATOR_EXITED;
@@ -251,7 +252,7 @@ sctp_is_desired_interface_type(struct ifnet *ifn)
 	int result;
 
 	/* check the interface type to see if it's one we care about */
-#if defined(__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__)
 	switch(ifnet_type(ifn)) {
 #else
 	switch (ifn->if_type) {
@@ -277,7 +278,7 @@ sctp_is_desired_interface_type(struct ifnet *ifn)
 	case IFT_GIF:
 	case IFT_L2VLAN:
 	case IFT_STF:
-#if !(defined(__APPLE__) && !defined(__Userspace__))
+#if !defined(__APPLE__)
 	case IFT_IP:
 	case IFT_IPOVERCDLC:
 	case IFT_IPOVERCLAW:
@@ -293,29 +294,21 @@ sctp_is_desired_interface_type(struct ifnet *ifn)
 	return (result);
 }
 #endif
-#if defined(__APPLE__) && !defined(__Userspace__)
 
+#if defined(__APPLE__)
 int
 sctp_is_vmware_interface(struct ifnet *ifn)
 {
 	return (strncmp(ifnet_name(ifn), "vmnet", 5) == 0);
 }
-
 #endif
 
-#if defined(_WIN32) && defined(__Userspace__)
-#ifdef MALLOC
-#undef MALLOC
-#define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
-#endif
-#ifdef FREE
-#undef FREE
-#define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
-#endif
+#if defined(__Userspace_os_Windows)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
 #if defined(INET) || defined(INET6)
+	struct ifaddrs *ifa;
 	struct sctp_ifa *sctp_ifa;
 	DWORD Err, AdapterAddrsSize;
 	PIP_ADAPTER_ADDRESSES pAdapterAddrs, pAdapt;
@@ -341,7 +334,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 	/* Get actual adapter information */
 	if ((Err = GetAdaptersAddresses(AF_INET, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTP_PRINTF("GetAdaptersV4Addresses() failed with error code %d\n", Err);
-		FREE(pAdapterAddrs);
+		if (pAdapterAddrs)
+			GlobalFree(pAdapterAddrs); 
 		return;
 	}
 	/* Enumerate through each returned adapter and save its information */
@@ -355,7 +349,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 				                                NULL,
 				                                pAdapt->IfIndex,
 				                                (pAdapt->IfType == IF_TYPE_IEEE80211)?MIB_IF_TYPE_ETHERNET:pAdapt->IfType,
-				                                pAdapt->AdapterName,
+												pAdapt->AdapterName,
 				                                NULL,
 				                                pUnicast->Address.lpSockaddr,
 				                                pAdapt->Flags,
@@ -366,7 +360,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 		}
 	}
-	FREE(pAdapterAddrs);
+	if (pAdapterAddrs)
+		GlobalFree(pAdapterAddrs);
 #endif
 #ifdef INET6
 	AdapterAddrsSize = 0;
@@ -386,7 +381,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 	/* Get actual adapter information */
 	if ((Err = GetAdaptersAddresses(AF_INET6, 0, NULL, pAdapterAddrs, &AdapterAddrsSize)) != ERROR_SUCCESS) {
 		SCTP_PRINTF("GetAdaptersV6Addresses() failed with error code %d\n", Err);
-		FREE(pAdapterAddrs);
+		if (pAdapterAddrs)
+			GlobalFree(pAdapterAddrs);
 		return;
 	}
 	/* Enumerate through each returned adapter and save its information */
@@ -408,7 +404,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 			}
 		}
 	}
-	FREE(pAdapterAddrs);
+	if (pAdapterAddrs)
+		GlobalFree(pAdapterAddrs);
 #endif
 }
 #elif defined(__Userspace__)
@@ -476,7 +473,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 #endif
 }
 #endif
-#if defined(__APPLE__) && !defined(__Userspace__)
+
+#if defined(__APPLE__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -535,13 +533,13 @@ sctp_init_ifns_for_vrf(int vrfid)
 			} else {
 				ifa_flags = 0;
 			}
-			SCTP_SNPRINTF(name, SCTP_IFNAMSIZ, "%s%d", ifnet_name(ifn), ifnet_unit(ifn));
+			snprintf(name, SCTP_IFNAMSIZ, "%s%d", ifnet_name(ifn), ifnet_unit(ifn));
 			sctp_ifa = sctp_add_addr_to_vrf(vrfid,
-			                                (void *)ifn, /* XXX */
+			                                (void *)ifn,
 			                                ifnet_index(ifn),
 			                                ifnet_type(ifn),
 			                                name,
-			                                (void *)ifa, /* XXX */
+			                                (void *)ifa,
 			                                ifa->ifa_addr,
 			                                ifa_flags,
 			                                0);
@@ -554,7 +552,8 @@ sctp_init_ifns_for_vrf(int vrfid)
 	ifnet_list_free(ifnetlist);
 }
 #endif
-#if defined(__FreeBSD__) && !defined(__Userspace__)
+
+#if defined(__FreeBSD__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -574,7 +573,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 
 	IFNET_RLOCK();
 	NET_EPOCH_ENTER(et);
-	CK_STAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_link) {
+	CK_TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
 		if (sctp_is_desired_interface_type(ifn) == 0) {
 			/* non desired type */
 			continue;
@@ -710,15 +709,16 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 	}
 	if (cmd == RTM_ADD) {
 		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID, (void *)ifa->ifa_ifp,
-#if defined(__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__)
 		                           ifnet_index(ifa->ifa_ifp), ifnet_type(ifa->ifa_ifp), ifnet_name(ifa->ifa_ifp),
 #else
 		                           ifa->ifa_ifp->if_index, ifa->ifa_ifp->if_type, ifa->ifa_ifp->if_xname,
 #endif
 		                           (void *)ifa, ifa->ifa_addr, ifa_flags, 1);
 	} else {
+
 		sctp_del_addr_from_vrf(SCTP_DEFAULT_VRFID, ifa->ifa_addr,
-#if defined(__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__)
 		                       ifnet_index(ifa->ifa_ifp),
 		                       ifnet_name(ifa->ifa_ifp));
 #else
@@ -733,13 +733,13 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 #endif
 }
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
+#if defined(__FreeBSD__)
 void
-sctp_addr_change_event_handler(void *arg __unused, struct ifaddr *ifa, int cmd) {
+ssctp_addr_change_event_handler(void *arg __unused, struct ifaddr *ifa, int cmd) {
 	sctp_addr_change(ifa, cmd);
 }
 #endif
-#if defined(__APPLE__) && !defined(__Userspace__)
+#if defined(__APPLE__)
 void
 sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 {
@@ -771,7 +771,7 @@ struct mbuf *
 sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 		      int how, int allonebuf, int type)
 {
-	struct mbuf *m = NULL;
+    struct mbuf *m = NULL;
 #if defined(__FreeBSD__) || defined(__Userspace__)
 #if defined(__Userspace__)
 	m =  m_getm2(NULL, space_needed, how, type, want_header ? M_PKTHDR : 0, allonebuf);
@@ -799,7 +799,6 @@ sctp_get_mbuf_for_msg(unsigned int space_needed, int want_header,
 #else
 	int mbuf_threshold;
 	unsigned int size;
-
 	if (want_header) {
 		MGETHDR(m, how, type);
 		size = MHLEN;
