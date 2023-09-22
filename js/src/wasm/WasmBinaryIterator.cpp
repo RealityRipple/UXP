@@ -263,22 +263,11 @@ wasm::Classify(Op op)
       case Op::F64ConvertUI64:
       case Op::F64ReinterpretI64:
       case Op::F64PromoteF32:
-      case Op::I32x4fromFloat32x4:
-      case Op::I32x4fromFloat32x4U:
-      case Op::F32x4fromInt32x4:
-      case Op::F32x4fromUint32x4:
-      case Op::I32x4fromFloat32x4Bits:
-      case Op::I32x4fromInt8x16Bits:
-      case Op::I32x4fromInt16x8Bits:
-      case Op::I16x8fromInt8x16Bits:
-      case Op::I16x8fromInt32x4Bits:
-      case Op::I16x8fromFloat32x4Bits:
-      case Op::I8x16fromInt16x8Bits:
-      case Op::I8x16fromInt32x4Bits:
-      case Op::I8x16fromFloat32x4Bits:
-      case Op::F32x4fromInt8x16Bits:
-      case Op::F32x4fromInt16x8Bits:
-      case Op::F32x4fromInt32x4Bits:
+      case Op::I32Extend8S:
+      case Op::I32Extend16S:
+      case Op::I64Extend8S:
+      case Op::I64Extend16S:
+      case Op::I64Extend32S:
         return OpKind::Conversion;
       case Op::I32Load8S:
       case Op::I32Load8U:
