@@ -295,7 +295,7 @@ sctp_is_desired_interface_type(struct ifnet *ifn)
 }
 #endif
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 int
 sctp_is_vmware_interface(struct ifnet *ifn)
 {
@@ -474,7 +474,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 }
 #endif
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -553,7 +553,7 @@ sctp_init_ifns_for_vrf(int vrfid)
 }
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 static void
 sctp_init_ifns_for_vrf(int vrfid)
 {
@@ -709,7 +709,7 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 	}
 	if (cmd == RTM_ADD) {
 		(void)sctp_add_addr_to_vrf(SCTP_DEFAULT_VRFID, (void *)ifa->ifa_ifp,
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 		                           ifnet_index(ifa->ifa_ifp), ifnet_type(ifa->ifa_ifp), ifnet_name(ifa->ifa_ifp),
 #else
 		                           ifa->ifa_ifp->if_index, ifa->ifa_ifp->if_type, ifa->ifa_ifp->if_xname,
@@ -718,7 +718,7 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 	} else {
 
 		sctp_del_addr_from_vrf(SCTP_DEFAULT_VRFID, ifa->ifa_addr,
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 		                       ifnet_index(ifa->ifa_ifp),
 		                       ifnet_name(ifa->ifa_ifp));
 #else
@@ -733,13 +733,13 @@ sctp_addr_change(struct ifaddr *ifa, int cmd)
 #endif
 }
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) && !defined(__Userspace__)
 void
 ssctp_addr_change_event_handler(void *arg __unused, struct ifaddr *ifa, int cmd) {
 	sctp_addr_change(ifa, cmd);
 }
 #endif
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(__Userspace__)
 void
 sctp_add_or_del_interfaces(int (*pred)(struct ifnet *), int add)
 {
