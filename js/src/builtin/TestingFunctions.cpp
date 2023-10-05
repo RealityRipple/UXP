@@ -1441,6 +1441,14 @@ RejectPromise(JSContext* cx, unsigned argc, Value* vp)
     return result;
 }
 
+static bool
+StreamsAreEnabled(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    args.rval().setBoolean(cx->options().streams());
+    return true;
+}
+
 static unsigned finalizeCount = 0;
 
 static void
@@ -3114,7 +3122,7 @@ static bool
 IsSimdAvailable(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-#if defined(JS_CODEGEN_NONE) || !defined(ENABLE_SIMD)
+#if defined(JS_CODEGEN_NONE)
     bool available = false;
 #else
     bool available = cx->jitSupportsSimd();
@@ -4143,6 +4151,10 @@ JS_FN_HELP("resolvePromise", ResolvePromise, 2, 0,
 JS_FN_HELP("rejectPromise", RejectPromise, 2, 0,
 "rejectPromise(promise, reason)",
 "  Reject a Promise by calling the JSAPI function JS::RejectPromise."),
+
+JS_FN_HELP("streamsAreEnabled", StreamsAreEnabled, 0, 0,
+"streamsAreEnabled()",
+"  Returns a boolean indicating whether WHATWG Streams are enabled for the current compartment."),
 
     JS_FN_HELP("makeFinalizeObserver", MakeFinalizeObserver, 0, 0,
 "makeFinalizeObserver()",

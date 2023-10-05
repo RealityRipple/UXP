@@ -777,8 +777,8 @@ ArrayBufferObject::prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buf
             return true;
 
         // Non-prepared-for-asm.js wasm buffers can be detached at any time.
-        // This error can only be triggered for SIMD.js (which isn't shipping)
-        // on !WASM_HUGE_MEMORY so this error is only visible in testing.
+        // This error can only be triggered for Atomics on !WASM_HUGE_MEMORY,
+        // so this error is only visible in testing.
         if (buffer->isWasm() || buffer->isPreparedForAsmJS())
             return false;
 
@@ -1255,15 +1255,16 @@ ArrayBufferObject::finalize(FreeOp* fop, JSObject* obj)
 }
 
 /* static */ void
-ArrayBufferObject::copyData(Handle<ArrayBufferObject*> toBuffer,
-                            Handle<ArrayBufferObject*> fromBuffer,
-                            uint32_t fromIndex, uint32_t count)
+ArrayBufferObject::copyData(Handle<ArrayBufferObject*> toBuffer, uint32_t toIndex,
+                            Handle<ArrayBufferObject*> fromBuffer, uint32_t fromIndex,
+                            uint32_t count)
 {
     MOZ_ASSERT(toBuffer->byteLength() >= count);
+    MOZ_ASSERT(toBuffer->byteLength() >= toIndex + count);
     MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex);
     MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex + count);
 
-    memcpy(toBuffer->dataPointer(), fromBuffer->dataPointer() + fromIndex, count);
+    memcpy(toBuffer->dataPointer() + toIndex, fromBuffer->dataPointer() + fromIndex, count);
 }
 
 /* static */ void
@@ -1888,6 +1889,17 @@ JS_GetArrayBufferViewByteLength(JSObject* obj)
     return obj->is<DataViewObject>()
            ? obj->as<DataViewObject>().byteLength()
            : obj->as<TypedArrayObject>().byteLength();
+}
+
+JS_FRIEND_API(uint32_t)
+JS_GetArrayBufferViewByteOffset(JSObject* obj)
+{
+    obj = CheckedUnwrap(obj);
+    if (!obj)
+        return 0;
+    return obj->is<DataViewObject>()
+           ? obj->as<DataViewObject>().byteOffset()
+           : obj->as<TypedArrayObject>().byteOffset();
 }
 
 JS_FRIEND_API(JSObject*)

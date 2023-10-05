@@ -36,7 +36,7 @@
 #include "builtin/Promise.h"
 #include "builtin/Reflect.h"
 #include "builtin/SelfHostingDefines.h"
-#include "builtin/SIMD.h"
+#include "builtin/Stream.h"
 #include "builtin/TypedObject.h"
 #include "builtin/WeakSetObject.h"
 #include "gc/Marking.h"
@@ -72,7 +72,6 @@ using JS::AutoCheckCannotGC;
 using mozilla::IsInRange;
 using mozilla::Maybe;
 using mozilla::PodMove;
-using mozilla::Maybe;
 
 static void
 selfHosting_WarningReporter(JSContext* cx, JSErrorReport* report)
@@ -1099,9 +1098,9 @@ static bool
 intrinsic_ArrayBufferCopyData(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 5);
+    MOZ_ASSERT(args.length() == 6);
 
-    bool isWrapped = args[4].toBoolean();
+    bool isWrapped = args[5].toBoolean();
     Rooted<T*> toBuffer(cx);
     if (!isWrapped) {
         toBuffer = &args[0].toObject().as<T>();
@@ -1115,11 +1114,12 @@ intrinsic_ArrayBufferCopyData(JSContext* cx, unsigned argc, Value* vp)
         }
         toBuffer = toBufferObj.as<T>();
     }
-    Rooted<T*> fromBuffer(cx, &args[1].toObject().as<T>());
-    uint32_t fromIndex = uint32_t(args[2].toInt32());
-    uint32_t count = uint32_t(args[3].toInt32());
+    uint32_t toIndex = uint32_t(args[1].toInt32());
+    Rooted<T*> fromBuffer(cx, &args[2].toObject().as<T>());
+    uint32_t fromIndex = uint32_t(args[3].toInt32());
+    uint32_t count = uint32_t(args[4].toInt32());
 
-    T::copyData(toBuffer, fromBuffer, fromIndex, count);
+    T::copyData(toBuffer, toIndex, fromBuffer, fromIndex, count);
 
     args.rval().setUndefined();
     return true;
@@ -2299,19 +2299,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("std_WeakMap_set",                     WeakMap_set,                  2,0),
     JS_FN("std_WeakMap_delete",                  WeakMap_delete,               1,0),
 
-    JS_FN("std_SIMD_Int8x16_extractLane",        simd_int8x16_extractLane,     2,0),
-    JS_FN("std_SIMD_Int16x8_extractLane",        simd_int16x8_extractLane,     2,0),
-    JS_INLINABLE_FN("std_SIMD_Int32x4_extractLane",   simd_int32x4_extractLane,  2,0, SimdInt32x4_extractLane),
-    JS_FN("std_SIMD_Uint8x16_extractLane",       simd_uint8x16_extractLane,    2,0),
-    JS_FN("std_SIMD_Uint16x8_extractLane",       simd_uint16x8_extractLane,    2,0),
-    JS_FN("std_SIMD_Uint32x4_extractLane",       simd_uint32x4_extractLane,    2,0),
-    JS_INLINABLE_FN("std_SIMD_Float32x4_extractLane", simd_float32x4_extractLane,2,0, SimdFloat32x4_extractLane),
-    JS_FN("std_SIMD_Float64x2_extractLane",      simd_float64x2_extractLane,   2,0),
-    JS_FN("std_SIMD_Bool8x16_extractLane",       simd_bool8x16_extractLane,    2,0),
-    JS_FN("std_SIMD_Bool16x8_extractLane",       simd_bool16x8_extractLane,    2,0),
-    JS_FN("std_SIMD_Bool32x4_extractLane",       simd_bool32x4_extractLane,    2,0),
-    JS_FN("std_SIMD_Bool64x2_extractLane",       simd_bool64x2_extractLane,    2,0),
-
     // Helper funtions after this point.
     JS_INLINABLE_FN("ToObject",      intrinsic_ToObject,                1,0, IntrinsicToObject),
     JS_INLINABLE_FN("IsObject",      intrinsic_IsObject,                1,0, IntrinsicIsObject),
@@ -2440,14 +2427,14 @@ static const JSFunctionSpec intrinsic_functions[] = {
                     intrinsic_PossiblyWrappedArrayBufferByteLength<ArrayBufferObject>, 1,0,
                     IntrinsicPossiblyWrappedArrayBufferByteLength),
     JS_FN("ArrayBufferCopyData",
-          intrinsic_ArrayBufferCopyData<ArrayBufferObject>,             5,0),
+          intrinsic_ArrayBufferCopyData<ArrayBufferObject>,             6,0),
 
     JS_FN("SharedArrayBufferByteLength",
           intrinsic_ArrayBufferByteLength<SharedArrayBufferObject>,     1,0),
     JS_FN("PossiblyWrappedSharedArrayBufferByteLength",
           intrinsic_PossiblyWrappedArrayBufferByteLength<SharedArrayBufferObject>, 1,0),
     JS_FN("SharedArrayBufferCopyData",
-          intrinsic_ArrayBufferCopyData<SharedArrayBufferObject>,       5,0),
+          intrinsic_ArrayBufferCopyData<SharedArrayBufferObject>,       6,0),
 
     JS_FN("IsUint8TypedArray",        intrinsic_IsUint8TypedArray,      1,0),
     JS_FN("IsInt8TypedArray",         intrinsic_IsInt8TypedArray,       1,0),
@@ -2503,6 +2490,9 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("CallWeakSetMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<WeakSetObject>>, 2, 0),
 
+    JS_FN("IsReadableStreamBYOBRequest",
+          intrinsic_IsInstanceOfBuiltin<ReadableStreamBYOBRequest>, 1, 0),
+
     // See builtin/TypedObject.h for descriptors of the typedobj functions.
     JS_FN("NewOpaqueTypedObject",           js::NewOpaqueTypedObject, 1, 0),
     JS_FN("NewDerivedTypedObject",          js::NewDerivedTypedObject, 3, 0),
@@ -2513,7 +2503,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("TypedObjectTypeDescr",           js::TypedObjectTypeDescr, 1, 0),
     JS_FN("ClampToUint8",                   js::ClampToUint8, 1, 0),
     JS_FN("GetTypedObjectModule",           js::GetTypedObjectModule, 0, 0),
-    JS_FN("GetSimdTypeDescr",               js::GetSimdTypeDescr, 1, 0),
 
     JS_INLINABLE_FN("ObjectIsTypeDescr"    ,          js::ObjectIsTypeDescr, 1, 0,
                     IntrinsicObjectIsTypeDescr),

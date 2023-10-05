@@ -331,7 +331,6 @@ MSG_DEF(JSMSG_STMT_AFTER_RETURN,       0, JSEXN_WARN, "unreachable code after re
 MSG_DEF(JSMSG_STRICT_CODE_WITH,        0, JSEXN_SYNTAXERR, "strict mode code may not contain 'with' statements")
 MSG_DEF(JSMSG_STRICT_NON_SIMPLE_PARAMS, 1, JSEXN_SYNTAXERR, "\"use strict\" not allowed in function with {0} parameter")
 MSG_DEF(JSMSG_TEMPLSTR_UNTERM_EXPR,    0, JSEXN_SYNTAXERR, "missing } in template string")
-MSG_DEF(JSMSG_SIMD_NOT_A_VECTOR,       2, JSEXN_TYPEERR, "expecting a SIMD {0} object as argument {1}")
 MSG_DEF(JSMSG_TOO_MANY_CASES,          0, JSEXN_INTERNALERR, "too many switch cases")
 MSG_DEF(JSMSG_TOO_MANY_CATCH_VARS,     0, JSEXN_SYNTAXERR, "too many catch variables")
 MSG_DEF(JSMSG_TOO_MANY_CON_ARGS,       0, JSEXN_SYNTAXERR, "too many constructor arguments")
@@ -533,15 +532,13 @@ MSG_DEF(JSMSG_INVALID_NAMED_CAPTURE_REF,   0, JSEXN_SYNTAXERR, "invalid named ca
 MSG_DEF(JSMSG_DEFAULT_LOCALE_ERROR,    0, JSEXN_ERR, "internal error getting the default locale")
 MSG_DEF(JSMSG_NO_SUCH_SELF_HOSTED_PROP,1, JSEXN_ERR, "No such property on self-hosted object: {0}")
 
-// Typed object / SIMD
+// Typed object
 MSG_DEF(JSMSG_INVALID_PROTOTYPE,       0, JSEXN_TYPEERR, "prototype field is not an object")
 MSG_DEF(JSMSG_TYPEDOBJECT_BAD_ARGS,    0, JSEXN_TYPEERR, "invalid arguments")
 MSG_DEF(JSMSG_TYPEDOBJECT_BINARYARRAY_BAD_INDEX, 0, JSEXN_RANGEERR, "invalid or out-of-range index")
 MSG_DEF(JSMSG_TYPEDOBJECT_HANDLE_UNATTACHED, 0, JSEXN_TYPEERR, "handle unattached")
 MSG_DEF(JSMSG_TYPEDOBJECT_STRUCTTYPE_BAD_ARGS, 0, JSEXN_RANGEERR, "invalid field descriptor")
 MSG_DEF(JSMSG_TYPEDOBJECT_TOO_BIG,     0, JSEXN_ERR, "Type is too large to allocate")
-MSG_DEF(JSMSG_SIMD_FAILED_CONVERSION,  0, JSEXN_RANGEERR, "SIMD conversion loses precision")
-MSG_DEF(JSMSG_SIMD_TO_NUMBER,          0, JSEXN_TYPEERR, "can't convert SIMD value to number")
 
 // Array
 MSG_DEF(JSMSG_TOO_LONG_ARRAY,         0, JSEXN_TYPEERR, "Too long array")
@@ -616,10 +613,38 @@ MSG_DEF(JSMSG_RETURN_NOT_CALLABLE,     0, JSEXN_TYPEERR, "property 'return' of i
 MSG_DEF(JSMSG_ITERATOR_NO_THROW,       0, JSEXN_TYPEERR, "iterator does not have a 'throw' method")
 
 // Async Iteration
-MSG_DEF(JSMSG_FOR_AWAIT_NOT_OF,        0, JSEXN_TYPEERR, "'for await' loop should be used with 'of'")
+MSG_DEF(JSMSG_FOR_AWAIT_NOT_OF,        0, JSEXN_SYNTAXERR, "'for await' loop should be used with 'of'")
 MSG_DEF(JSMSG_NOT_AN_ASYNC_GENERATOR,  0, JSEXN_TYPEERR, "Not an async generator")
 MSG_DEF(JSMSG_NOT_AN_ASYNC_ITERATOR,   0, JSEXN_TYPEERR, "Not an async from sync iterator")
 MSG_DEF(JSMSG_GET_ASYNC_ITER_RETURNED_PRIMITIVE, 0, JSEXN_TYPEERR, "[Symbol.asyncIterator]() returned a non-object value")
+
+// ReadableStream
+MSG_DEF(JSMSG_READABLESTREAM_UNDERLYINGSOURCE_TYPE_WRONG,0, JSEXN_RANGEERR,"'underlyingSource.type' must be \"bytes\" or undefined.")
+MSG_DEF(JSMSG_READABLESTREAM_INVALID_READER_MODE,        0, JSEXN_RANGEERR,"'mode' must be \"byob\" or undefined.")
+MSG_DEF(JSMSG_NUMBER_MUST_BE_FINITE_NON_NEGATIVE, 1, JSEXN_RANGEERR, "'{0}' must be a finite, non-negative number.")
+MSG_DEF(JSMSG_READABLEBYTESTREAMCONTROLLER_INVALID_BYTESWRITTEN, 0, JSEXN_RANGEERR, "'bytesWritten' exceeds remaining length.")
+MSG_DEF(JSMSG_READABLEBYTESTREAMCONTROLLER_INVALID_VIEW_SIZE, 0, JSEXN_RANGEERR, "view size does not match requested data.")
+MSG_DEF(JSMSG_READABLEBYTESTREAMCONTROLLER_INVALID_VIEW_OFFSET, 0, JSEXN_RANGEERR, "view offset does not match requested position.")
+MSG_DEF(JSMSG_READABLESTREAM_NOT_LOCKED,                 1, JSEXN_TYPEERR, "'{0}' may only be called on a locked stream.")
+MSG_DEF(JSMSG_READABLESTREAM_LOCKED,                     0, JSEXN_TYPEERR, "A Reader may only be created for an unlocked ReadableStream.")
+MSG_DEF(JSMSG_READABLESTREAM_NOT_BYTE_STREAM_CONTROLLER, 1, JSEXN_TYPEERR, "{0} requires a ReadableByteStreamController.")
+MSG_DEF(JSMSG_READABLESTREAM_NOT_DEFAULT_CONTROLLER,     1, JSEXN_TYPEERR, "{0} requires a ReadableStreamDefaultController.")
+MSG_DEF(JSMSG_READABLESTREAM_CONTROLLER_SET,             0, JSEXN_TYPEERR, "The ReadableStream already has a controller defined.")
+MSG_DEF(JSMSG_READABLESTREAMREADER_NOT_OWNED,            1, JSEXN_TYPEERR, "The ReadableStream reader method '{0}' may only be called on a reader owned by a stream.")
+MSG_DEF(JSMSG_READABLESTREAMREADER_NOT_EMPTY,            1, JSEXN_TYPEERR, "The ReadableStream reader method '{0}' may not be called on a reader with read requests.")
+MSG_DEF(JSMSG_READABLESTREAMBYOBREADER_READ_EMPTY_VIEW,  0, JSEXN_TYPEERR, "ReadableStreamBYOBReader.read() was passed an empty TypedArrayBuffer view.")
+MSG_DEF(JSMSG_READABLESTREAMREADER_RELEASED,             0, JSEXN_TYPEERR, "The ReadableStream reader was released.")
+MSG_DEF(JSMSG_READABLESTREAMCONTROLLER_CLOSED,           1, JSEXN_TYPEERR, "'{0}' called on a stream already closing.")
+MSG_DEF(JSMSG_READABLESTREAMCONTROLLER_NOT_READABLE,     1, JSEXN_TYPEERR, "'{0}' may only be called on a stream in the 'readable' state.")
+MSG_DEF(JSMSG_READABLEBYTESTREAMCONTROLLER_BAD_CHUNKSIZE,0, JSEXN_RANGEERR, "ReadableByteStreamController requires a positive integer or undefined for 'autoAllocateChunkSize'.")
+MSG_DEF(JSMSG_READABLEBYTESTREAMCONTROLLER_BAD_CHUNK,    1, JSEXN_TYPEERR, "{0} passed a bad chunk.")
+MSG_DEF(JSMSG_READABLEBYTESTREAMCONTROLLER_CLOSE_PENDING_PULL, 0, JSEXN_TYPEERR, "The ReadableByteStreamController cannot be closed while the buffer is being filled.")
+MSG_DEF(JSMSG_READABLESTREAMBYOBREQUEST_NO_CONTROLLER,   1, JSEXN_TYPEERR, "ReadableStreamBYOBRequest method '{0}' called on a request with no controller.")
+MSG_DEF(JSMSG_READABLESTREAMBYOBREQUEST_RESPOND_CLOSED,  0, JSEXN_TYPEERR, "ReadableStreamBYOBRequest method 'respond' called with non-zero number of bytes with a closed controller.")
+MSG_DEF(JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,     1, JSEXN_TYPEERR, "ReadableStream method {0} not yet implemented")
+
+// Other Stream-related
+MSG_DEF(JSMSG_STREAM_INVALID_HIGHWATERMARK,             0, JSEXN_RANGEERR, "'highWaterMark' must be a non-negative, non-NaN number.")
 
 // BigInt
 MSG_DEF(JSMSG_BIGINT_TO_NUMBER, 0, JSEXN_TYPEERR, "can't convert BigInt to number")
