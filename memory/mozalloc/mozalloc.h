@@ -152,14 +152,11 @@ MFBT_API void* moz_xvalloc(size_t size)
 
 #if defined(_MSC_VER)
 /*
- * Suppress build warning spam (bug 578546).
+ * Suppress build warning spam (issue #2281).
  */
-#define MOZALLOC_THROW_IF_HAS_EXCEPTIONS
-#define MOZALLOC_THROW_BAD_ALLOC_IF_HAS_EXCEPTIONS
+#define MOZALLOC_THROW_IF_HAS_EXCEPTIONS noexcept(true)
+#define MOZALLOC_THROW_BAD_ALLOC_IF_HAS_EXCEPTIONS noexcept(false)
 #elif __cplusplus >= 201103
-/*
- * C++11 has deprecated exception-specifications in favour of |noexcept|.
- */
 #define MOZALLOC_THROW_IF_HAS_EXCEPTIONS noexcept(true)
 #define MOZALLOC_THROW_BAD_ALLOC_IF_HAS_EXCEPTIONS noexcept(false)
 #else
