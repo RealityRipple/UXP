@@ -28,9 +28,11 @@ mfbt_src_cppsrcs = [
 
 # Compression.cpp cannot be built in unified mode because it pulls in Windows system headers.
 # Decimal.cpp doesn't build in unified mode with gcc.
+# We build lz4 in C mode
 mfbt_nonunified_src_lcppsrcs = [
     'Compression.cpp',
     'decimal/Decimal.cpp',
+    'lz4.c',
 ]
 
 mfbt_nonunified_src_cppsrcs = [
