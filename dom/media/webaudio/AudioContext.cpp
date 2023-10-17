@@ -372,13 +372,6 @@ AudioContext::CreateMediaElementSource(HTMLMediaElement& aMediaElement,
     return nullptr;
   }
 
-#ifdef MOZ_EME
-  if (aMediaElement.ContainsRestrictedContent()) {
-    aRv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-    return nullptr;
-  }
-#endif
-
   if (CheckClosed(aRv)) {
     return nullptr;
   }

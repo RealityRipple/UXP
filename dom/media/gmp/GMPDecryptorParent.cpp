@@ -45,13 +45,7 @@ GMPDecryptorParent::~GMPDecryptorParent()
 bool
 GMPDecryptorParent::RecvSetDecryptorId(const uint32_t& aId)
 {
-#ifdef MOZ_EME
-  if (!mIsOpen) {
-    NS_WARNING("Trying to use a dead GMP decrypter!");
-    return false;
-  }
-  mCallback->SetDecryptorId(aId);
-#endif
+ /* EME stub */
   return true;
 }
 

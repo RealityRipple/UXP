@@ -6,9 +6,6 @@
 #ifndef GMPDecryptorProxy_h_
 #define GMPDecryptorProxy_h_
 
-#ifdef MOZ_EME
-#include "mozilla/DecryptorProxyCallback.h"
-#endif
 #include "GMPCallbackBase.h"
 #include "gmp-decryption.h"
 #include "nsString.h"
@@ -17,12 +14,7 @@ namespace mozilla {
 class CryptoSample;
 } // namespace mozilla
 
-#ifdef MOZ_EME
-class GMPDecryptorProxyCallback : public DecryptorProxyCallback,
-                                  public GMPCallbackBase {
-#else
 class GMPDecryptorProxyCallback : public GMPCallbackBase {
-#endif
 
 public:
   virtual ~GMPDecryptorProxyCallback() {}

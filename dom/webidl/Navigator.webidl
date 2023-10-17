@@ -304,15 +304,6 @@ partial interface Navigator {
   readonly attribute LegacyMozTCPSocket mozTCPSocket;
 };
 
-#ifdef MOZ_EME
-partial interface Navigator {
-  [Pref="media.eme.apiVisible", NewObject]
-  Promise<MediaKeySystemAccess>
-  requestMediaKeySystemAccess(DOMString keySystem,
-                              sequence<MediaKeySystemConfiguration> supportedConfigurations);
-};
-#endif
-
 [NoInterfaceObject, Exposed=(Window,Worker)]
 interface NavigatorConcurrentHardware {
   readonly attribute unsigned long long hardwareConcurrency;

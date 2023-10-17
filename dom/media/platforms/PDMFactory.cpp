@@ -35,11 +35,6 @@
 
 #include "AgnosticDecoderModule.h"
 
-#ifdef MOZ_EME
-#include "mozilla/CDMProxy.h"
-#include "EMEDecoderModule.h"
-#endif
-
 #include "DecoderDoctorDiagnostics.h"
 
 #include "MP4Decoder.h"
@@ -443,14 +438,5 @@ PDMFactory::GetDecoder(const TrackInfo& aTrackInfo,
   }
   return pdm.forget();
 }
-
-#ifdef MOZ_EME
-void
-PDMFactory::SetCDMProxy(CDMProxy* aProxy)
-{
-  RefPtr<PDMFactory> m = new PDMFactory();
-  mEMEPDM = new EMEDecoderModule(aProxy, m);
-}
-#endif
 
 }  // namespace mozilla
