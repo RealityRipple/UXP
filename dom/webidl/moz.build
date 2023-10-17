@@ -572,19 +572,6 @@ WEBIDL_FILES = [
     'XULElement.webidl',
 ]
 
-if CONFIG['MOZ_EME']:
-    WEBIDL_FILES += [
-        'MediaEncryptedEvent.webidl',
-        'MediaKeyError.webidl',
-        'MediaKeyMessageEvent.webidl',
-        'MediaKeys.webidl',
-        'MediaKeySession.webidl',
-        'MediaKeysRequestStatus.webidl',
-        'MediaKeyStatusMap.webidl',
-        'MediaKeySystemAccess.webidl',
-        'WidevineCDMManifest.webidl',
-    ]
-
 if CONFIG['MOZ_AUDIO_CHANNEL_MANAGER']:
     WEBIDL_FILES += [
         'AudioChannelManager.webidl',
