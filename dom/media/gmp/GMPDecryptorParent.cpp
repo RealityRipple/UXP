@@ -42,13 +42,6 @@ GMPDecryptorParent::~GMPDecryptorParent()
 {
 }
 
-bool
-GMPDecryptorParent::RecvSetDecryptorId(const uint32_t& aId)
-{
- /* EME stub */
-  return true;
-}
-
 nsresult
 GMPDecryptorParent::Init(GMPDecryptorProxyCallback* aCallback,
                          bool aDistinctiveIdentifierRequired,
