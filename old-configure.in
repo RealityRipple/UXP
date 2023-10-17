@@ -2724,10 +2724,6 @@ dnl ========================================================
 dnl = Enable Gecko Media Plugins
 dnl ========================================================
 
-if test -n "$MOZ_EME"; then
-    MOZ_GMP=1
-fi
-
 if test -n "$MOZ_WEBRTC"; then
     MOZ_GMP=1
 fi
@@ -2793,25 +2789,6 @@ if test -n "$MOZ_APPLEMEDIA"; then
     [AC_MSG_ERROR([MacOS X 10.7 SDK or later is required])])
 fi
 fi # COMPILE_ENVIRONMENT
-
-dnl ========================================================
-dnl = EME support
-dnl ========================================================
-
-MOZ_ARG_ENABLE_BOOL(eme,
-[  --enable-eme           Enable support for Encrypted Media Extensions  ],
-    MOZ_EME=1,
-    MOZ_EME=)
-
-
-if test -n "$MOZ_EME"; then
-    if test -z "$MOZ_FMP4"; then
-        AC_MSG_ERROR([Encrypted Media Extension support requires Fragmented MP4 support])
-    fi
-    AC_DEFINE(MOZ_EME)
-fi
-
-AC_SUBST(MOZ_EME)
 
 MOZ_LIBVPX_CFLAGS=
 MOZ_LIBVPX_LIBS=
