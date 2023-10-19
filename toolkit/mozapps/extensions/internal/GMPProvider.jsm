@@ -28,7 +28,7 @@ const URI_EXTENSION_STRINGS  = "chrome://mozapps/locale/extensions/extensions.pr
 const STRING_TYPE_NAME       = "type.%ID%.name";
 
 const SEC_IN_A_DAY           = 24 * 60 * 60;
-// How long to wait after a user enabled EME before attempting to download CDMs.
+// How long to wait before attempting to download GMPs.
 const GMP_CHECK_DELAY        = 10 * 1000; // milliseconds
 
 const NS_GRE_DIR             = "GreD";
@@ -48,16 +48,6 @@ const GMP_PLUGINS = [
     licenseURL:      "chrome://mozapps/content/extensions/OpenH264-license.txt",
     homepageURL:     "http://www.openh264.org/",
     optionsURL:      "chrome://mozapps/content/extensions/gmpPrefs.xul"
-  },
-  {
-    id:              WIDEVINE_ID,
-    name:            "widevine_name",
-    // Describe the purpose of both CDMs in the same way.
-    description:     "widevine_description2",
-    licenseURL:      "https://www.google.com/policies/privacy/",
-    homepageURL:     "https://www.widevine.com/",
-    optionsURL:      "chrome://mozapps/content/extensions/gmpPrefs.xul",
-    isEME:           true
   }];
 XPCOMUtils.defineConstant(this, "GMP_PLUGINS", GMP_PLUGINS);
 
@@ -109,11 +99,6 @@ function GMPWrapper(aPluginInfo) {
   Preferences.observe(GMPPrefs.getPrefKey(GMPPrefs.KEY_PLUGIN_VERSION,
                                           this._plugin.id),
                       this.onPrefVersionChanged, this);
-  if (this._plugin.isEME) {
-    Preferences.observe(GMPPrefs.KEY_EME_ENABLED,
-                        this.onPrefEMEGlobalEnabledChanged, this);
-    messageManager.addMessageListener("EMEVideo:ContentMediaKeysRequest", this);
-  }
 }
 
 GMPWrapper.prototype = {
@@ -149,14 +134,7 @@ GMPWrapper.prototype = {
   get version() { return GMPPrefs.get(GMPPrefs.KEY_PLUGIN_VERSION, null,
                                       this._plugin.id); },
 
-  get isActive() { return !this.appDisabled && !this.userDisabled; },
-  get appDisabled() {
-    if (this._plugin.isEME && !GMPPrefs.get(GMPPrefs.KEY_EME_ENABLED, true)) {
-      // If "media.eme.enabled" is false, all EME plugins are disabled.
-      return true;
-    }
-   return false;
-  },
+  get isActive() { return !this.userDisabled; },
 
   get userDisabled() {
     return !GMPPrefs.get(GMPPrefs.KEY_PLUGIN_ENABLED, true, this._plugin.id);
@@ -386,7 +364,7 @@ GMPWrapper.prototype = {
   },
 
   onPrefEnabledChanged: function() {
-    if (!this._plugin.isEME || !this.appDisabled) {
+    if (!this._plugin.isEME) {
       this._handleEnabledChanged();
     }
   },
@@ -436,11 +414,6 @@ GMPWrapper.prototype = {
     Preferences.ignore(GMPPrefs.getPrefKey(GMPPrefs.KEY_PLUGIN_VERSION,
                                            this._plugin.id),
                        this.onPrefVersionChanged, this);
-    if (this._plugin.isEME) {
-      Preferences.ignore(GMPPrefs.KEY_EME_ENABLED,
-                         this.onPrefEMEGlobalEnabledChanged, this);
-      messageManager.removeMessageListener("EMEVideo:ContentMediaKeysRequest", this);
-    }
     return this._updateTask;
   },
 };
@@ -474,21 +447,6 @@ var GMPProvider = {
           this._log.warn("startup - adding gmp directory failed with " +
                          e.name + " - sandboxing not available?", e);
         }
-      }
-    }
-
-    if (Preferences.get(GMPPrefs.KEY_EME_ENABLED, false)) {
-      try {
-        let greDir = Services.dirsvc.get(NS_GRE_DIR,
-                                         Ci.nsILocalFile);
-        let clearkeyPath = OS.Path.join(greDir.path,
-                                        CLEARKEY_PLUGIN_ID,
-                                        CLEARKEY_VERSION);
-        this._log.info("startup - adding clearkey CDM directory " +
-                       clearkeyPath);
-        gmpService.addPluginDirectory(clearkeyPath);
-      } catch (e) {
-        this._log.warn("startup - adding clearkey CDM failed", e);
       }
     }
   },
@@ -586,12 +544,11 @@ var GMPProvider = {
   },
 
   ensureProperCDMInstallState: function() {
-    if (!GMPPrefs.get(GMPPrefs.KEY_EME_ENABLED, true)) {
-      for (let [id, plugin] of this._plugins) {
-        if (plugin.isEME && plugin.wrapper.isInstalled) {
-          gmpService.addPluginDirectory(plugin.wrapper.gmpPath);
-          plugin.wrapper.uninstallPlugin();
-        }
+    // This removes disabled EME CDM plugins
+    for (let [id, plugin] of this._plugins) {
+      if (plugin.isEME && plugin.wrapper.isInstalled) {
+        gmpService.addPluginDirectory(plugin.wrapper.gmpPath);
+        plugin.wrapper.uninstallPlugin();
       }
     }
   },

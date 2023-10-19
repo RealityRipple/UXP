@@ -44,9 +44,6 @@ if CONFIG['MOZ_FMP4']:
 if CONFIG['MOZ_WEBRTC']:
     DIRS += ['bridge']
 
-if CONFIG['MOZ_EME']:
-    DIRS += ['eme']
-
 if CONFIG['MOZ_GMP']:
     DIRS += [
         'gmp',

@@ -10,10 +10,6 @@
 #include "mozilla/Function.h"
 #include "mozilla/StaticMutex.h"
 
-#ifdef MOZ_EME
-class CDMProxy;
-#endif
-
 namespace mozilla {
 
 class DecoderDoctorDiagnostics;
@@ -39,15 +35,6 @@ public:
   bool Supports(const TrackInfo& aTrackInfo,
                 DecoderDoctorDiagnostics* aDiagnostics) const;
 
-#ifdef MOZ_EME
-  // Creates a PlatformDecoderModule that uses a CDMProxy to decrypt or
-  // decrypt-and-decode EME encrypted content. If the CDM only decrypts and
-  // does not decode, we create a PDM and use that to create MediaDataDecoders
-  // that we use on on aTaskQueue to decode the decrypted stream.
-  // This is called on the decode task queue.
-  void SetCDMProxy(CDMProxy* aProxy);
-#endif
-
   static const int kYUV400 = 0;
   static const int kYUV420 = 1;
   static const int kYUV422 = 2;
@@ -69,7 +56,6 @@ private:
                        const CreateDecoderParams& aParams);
 
   nsTArray<RefPtr<PlatformDecoderModule>> mCurrentPDMs;
-  RefPtr<PlatformDecoderModule> mEMEPDM;
   RefPtr<PlatformDecoderModule> mBlankPDM;
 
   bool mWMFFailedToLoad = false;
