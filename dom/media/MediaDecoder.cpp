@@ -388,9 +388,6 @@ MediaDecoder::MediaDecoder(MediaDecoderOwner* aOwner)
   , mLogicalPosition(0.0)
   , mDuration(std::numeric_limits<double>::quiet_NaN())
   , mResourceCallback(new ResourceCallback())
-#ifdef MOZ_EME
-  , mCDMProxyPromise(mCDMProxyPromiseHolder.Ensure(__func__))
-#endif
   , mIgnoreProgressData(false)
   , mInfiniteStream(false)
   , mOwner(aOwner)
@@ -474,10 +471,6 @@ MediaDecoder::Shutdown()
   mWatchManager.Shutdown();
 
   mResourceCallback->Disconnect();
-
-#ifdef MOZ_EME
-  mCDMProxyPromiseHolder.RejectIfExists(true, __func__);
-#endif
 
   DiscardOngoingSeekIfExists();
 
@@ -1550,23 +1543,6 @@ MediaDecoder::CanPlayThrough()
   NS_ENSURE_TRUE(mDecoderStateMachine, false);
   return GetStatistics().CanPlayThrough();
 }
-
-#ifdef MOZ_EME
-RefPtr<MediaDecoder::CDMProxyPromise>
-MediaDecoder::RequestCDMProxy() const
-{
-  return mCDMProxyPromise;
-}
-
-void
-MediaDecoder::SetCDMProxy(CDMProxy* aProxy)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aProxy);
-
-  mCDMProxyPromiseHolder.ResolveIfExists(aProxy, __func__);
-}
-#endif
 
 bool
 MediaDecoder::IsOpusEnabled()

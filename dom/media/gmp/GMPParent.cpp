@@ -28,11 +28,6 @@ using mozilla::ipc::GeckoChildProcessHost;
 #include "WMFDecoderModule.h"
 #endif
 
-#ifdef MOZ_EME
-#include "mozilla/dom/WidevineCDMManifestBinding.h"
-#include "widevine-adapter/WidevineAdapter.h"
-#endif
-
 namespace mozilla {
 
 #undef LOG
@@ -654,18 +649,7 @@ GMPParent::ReadGMPMetaData()
     return ReadGMPInfoFile(infoFile);
   }
 
-#ifdef MOZ_EME
-  // Maybe this is the Widevine adapted plugin?
-  nsCOMPtr<nsIFile> manifestFile;
-  rv = mDirectory->Clone(getter_AddRefs(manifestFile));
-  if (NS_FAILED(rv)) {
-    return GenericPromise::CreateAndReject(rv, __func__);
-  }
-  manifestFile->AppendRelativePath(NS_LITERAL_STRING("manifest.json"));
-  return ReadChromiumManifestFile(manifestFile);
-#else
   return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-#endif
 }
 
 RefPtr<GenericPromise>
@@ -758,48 +742,8 @@ GMPParent::ReadChromiumManifestFile(nsIFile* aFile)
 RefPtr<GenericPromise>
 GMPParent::ParseChromiumManifest(nsString aJSON)
 {
-#ifdef MOZ_EME
-  LOGD("%s: for '%s'", __FUNCTION__, NS_LossyConvertUTF16toASCII(aJSON).get());
-
-  MOZ_ASSERT(NS_IsMainThread());
-  mozilla::dom::WidevineCDMManifest m;
-  if (!m.Init(aJSON)) {
-    return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-  }
-
-  nsresult ignored; // Note: ToInteger returns 0 on failure.
-  if (!WidevineAdapter::Supports(m.mX_cdm_module_versions.ToInteger(&ignored),
-                                 m.mX_cdm_interface_versions.ToInteger(&ignored),
-                                 m.mX_cdm_host_versions.ToInteger(&ignored))) {
-    return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-  }
-
-  mDisplayName = NS_ConvertUTF16toUTF8(m.mName);
-  mDescription = NS_ConvertUTF16toUTF8(m.mDescription);
-  mVersion = NS_ConvertUTF16toUTF8(m.mVersion);
-
-  GMPCapability video(NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER));
-  video.mAPITags.AppendElement(NS_LITERAL_CSTRING("h264"));
-  video.mAPITags.AppendElement(NS_LITERAL_CSTRING("vp8"));
-  video.mAPITags.AppendElement(NS_LITERAL_CSTRING("vp9"));
-  video.mAPITags.AppendElement(kEMEKeySystemWidevine);
-  mCapabilities.AppendElement(Move(video));
-
-  GMPCapability decrypt(NS_LITERAL_CSTRING(GMP_API_DECRYPTOR));
-  decrypt.mAPITags.AppendElement(kEMEKeySystemWidevine);
-  mCapabilities.AppendElement(Move(decrypt));
-
-  MOZ_ASSERT(mName.EqualsLiteral("widevinecdm"));
-  mAdapter = NS_LITERAL_STRING("widevine");
-#ifdef XP_WIN
-  mLibs = NS_LITERAL_CSTRING("dxva2.dll");
-#endif
-
-  return GenericPromise::CreateAndResolve(true, __func__);
-#else  // !MOZ_EME
   MOZ_ASSERT_UNREACHABLE("don't call me if EME isn't enabled");
   return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
-#endif // !MOZ_EME
 }
 
 bool

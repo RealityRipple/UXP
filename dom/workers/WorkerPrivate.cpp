@@ -241,6 +241,7 @@ private:
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     nsresult rv = mWrappedRunnable->Run();
+    mWrappedRunnable = nullptr;
     if (NS_FAILED(rv)) {
       if (!JS_IsExceptionPending(aCx)) {
         Throw(aCx, rv);
@@ -259,6 +260,7 @@ private:
     MOZ_ASSERT(cancelable); // We checked this earlier!
     rv = cancelable->Cancel();
     nsresult rv2 = WorkerRunnable::Cancel();
+    mWrappedRunnable = nullptr;
     return NS_FAILED(rv) ? rv : rv2;
   }
 };
@@ -6225,8 +6227,6 @@ WorkerPrivate::RunExpiredTimeouts(JSContext* aCx)
 
   // Guard against recursion.
   mRunningExpiredTimeouts = true;
-
-  MOZ_DIAGNOSTIC_ASSERT(data->mCurrentTimerNestingLevel == 0);
 
   // Run expired timeouts.
   for (uint32_t index = 0; index < expiredTimeouts.Length(); index++) {

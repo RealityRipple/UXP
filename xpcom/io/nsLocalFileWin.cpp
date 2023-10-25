@@ -3016,6 +3016,8 @@ nsLocalFile::IsExecutable(bool* aResult)
       "air",         // Adobe AIR installer
       "app",         // executable application
       "application", // from bug 348763
+      "appx",
+      "appxbundle",
       "asp",
       "bas",
       "bat",
@@ -3058,6 +3060,8 @@ nsLocalFile::IsExecutable(bool* aResult)
       "msh",         // Microsoft Shell
       "mshxml",      // Microsoft Shell
       "msi",
+      "msix",
+      "msixbundle",
       "msp",
       "mst",
       "ops",         // Office Profile Settings

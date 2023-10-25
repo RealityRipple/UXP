@@ -90,12 +90,12 @@ function checkTrackStats(pc, rtpSenderOrReceiver, outbound) {
       (audio ? "audio" : "video") + " rtp track id " + track.id;
   return pc.getStats(track).then(stats => {
     ok(pc.hasStat(stats, {
-      type: outbound ? "outboundrtp" : "inboundrtp",
+      type: outbound ? "outbound-rtp" : "inbound-rtp",
       isRemote: false,
       mediaType: audio ? "audio" : "video"
     }), msg + " - found expected stats");
     ok(!pc.hasStat(stats, {
-      type: outbound ? "inboundrtp" : "outboundrtp",
+      type: outbound ? "inbound-rtp" : "outbound-rtp",
       isRemote: false
     }), msg + " - did not find extra stats with wrong direction");
     ok(!pc.hasStat(stats, {
@@ -118,7 +118,7 @@ var commandsPeerConnectionInitial = [
       test.setupSignalingClient();
       test.registerSignalingCallback("ice_candidate", function (message) {
         var pc = test.pcRemote ? test.pcRemote : test.pcLocal;
-        pc.storeOrAddIceCandidate(new RTCIceCandidate(message.ice_candidate));
+        pc.storeOrAddIceCandidate(message.ice_candidate);
       });
       test.registerSignalingCallback("end_of_trickle_ice", function (message) {
         test.signalingMessagesFinished();
