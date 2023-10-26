@@ -1,6 +1,6 @@
 This directory contains files used in Goanna builds from FFmpeg
 (http://ffmpeg.org). The current files are from FFmpeg as of
-Release n4.2.7
+Release n6.0
 
 All source files match their path from the library's source archive.
 The FFmpeg project recommends to use the branch tip, however we
