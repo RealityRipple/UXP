@@ -15,6 +15,20 @@ extern NSString* const kCorePboardType_url;
 extern NSString* const kCorePboardType_urld;
 extern NSString* const kCorePboardType_urln;
 extern NSString* const kCustomTypesPboardType;
+#if !defined(MAC_OS_X_VERSION_10_7) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7)
+extern NSString* const kCorePboardType_text; // bug 966986 attachment 8540201
+
+// restore from bug 966986
+@interface NSPasteboardWrapper : NSObject
+{
+  NSPasteboard* mPasteboard;
+  NSArray* mFilenames;
+}
+- (id)initWithPasteboard:(NSPasteboard*)aPasteboard;
+- (id)propertyListForType:(NSString*)aType;
+- (NSPasteboard*)pasteboard;
+@end
+#endif
 
 class nsDragService : public nsBaseDragService
 {
@@ -42,10 +56,12 @@ private:
                               mozilla::LayoutDeviceIntRect* aDragRect,
                               nsIScriptableRegion* aRegion);
   bool IsValidType(NSString* availableType, bool allowFileURL);
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   NSString* GetStringForType(NSPasteboardItem* item, const NSString* type,
                              bool allowFileURL = false);
   NSString* GetTitleForURL(NSPasteboardItem* item);
   NSString* GetFilePath(NSPasteboardItem* item);
+#endif
 
   nsCOMPtr<nsIArray> mDataItems; // only valid for a drag started within gecko
   NSView* mNativeDragView;

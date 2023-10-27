@@ -161,7 +161,6 @@ nsLookAndFeel::NativeGetColor(ColorID aID, nscolor &aColor)
         break;
       }
       // Otherwise fall through and return the regular button text:
-
     case eColorID_buttontext:
     case eColorID__moz_buttonhovertext:
       aColor = GetColorFromNSColor([NSColor controlTextColor]);
@@ -421,8 +420,29 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
       aResult = NS_ALERT_TOP;
       break;
     case eIntID_TabFocusModel:
+#if defined(MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
       aResult = [NSApp isFullKeyboardAccessEnabled] ?
                   nsIContent::eTabFocus_any : nsIContent::eTabFocus_textControlsMask;
+#else
+    {
+      // we should probably cache this
+      CFPropertyListRef fullKeyboardAccessProperty;
+      fullKeyboardAccessProperty = ::CFPreferencesCopyValue(CFSTR("AppleKeyboardUIMode"),
+                                                            kCFPreferencesAnyApplication,
+                                                            kCFPreferencesCurrentUser,
+                                                            kCFPreferencesAnyHost);
+      aResult = 1;    // default to just textboxes
+      if (fullKeyboardAccessProperty) {
+        int32_t fullKeyboardAccessPrefVal;
+        if (::CFNumberGetValue((CFNumberRef) fullKeyboardAccessProperty, kCFNumberIntType, &fullKeyboardAccessPrefVal)) {
+          // the second bit means  "Full keyboard access" is on
+          if (fullKeyboardAccessPrefVal & (1 << 1))
+            aResult = 7; // everything that can be focused
+        }
+        ::CFRelease(fullKeyboardAccessProperty);
+      }
+    }
+#endif
       break;
     case eIntID_ScrollToClick:
     {
@@ -446,10 +466,12 @@ nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
       break;
     case eIntID_SwipeAnimationEnabled:
       aResult = 0;
+#if defined(MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
       if ([NSEvent respondsToSelector:@selector(
             isSwipeTrackingFromScrollEventsEnabled)]) {
         aResult = [NSEvent isSwipeTrackingFromScrollEventsEnabled] ? 1 : 0;
       }
+#endif
       break;
     case eIntID_ColorPickerAvailable:
       aResult = 1;

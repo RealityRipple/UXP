@@ -22,6 +22,13 @@
 #define NS_PAPER_ORIENTATION_LANDSCAPE  (NSLandscapeOrientation)
 #endif
 
+// 10.4 is missing these. They don't seem to be used, but here they are.
+#if !defined(MAC_OS_X_VERSION_10_6) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6
+#define NSPrintSelectionOnly @"NSPrintSelectionOnly"
+#define NSPrintJobSavingURL @"NSJobSavingURL"
+#define NSPrintJobSavingFileNameExtensionHidden @"NSJobSavingFileNameExtensionHidden"
+#endif
+
 using namespace mozilla::embedding;
 
 nsPrintOptionsX::nsPrintOptionsX()
@@ -91,11 +98,13 @@ nsPrintOptionsX::SerializeToPrintData(nsIPrintSettings* aSettings,
     nsCocoaUtils::GetStringForNSString(faxNumber, data->faxNumber());
   }
 
+#if defined(MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
   NSURL* printToFileURL = [dict objectForKey: NSPrintJobSavingURL];
   if (printToFileURL) {
     nsCocoaUtils::GetStringForNSString([printToFileURL absoluteString],
                                        data->toFileName());
   }
+#endif
 
   NSDate* printTime = [dict objectForKey: NSPrintTime];
   if (printTime) {
@@ -151,9 +160,22 @@ nsPrintOptionsX::SerializeToPrintData(nsIPrintSettings* aSettings,
   data->detailedErrorReporting() = [[dict objectForKey: NSPrintDetailedErrorReporting] boolValue];
   data->addHeaderAndFooter() = [[dict objectForKey: NSPrintHeaderAndFooter] boolValue];
   data->fileNameExtensionHidden() =
+#if defined(MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
     [[dict objectForKey: NSPrintJobSavingFileNameExtensionHidden] boolValue];
 
   bool printSelectionOnly = [[dict objectForKey: NSPrintSelectionOnly] boolValue];
+#else
+    // It's debatable this has any value, but just in case,
+    [dict objectForKey: NSPrintJobSavingFileNameExtensionHidden] ?
+    [[dict objectForKey: NSPrintJobSavingFileNameExtensionHidden] boolValue] :
+    false;
+
+  bool printSelectionOnly = // In a like, similarly purposeless fashion
+  [dict objectForKey: NSPrintSelectionOnly] ?
+  [[dict objectForKey: NSPrintSelectionOnly] boolValue] :
+  false;
+#endif
+
   aSettings->SetPrintOptions(nsIPrintSettings::kEnableSelectionRB,
                              printSelectionOnly);
   aSettings->GetPrintOptionsBits(&data->optionFlags());
@@ -267,11 +289,13 @@ nsPrintOptionsX::DeserializeToPrintSettings(const PrintData& data,
                       forKey: NSPrintSelectionOnly];
   }
 
+#if defined(MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
   NSURL* jobSavingURL =
     [NSURL URLWithString: nsCocoaUtils::ToNSString(data.toFileName())];
   if (jobSavingURL) {
     [newPrintInfoDict setObject: jobSavingURL forKey: NSPrintJobSavingURL];
   }
+#endif
 
   NSTimeInterval timestamp = data.printTime();
   NSDate* printTime = [NSDate dateWithTimeIntervalSinceReferenceDate: timestamp];

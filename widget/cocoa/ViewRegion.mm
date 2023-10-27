@@ -19,7 +19,7 @@ bool
 ViewRegion::UpdateRegion(const LayoutDeviceIntRegion& aRegion,
                          const nsChildView& aCoordinateConverter,
                          NSView* aContainerView,
-                         NSView* (^aViewCreationCallback)())
+                         std::function<NSView*()> aViewCreationCallback)
 {
   if (mRegion == aRegion) {
     return false;

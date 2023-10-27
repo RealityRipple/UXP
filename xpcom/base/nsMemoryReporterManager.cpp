@@ -483,6 +483,10 @@ InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType)
       base = SHARED_REGION_BASE_X86_64;
       size = SHARED_REGION_SIZE_X86_64;
       break;
+    case CPU_TYPE_POWERPC:
+      base = SHARED_REGION_BASE_PPC;
+      size = SHARED_REGION_SIZE_PPC;
+      break;
     default:
       return false;
   }
@@ -528,8 +532,10 @@ ResidentUniqueDistinguishedAmount(int64_t* aN)
     }
 
     switch (info.share_mode) {
+#ifdef SM_LARGE_PAGE
       case SM_LARGE_PAGE:
         // NB: Large pages are not shareable and always resident.
+#endif
       case SM_PRIVATE:
         privatePages += info.private_pages_resident;
         privatePages += info.shared_pages_resident;

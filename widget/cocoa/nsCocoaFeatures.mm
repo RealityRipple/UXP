@@ -15,6 +15,8 @@
 #define MACOS_MINOR_VERSION_MASK 0x00FFFFFF
 #define MACOS_BUGFIX_VERSION_MASK 0x00FFFFFF
 #define MACOS_VERSION_10_0_HEX 0x000A0000
+#define MACOS_VERSION_10_5_HEX 0x000A0500
+#define MACOS_VERSION_10_6_HEX 0x000A0600
 #define MACOS_VERSION_10_7_HEX 0x000A0700
 #define MACOS_VERSION_10_8_HEX 0x000A0800
 #define MACOS_VERSION_10_9_HEX 0x000A0900
@@ -28,6 +30,7 @@
 #define MACOS_VERSION_11_0_HEX 0x000B0000
 #define MACOS_VERSION_12_0_HEX 0x000C0000
 #define MACOS_VERSION_13_0_HEX 0x000D0000
+#define MACOS_VERSION_14_0_HEX 0x000E0000
 
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
@@ -93,12 +96,12 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor, int32_t aBug
   int32_t macOSVersion;
   if (aMajor < 10) {
     aMajor = 10;
-    NS_ERROR("Couldn't determine macOS version, assuming 10.7");
-    macOSVersion = MACOS_VERSION_10_7_HEX;
-  } else if (aMajor == 10 && aMinor < 7) {
-    aMinor = 7;
-    NS_ERROR("macOS version too old, assuming 10.7");
-    macOSVersion = MACOS_VERSION_10_7_HEX;
+    NS_ERROR("Couldn't determine macOS version, assuming 10.5");
+    macOSVersion = MACOS_VERSION_10_5_HEX;
+  } else if (aMajor == 10 && aMinor < 5) {
+    aMinor = 5;
+    NS_ERROR("macOS version too old, assuming 10.5");
+    macOSVersion = MACOS_VERSION_10_5_HEX;
   } else {
     MOZ_ASSERT(aMajor >= 10);
     MOZ_ASSERT(aMajor < 256);
@@ -158,6 +161,36 @@ nsCocoaFeatures::macOSVersionMinor()
 nsCocoaFeatures::macOSVersionBugFix()
 {
   return ExtractBugFixVersion(macOSVersion());
+}
+
+/* static */ bool
+nsCocoaFeatures::OnLeopardOrLater()
+{
+    return (macOSVersion() >= MACOS_VERSION_10_5_HEX);
+}
+
+/* static */ bool
+nsCocoaFeatures::OnSnowLeopardOrLater()
+{
+    return (macOSVersion() >= MACOS_VERSION_10_6_HEX);
+}
+
+/* static */ bool
+nsCocoaFeatures::OnLionOrLater()
+{
+    return (macOSVersion() >= MACOS_VERSION_10_7_HEX);
+}
+
+/* static */ bool
+nsCocoaFeatures::OnMountainLionOrLater()
+{
+    return (macOSVersion() >= MACOS_VERSION_10_8_HEX);
+}
+
+/* static */ bool
+nsCocoaFeatures::OnMavericksOrLater()
+{
+    return (macOSVersion() >= MACOS_VERSION_10_9_HEX);
 }
 
 /* static */ bool
@@ -227,6 +260,12 @@ nsCocoaFeatures::OnMontereyOrLater()
 nsCocoaFeatures::OnVenturaOrLater() 
 {
   return (macOSVersion() >= MACOS_VERSION_13_0_HEX);
+}
+
+/* static */ bool
+nsCocoaFeatures::OnSonomaOrLater()
+{
+  return (macOSVersion() >= MACOS_VERSION_14_0_HEX);
 }
 
 /* static */ bool

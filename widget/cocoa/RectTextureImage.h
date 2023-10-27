@@ -7,6 +7,7 @@
 #define RectTextureImage_h_
 
 #include "mozilla/RefPtr.h"
+#include <functional>
 
 class MacIOSurface;
 
@@ -38,8 +39,8 @@ public:
 
   void UpdateIfNeeded(const LayoutDeviceIntSize& aNewSize,
                       const LayoutDeviceIntRegion& aDirtyRegion,
-                      void (^aCallback)(gfx::DrawTarget*,
-                                        const LayoutDeviceIntRegion&))
+                      std::function<void(gfx::DrawTarget*,
+                                         const LayoutDeviceIntRegion&)> aCallback)
   {
     RefPtr<gfx::DrawTarget> drawTarget = BeginUpdate(aNewSize, aDirtyRegion);
     if (drawTarget) {

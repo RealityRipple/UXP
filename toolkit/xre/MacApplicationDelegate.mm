@@ -47,7 +47,11 @@ private:
   NSAutoreleasePool *mLocalPool;
 };
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 @interface MacApplicationDelegate : NSObject<NSApplicationDelegate>
+#else
+@interface MacApplicationDelegate : NSObject
+#endif
 {
 }
 
@@ -88,7 +92,11 @@ SetupMacApplicationDelegate()
                                             forKey:@"NSTreatUnknownArgumentsAsOpen"];
 
   // Create the delegate. This should be around for the lifetime of the app.
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   id<NSApplicationDelegate> delegate = [[MacApplicationDelegate alloc] init];
+#else
+  id delegate = [[MacApplicationDelegate alloc] init];
+#endif
   [[GeckoNSApplication sharedApplication] setDelegate:delegate];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;

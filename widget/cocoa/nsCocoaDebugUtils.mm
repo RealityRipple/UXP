@@ -11,6 +11,9 @@
 #include <time.h>
 #include <execinfo.h>
 #include <asl.h>
+#include <unistd.h>
+
+#import <Cocoa/Cocoa.h>
 
 static char gProcPath[PROC_PIDPATHINFO_MAXSIZE] = {0};
 static char gBundleID[MAXPATHLEN] = {0};
@@ -39,7 +42,11 @@ static void MaybeGetPathAndID()
 
 static void GetThreadName(char* aName, size_t aSize)
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   pthread_getname_np(pthread_self(), aName, aSize);
+#else
+  snprintf(aName, aSize, "Thread #%lu", (unsigned long)pthread_self);
+#endif
 }
 
 void

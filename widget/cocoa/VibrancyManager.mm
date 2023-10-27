@@ -18,7 +18,7 @@ VibrancyManager::UpdateVibrantRegion(VibrancyType aType,
     return;
   }
   auto& vr = *mVibrantRegions.LookupOrAdd(uint32_t(aType));
-  vr.UpdateRegion(aRegion, mCoordinateConverter, mContainerView, ^() {
+  vr.UpdateRegion(aRegion, mCoordinateConverter, mContainerView, [this, aType]() {
     return this->CreateEffectView(aType);
   });
 }
@@ -123,7 +123,7 @@ AppearanceForVibrancyType(VibrancyType aType)
   }
 }
 
-#if !defined(MAC_OS_X_VERSION_10_10) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_10
+#if !defined(MAC_OS_X_VERSION_10_10) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_10)
 enum {
   NSVisualEffectStateFollowsWindowActiveState,
   NSVisualEffectStateActive,
@@ -135,7 +135,7 @@ enum {
 };
 #endif
 
-#if !defined(MAC_OS_X_VERSION_10_11) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_11
+#if !defined(MAC_OS_X_VERSION_10_11) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_11)
 enum {
   NSVisualEffectMaterialMenu = 5,
   NSVisualEffectMaterialSidebar = 7
@@ -170,7 +170,7 @@ HasVibrantForeground(VibrancyType aType)
   }
 }
 
-#if !defined(MAC_OS_X_VERSION_10_12) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+#if !defined(MAC_OS_X_VERSION_10_12) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12)
 enum {
   NSVisualEffectMaterialSelection = 4
 };
@@ -207,8 +207,10 @@ VibrancyManager::CreateEffectView(VibrancyType aType, BOOL aIsContainer)
     // Before 10.11 there is no material that perfectly matches the menu
     // look. Of all available material types, NSVisualEffectMaterialTitlebar
     // is the one that comes closest.
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     [effectView setMaterial:canUseElCapitanMaterials ? NSVisualEffectMaterialMenu
                                                      : NSVisualEffectMaterialTitlebar];
+#endif
   } else if (aType == VibrancyType::SOURCE_LIST && canUseElCapitanMaterials) {
     [effectView setMaterial:NSVisualEffectMaterialSidebar];
   } else if (aType == VibrancyType::HIGHLIGHTED_MENUITEM ||

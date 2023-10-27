@@ -18,6 +18,11 @@ public:
   static int32_t macOSVersionMajor();
   static int32_t macOSVersionMinor();
   static int32_t macOSVersionBugFix();
+  static bool OnLeopardOrLater();
+  static bool OnSnowLeopardOrLater();
+  static bool OnLionOrLater();
+  static bool OnMountainLionOrLater();
+  static bool OnMavericksOrLater();
   static bool OnYosemiteOrLater();
   static bool OnElCapitanOrLater();
   static bool OnSierraOrLater();
@@ -27,6 +32,7 @@ public:
   static bool OnBigSurOrLater();
   static bool OnMontereyOrLater();
   static bool OnVenturaOrLater();
+  static bool OnSonomaOrLater();
 
   static bool IsAtLeastVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix=0);
 

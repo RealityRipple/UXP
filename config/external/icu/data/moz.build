@@ -26,5 +26,8 @@ LOCAL_INCLUDES += ['.']
 if CONFIG['HAVE_YASM']:
     USE_YASM = True
     SOURCES += ['icudata.s']
+elif CONFIG['OS_ARCH'] == 'Darwin':
+    if CONFIG['CPU_ARCH'] != 'ppc':
+        SOURCES += ['icudata_gas.S']
 elif CONFIG['GNU_AS']:
     SOURCES += ['icudata_gas.S']

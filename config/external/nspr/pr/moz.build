@@ -46,7 +46,7 @@ elif CONFIG['OS_TARGET'] == 'Darwin':
     )
     SOURCES += [
         '/nsprpub/pr/src/md/unix/darwin.c',
-        '/nsprpub/pr/src/md/unix/os_Darwin.s',
+        '/nsprpub/pr/src/md/unix/os_Darwin.S',
     ]
     if not CONFIG['MOZ_IOS']:
         DEFINES['HAVE_CRT_EXTERNS_H'] = True

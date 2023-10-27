@@ -141,14 +141,17 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
     OS_LIBS += [
         '-framework OpenGL',
         '-framework SystemConfiguration',
-        '-framework AVFoundation',
-        '-framework CoreMedia',
         '-framework IOKit',
         '-F%s' % CONFIG['MACOS_PRIVATE_FRAMEWORKS_DIR'],
         '-framework CoreUI',
-        '-framework CoreSymbolication',
         'cups',
     ]
+    if CONFIG['CPU_ARCH'] != 'ppc':
+        OS_LIBS += [
+            '-framework AVFoundation',
+            '-framework CoreMedia',
+            '-framework CoreSymbolication',
+        ]
 
 if CONFIG['MOZ_WMF']:
     OS_LIBS += [

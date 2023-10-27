@@ -43,6 +43,11 @@ extern "C" OSStatus TSMProcessRawKeyEvent(EventRef anEvent);
   NSTextView *mInputTextView;
 }
 
+// Not in 10.4 or 10.5.
+#if !defined(MAC_OS_X_VERSION_10_6) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)
+typedef NSObject NSTextInputContext;
+#endif
+
 + (ComplexTextInputPanelImpl*)sharedComplexTextInputPanelImpl;
 
 - (NSTextInputContext*)inputContext;
@@ -91,10 +96,13 @@ extern "C" OSStatus TSMProcessRawKeyEvent(EventRef anEvent);
 
   [self setFloatingPanel:YES];
 
+// NSTextInputContextKeyboardSelectionDidChangeNotification needs 10.6+.
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(keyboardInputSourceChanged:)
                                                name:NSTextInputContextKeyboardSelectionDidChangeNotification
                                              object:nil];
+#endif
 
   return self;
 }
@@ -131,9 +139,11 @@ extern "C" OSStatus TSMProcessRawKeyEvent(EventRef anEvent);
 {
   *string = nil;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   if (![[mInputTextView inputContext] handleEvent:event]) {
     return;
   }
+#endif
 
   if ([mInputTextView hasMarkedText]) {
     // Don't show the input method window for dead keys
@@ -155,7 +165,11 @@ extern "C" OSStatus TSMProcessRawKeyEvent(EventRef anEvent);
 
 - (NSTextInputContext*)inputContext
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   return [mInputTextView inputContext];
+#else
+  return nil;
+#endif
 }
 
 - (void)cancelComposition
