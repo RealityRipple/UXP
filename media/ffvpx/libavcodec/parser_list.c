@@ -1,4 +1,4 @@
-#include "config_common.h"
+#include "config_components.h"
 
 static const AVCodecParser * const parser_list[] = {
 #if CONFIG_VP8_PARSER
