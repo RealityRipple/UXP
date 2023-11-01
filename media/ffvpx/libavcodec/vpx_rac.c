@@ -19,10 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/common.h"
-#include "vp56.h"
+#include <stdint.h>
+#include "libavutil/error.h"
+#include "bytestream.h"
+#include "vpx_rac.h"
 
-const uint8_t ff_vp56_norm_shift[256]= {
+const uint8_t ff_vpx_norm_shift[256]= {
  8,7,6,6,5,5,5,5,4,4,4,4,4,4,4,4,
  3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
@@ -37,7 +39,7 @@ const uint8_t ff_vp56_norm_shift[256]= {
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
-int ff_vp56_init_range_decoder(VP56RangeCoder *c, const uint8_t *buf, int buf_size)
+int ff_vpx_init_range_decoder(VPXRangeCoder *c, const uint8_t *buf, int buf_size)
 {
     c->high = 255;
     c->bits = -16;
