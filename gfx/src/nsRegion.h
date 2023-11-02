@@ -296,9 +296,9 @@ public:
    * @param aToAPP the APP to scale to
    * @note this can turn an empty region into a non-empty region
    */
-  MOZ_MUST_USE nsRegion
+  [[nodiscard]] nsRegion
     ScaleToOtherAppUnitsRoundOut (int32_t aFromAPP, int32_t aToAPP) const;
-  MOZ_MUST_USE nsRegion
+  [[nodiscard]] nsRegion
     ScaleToOtherAppUnitsRoundIn (int32_t aFromAPP, int32_t aToAPP) const;
   nsRegion& ScaleRoundOut(float aXScale, float aYScale);
   nsRegion& ScaleInverseRoundOut(float aXScale, float aYScale);
