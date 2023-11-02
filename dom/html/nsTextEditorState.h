@@ -154,7 +154,7 @@ public:
     // Whether the value change should be notified to the frame/contet nor not.
     eSetValue_Notify                = 1 << 2
   };
-  MOZ_MUST_USE bool SetValue(const nsAString& aValue, uint32_t aFlags);
+  [[nodiscard]] bool SetValue(const nsAString& aValue, uint32_t aFlags);
   void GetValue(nsAString& aValue, bool aIgnoreWrap) const;
   bool HasNonEmptyValue();
   // The following methods are for textarea element to use whether default

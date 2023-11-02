@@ -60,7 +60,7 @@ public:
     {
     }
     ~txLoadedDocumentsHash();
-    MOZ_MUST_USE nsresult init(const txXPathNode& aSource);
+    [[nodiscard]] nsresult init(const txXPathNode& aSource);
 
 private:
     friend class txExecutionState;

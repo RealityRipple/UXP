@@ -287,14 +287,14 @@ public:
     insertBack(aElem);
   }
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   already_AddRefed<ScriptLoadRequest> Steal(ScriptLoadRequest* aElem)
   {
     aElem->removeFrom(*this);
     return dont_AddRef(aElem);
   }
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   already_AddRefed<ScriptLoadRequest> StealFirst()
   {
     MOZ_ASSERT(!isEmpty());
