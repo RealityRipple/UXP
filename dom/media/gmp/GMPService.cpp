@@ -20,7 +20,6 @@
 #include "nsNativeCharsetUtils.h"
 #include "nsIConsoleService.h"
 #include "mozilla/Unused.h"
-#include "GMPDecryptorParent.h"
 #include "GMPAudioDecoderParent.h"
 #include "nsComponentManagerUtils.h"
 #include "runnable_utils.h"
@@ -444,57 +443,6 @@ GeckoMediaPluginService::GetGMPVideoEncoder(GMPCrashHelper* aHelper,
   if (!GetContentParentFrom(aHelper,
                             aNodeId,
                             NS_LITERAL_CSTRING(GMP_API_VIDEO_ENCODER),
-                            *aTags,
-                            Move(callback))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-class GetGMPContentParentForDecryptorDone : public GetGMPContentParentCallback
-{
-public:
-  explicit GetGMPContentParentForDecryptorDone(UniquePtr<GetGMPDecryptorCallback>&& aCallback,
-                                               GMPCrashHelper* aHelper)
-   : mCallback(Move(aCallback))
-   , mHelper(aHelper)
-  {
-  }
-
-  void Done(GMPContentParent* aGMPParent) override
-  {
-    GMPDecryptorParent* ksp = nullptr;
-    if (aGMPParent && NS_SUCCEEDED(aGMPParent->GetGMPDecryptor(&ksp))) {
-      ksp->SetCrashHelper(mHelper);
-    }
-    mCallback->Done(ksp);
-  }
-
-private:
-  UniquePtr<GetGMPDecryptorCallback> mCallback;
-  RefPtr<GMPCrashHelper> mHelper;
-};
-
-NS_IMETHODIMP
-GeckoMediaPluginService::GetGMPDecryptor(GMPCrashHelper* aHelper,
-                                         nsTArray<nsCString>* aTags,
-                                         const nsACString& aNodeId,
-                                         UniquePtr<GetGMPDecryptorCallback>&& aCallback)
-{
-  MOZ_ASSERT(NS_GetCurrentThread() == mGMPThread);
-  NS_ENSURE_ARG(aTags && aTags->Length() > 0);
-  NS_ENSURE_ARG(aCallback);
-
-  if (mShuttingDownOnGMPThread) {
-    return NS_ERROR_FAILURE;
-  }
-
-  UniquePtr<GetGMPContentParentCallback> callback(
-    new GetGMPContentParentForDecryptorDone(Move(aCallback), aHelper));
-  if (!GetContentParentFrom(aHelper,
-                            aNodeId,
-                            NS_LITERAL_CSTRING(GMP_API_DECRYPTOR),
                             *aTags,
                             Move(callback))) {
     return NS_ERROR_FAILURE;
