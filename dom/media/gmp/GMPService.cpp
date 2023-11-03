@@ -371,11 +371,10 @@ private:
 };
 
 NS_IMETHODIMP
-GeckoMediaPluginService::GetDecryptingGMPVideoDecoder(GMPCrashHelper* aHelper,
-                                                      nsTArray<nsCString>* aTags,
-                                                      const nsACString& aNodeId,
-                                                      UniquePtr<GetGMPVideoDecoderCallback>&& aCallback,
-                                                      uint32_t aDecryptorId)
+GeckoMediaPluginService::GetGMPVideoDecoder(GMPCrashHelper* aHelper,
+                                            nsTArray<nsCString>* aTags,
+                                            const nsACString& aNodeId,
+                                            UniquePtr<GetGMPVideoDecoderCallback>&& aCallback)
 {
   MOZ_ASSERT(NS_GetCurrentThread() == mGMPThread);
   NS_ENSURE_ARG(aTags && aTags->Length() > 0);
@@ -386,7 +385,7 @@ GeckoMediaPluginService::GetDecryptingGMPVideoDecoder(GMPCrashHelper* aHelper,
   }
 
   UniquePtr<GetGMPContentParentCallback> callback(
-    new GetGMPContentParentForVideoDecoderDone(Move(aCallback), aHelper, aDecryptorId));
+    new GetGMPContentParentForVideoDecoderDone(Move(aCallback), aHelper, 0));
   if (!GetContentParentFrom(aHelper,
                             aNodeId,
                             NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER),
