@@ -122,7 +122,7 @@ public:
   nsresult CommitToSegmentSize(uint32_t size, bool forceCommitment) override;
   nsresult GetTransactionSecurityInfo(nsISupports **) override;
   nsresult NudgeTunnel(NudgeTunnelCallback *callback);
-  MOZ_MUST_USE nsresult SetProxiedTransaction(nsAHttpTransaction *aTrans,
+  [[nodiscard]] nsresult SetProxiedTransaction(nsAHttpTransaction *aTrans,
                                               nsAHttpTransaction *aSpdyConnectTransaction = nullptr);
   void     newIODriver(nsIAsyncInputStream *aSocketIn,
                        nsIAsyncOutputStream *aSocketOut,

@@ -3523,8 +3523,7 @@ ToIPCSegment(const nsStandardURL::URLSegment& aSegment)
     return ipc::StandardURLSegment(aSegment.mPos, aSegment.mLen);
 }
 
-inline
-MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 FromIPCSegment(const nsACString& aSpec, const ipc::StandardURLSegment& aSegment, nsStandardURL::URLSegment& aTarget)
 {
     // This seems to be just an empty segment.

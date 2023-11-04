@@ -12,7 +12,7 @@
 #include "nsServiceManagerUtils.h"
 #include "prtime.h"
 
-inline MOZ_MUST_USE nsresult
+[[nodiscard]] inline nsresult
 NS_GetAboutModuleName(nsIURI *aAboutURI, nsCString& aModule)
 {
 #ifdef DEBUG
