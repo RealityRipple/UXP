@@ -46,7 +46,7 @@ struct ExperimentalTextFormatting
 // Translate the given binary representation of a wasm module into the module's textual
 // representation.
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 BinaryToExperimentalText(JSContext* cx, const uint8_t* bytes, size_t length, StringBuffer& buffer,
                          const ExperimentalTextFormatting& formatting = ExperimentalTextFormatting(),
                          GeneratedSourceMap* sourceMap = nullptr);

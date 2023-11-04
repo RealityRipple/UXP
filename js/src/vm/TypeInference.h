@@ -843,14 +843,14 @@ public:
   DPAConstraintInfo(const DPAConstraintInfo&) = delete;
   void operator=(const DPAConstraintInfo&) = delete;
 
-  MOZ_MUST_USE bool addProtoConstraint(JSObject* proto, jsid id) {
+  [[nodiscard]] bool addProtoConstraint(JSObject* proto, jsid id) {
     return protoConstraints_.emplaceBack(proto, id);
   }
-  MOZ_MUST_USE bool addInliningConstraint(JSScript* caller, JSScript* callee) {
+  [[nodiscard]] bool addInliningConstraint(JSScript* caller, JSScript* callee) {
     return inliningConstraints_.emplaceBack(caller, callee);
   }
 
-  MOZ_MUST_USE bool finishConstraints(JSContext* cx, ObjectGroup* group);
+  [[nodiscard]] bool finishConstraints(JSContext* cx, ObjectGroup* group);
 };
 
 bool

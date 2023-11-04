@@ -371,7 +371,7 @@ GlobalObject::initStarGenerators(JSContext* cx, Handle<GlobalObject*> global)
     return true;
 }
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 js::CheckStarGeneratorResumptionValue(JSContext* cx, HandleValue v)
 {
     // yield/return value should be an Object.

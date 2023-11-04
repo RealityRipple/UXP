@@ -81,7 +81,7 @@ ReportCompileError(ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
  * This function DOES NOT respect an existing werror option.  If the caller
  * wishes such option to be respected, it must do so itself.
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 ReportCompileWarning(JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
                      unsigned flags, unsigned errorNumber, va_list args);
 

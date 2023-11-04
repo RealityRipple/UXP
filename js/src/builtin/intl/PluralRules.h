@@ -46,7 +46,7 @@ CreatePluralRulesPrototype(JSContext* cx, JS::Handle<JSObject*> Intl,
  *
  * Usage: pluralRules = intl_PluralRules(locales, options)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_PluralRules(JSContext* cx, unsigned argc, Value* vp);
 
 /**
@@ -58,7 +58,7 @@ intl_PluralRules(JSContext* cx, unsigned argc, Value* vp);
  *
  * Usage: rule = intl_SelectPluralRule(pluralRules, x)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_SelectPluralRule(JSContext* cx, unsigned argc, Value* vp);
 
 /**
@@ -71,7 +71,7 @@ intl_SelectPluralRule(JSContext* cx, unsigned argc, Value* vp);
  *
  * intl_getPluralCategories('pl', 'cardinal'); // ['one', 'few', 'many', 'other']
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_GetPluralCategories(JSContext* cx, unsigned argc, Value* vp);
 
 } // namespace js

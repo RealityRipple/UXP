@@ -12,8 +12,7 @@
 namespace js {
 namespace jit {
 
-MOZ_MUST_USE bool
-FoldLinearArithConstants(MIRGenerator* mir, MIRGraph& graph);
+[[nodiscard]] bool FoldLinearArithConstants(MIRGenerator* mir, MIRGraph& graph);
 
 } /* namespace jit */
 } /* namespace js */

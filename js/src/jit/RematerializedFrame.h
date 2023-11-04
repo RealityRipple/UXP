@@ -72,10 +72,10 @@ class RematerializedFrame
 
     // Rematerialize all remaining frames pointed to by |iter| into |frames|
     // in older-to-younger order, e.g., frames[0] is the oldest frame.
-    static MOZ_MUST_USE bool RematerializeInlineFrames(JSContext* cx, uint8_t* top,
-                                                       InlineFrameIterator& iter,
-                                                       MaybeReadFallback& fallback,
-                                                       GCVector<RematerializedFrame*>& frames);
+    [[nodiscard]] static bool RematerializeInlineFrames(JSContext* cx, uint8_t* top,
+                                                        InlineFrameIterator& iter,
+                                                        MaybeReadFallback& fallback,
+                                                        GCVector<RematerializedFrame*>& frames);
 
     // Free a vector of RematerializedFrames; takes care to call the
     // destructor. Also clears the vector.
@@ -137,8 +137,8 @@ class RematerializedFrame
         envChain_ = &envChain_->as<SpecificEnvironment>().enclosingEnvironment();
     }
 
-    MOZ_MUST_USE bool initFunctionEnvironmentObjects(JSContext* cx);
-    MOZ_MUST_USE bool pushVarEnvironment(JSContext* cx, HandleScope scope);
+    [[nodiscard]] bool initFunctionEnvironmentObjects(JSContext* cx);
+    [[nodiscard]] bool pushVarEnvironment(JSContext* cx, HandleScope scope);
 
     bool hasInitialEnvironment() const {
         return hasInitialEnv_;

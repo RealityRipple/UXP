@@ -578,18 +578,18 @@ struct JSCompartment
     JSCompartment(JS::Zone* zone, const JS::CompartmentOptions& options);
     ~JSCompartment();
 
-    MOZ_MUST_USE bool init(JSContext* maybecx);
+    [[nodiscard]] bool init(JSContext* maybecx);
 
-    MOZ_MUST_USE inline bool wrap(JSContext* cx, JS::MutableHandleValue vp);
+    [[nodiscard]] inline bool wrap(JSContext* cx, JS::MutableHandleValue vp);
 
-    MOZ_MUST_USE bool wrap(JSContext* cx, js::MutableHandleString strp);
-    MOZ_MUST_USE bool wrap(JSContext* cx, js::MutableHandle<JS::BigInt*> bi);
-    MOZ_MUST_USE bool wrap(JSContext* cx, JS::MutableHandleObject obj);
-    MOZ_MUST_USE bool wrap(JSContext* cx, JS::MutableHandle<js::PropertyDescriptor> desc);
-    MOZ_MUST_USE bool wrap(JSContext* cx, JS::MutableHandle<JS::GCVector<JS::Value>> vec);
-    MOZ_MUST_USE bool rewrap(JSContext* cx, JS::MutableHandleObject obj, JS::HandleObject existing);
+    [[nodiscard]] bool wrap(JSContext* cx, js::MutableHandleString strp);
+    [[nodiscard]] bool wrap(JSContext* cx, js::MutableHandle<JS::BigInt*> bi);
+    [[nodiscard]] bool wrap(JSContext* cx, JS::MutableHandleObject obj);
+    [[nodiscard]] bool wrap(JSContext* cx, JS::MutableHandle<js::PropertyDescriptor> desc);
+    [[nodiscard]] bool wrap(JSContext* cx, JS::MutableHandle<JS::GCVector<JS::Value>> vec);
+    [[nodiscard]] bool rewrap(JSContext* cx, JS::MutableHandleObject obj, JS::HandleObject existing);
 
-    MOZ_MUST_USE bool putWrapper(JSContext* cx, const js::CrossCompartmentKey& wrapped,
+    [[nodiscard]] bool putWrapper(JSContext* cx, const js::CrossCompartmentKey& wrapped,
                                  const js::Value& wrapper);
 
     js::WrapperMap::Ptr lookupWrapper(const js::Value& wrapped) const {
@@ -672,7 +672,7 @@ struct JSCompartment
     js::SavedStacks& savedStacks() { return savedStacks_; }
 
     // Add a name to [[VarNames]].  Reports OOM on failure.
-    MOZ_MUST_USE bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
+    [[nodiscard]] bool addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name);
 
     void removeFromVarNames(JS::Handle<JSAtom*> name) {
         varNames_.remove(name);

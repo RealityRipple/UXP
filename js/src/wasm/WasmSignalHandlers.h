@@ -38,7 +38,7 @@ namespace wasm {
 // Ensure the given JSRuntime is set up to use signals. Failure to enable signal
 // handlers indicates some catastrophic failure and creation of the runtime must
 // fail.
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EnsureSignalHandlers(JSRuntime* rt);
 
 // Return whether signals can be used in this process for interrupts or

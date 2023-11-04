@@ -294,7 +294,7 @@ ClassCanHaveFixedData(const Class* clasp)
 // returned in place of the pointer passed. If a GC occurs, the returned pointer
 // may be the passed pointer, relocated by GC. If no GC could occur, it's just
 // passed through. We root nothing unless necessary.
-static MOZ_ALWAYS_INLINE MOZ_MUST_USE JSObject*
+[[nodiscard]] static MOZ_ALWAYS_INLINE JSObject*
 SetNewObjectMetadata(ExclusiveContext* cxArg, JSObject* obj)
 {
     MOZ_ASSERT(!cxArg->compartment()->hasObjectPendingMetadata());

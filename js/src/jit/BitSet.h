@@ -52,7 +52,7 @@ class BitSet
         bits_(nullptr),
         numBits_(numBits) {}
 
-    MOZ_MUST_USE bool init(TempAllocator& alloc);
+    [[nodiscard]] bool init(TempAllocator& alloc);
 
     unsigned int getNumBits() const {
         return numBits_;

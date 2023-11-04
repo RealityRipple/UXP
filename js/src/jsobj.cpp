@@ -3854,7 +3854,7 @@ JSObject::maybeConstructorDisplayAtom() const
 }
 
 // ES 2016 7.3.20.
-MOZ_MUST_USE JSObject*
+[[nodiscard]] JSObject*
 js::SpeciesConstructor(JSContext* cx, HandleObject obj, HandleObject defaultCtor,
                        bool (*isDefaultSpecies)(JSContext*, JSFunction*))
 {
@@ -3916,7 +3916,7 @@ js::SpeciesConstructor(JSContext* cx, HandleObject obj, HandleObject defaultCtor
     return nullptr;
 }
 
-MOZ_MUST_USE JSObject*
+[[nodiscard]] JSObject*
 js::SpeciesConstructor(JSContext* cx, HandleObject obj, JSProtoKey ctorKey,
                        bool (*isDefaultSpecies)(JSContext*, JSFunction*))
 {

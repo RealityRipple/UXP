@@ -299,7 +299,7 @@ class MoveResolver
 
     PendingMove* findBlockingMove(const PendingMove* last);
     PendingMove* findCycledMove(PendingMoveIterator* stack, PendingMoveIterator end, const PendingMove* first);
-    MOZ_MUST_USE bool addOrderedMove(const MoveOp& move);
+    [[nodiscard]] bool addOrderedMove(const MoveOp& move);
     void reorderMove(size_t from, size_t to);
 
     // Internal reset function. Does not clear lists.
@@ -319,8 +319,8 @@ class MoveResolver
     //
     // After calling addMove() for each parallel move, resolve() performs the
     // cycle resolution algorithm. Calling addMove() again resets the resolver.
-    MOZ_MUST_USE bool addMove(const MoveOperand& from, const MoveOperand& to, MoveOp::Type type);
-    MOZ_MUST_USE bool resolve();
+    [[nodiscard]] bool addMove(const MoveOperand& from, const MoveOperand& to, MoveOp::Type type);
+    [[nodiscard]] bool resolve();
     void sortMemoryToMemoryMoves();
 
     size_t numMoves() const {

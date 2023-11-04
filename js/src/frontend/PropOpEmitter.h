@@ -206,66 +206,66 @@ class MOZ_STACK_CLASS PropOpEmitter
     PropOpEmitter(BytecodeEmitter* bce, Kind kind, ObjKind objKind);
 
   private:
-    MOZ_MUST_USE bool isCall() const {
+    [[nodiscard]] bool isCall() const {
         return kind_ == Kind::Call;
     }
 
-    MOZ_MUST_USE bool isSuper() const {
+    [[nodiscard]] bool isSuper() const {
         return objKind_ == ObjKind::Super;
     }
 
-    MOZ_MUST_USE bool isSimpleAssignment() const {
+    [[nodiscard]] bool isSimpleAssignment() const {
         return kind_ == Kind::SimpleAssignment;
     }
 
-    MOZ_MUST_USE bool isPropInit() const {
+    [[nodiscard]] bool isPropInit() const {
         return kind_ == Kind::PropInit;
     }
 
-    MOZ_MUST_USE bool isDelete() const {
+    [[nodiscard]] bool isDelete() const {
         return kind_ == Kind::Delete;
     }
 
-    MOZ_MUST_USE bool isCompoundAssignment() const {
+    [[nodiscard]] bool isCompoundAssignment() const {
         return kind_ == Kind::CompoundAssignment;
     }
 
-    MOZ_MUST_USE bool isIncDec() const {
+    [[nodiscard]] bool isIncDec() const {
         return isPostIncDec() || isPreIncDec();
     }
 
-    MOZ_MUST_USE bool isPostIncDec() const {
+    [[nodiscard]] bool isPostIncDec() const {
         return kind_ == Kind::PostIncrement ||
                kind_ == Kind::PostDecrement;
     }
 
-    MOZ_MUST_USE bool isPreIncDec() const {
+    [[nodiscard]] bool isPreIncDec() const {
         return kind_ == Kind::PreIncrement ||
                kind_ == Kind::PreDecrement;
     }
 
-    MOZ_MUST_USE bool isInc() const {
+    [[nodiscard]] bool isInc() const {
         return kind_ == Kind::PostIncrement ||
                kind_ == Kind::PreIncrement;
     }
 
-    MOZ_MUST_USE bool
+    [[nodiscard]] bool
     prepareAtomIndex(JSAtom* prop);
 
   public:
-    MOZ_MUST_USE bool prepareForObj();
+    [[nodiscard]] bool prepareForObj();
 
-    MOZ_MUST_USE bool emitGet(JSAtom* prop);
+    [[nodiscard]] bool emitGet(JSAtom* prop);
 
-    MOZ_MUST_USE bool prepareForRhs();
-    MOZ_MUST_USE bool skipObjAndRhs();
+    [[nodiscard]] bool prepareForRhs();
+    [[nodiscard]] bool skipObjAndRhs();
 
-    MOZ_MUST_USE bool emitDelete(JSAtom* prop);
+    [[nodiscard]] bool emitDelete(JSAtom* prop);
 
     // `prop` can be nullptr for CompoundAssignment.
-    MOZ_MUST_USE bool emitAssignment(JSAtom* prop);
+    [[nodiscard]] bool emitAssignment(JSAtom* prop);
 
-    MOZ_MUST_USE bool emitIncDec(JSAtom* prop);
+    [[nodiscard]] bool emitIncDec(JSAtom* prop);
 };
 
 } /* namespace frontend */

@@ -72,16 +72,16 @@ class ForOfLoopControl : public LoopControl
     ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth, bool allowSelfHosted,
                      IteratorKind iterKind);
 
-    MOZ_MUST_USE bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce);
-    MOZ_MUST_USE bool emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce);
+    [[nodiscard]] bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce);
+    [[nodiscard]] bool emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce);
 
-    MOZ_MUST_USE bool emitIteratorCloseInInnermostScope(BytecodeEmitter* bce,
+    [[nodiscard]] bool emitIteratorCloseInInnermostScope(BytecodeEmitter* bce,
                                                         CompletionKind completionKind = CompletionKind::Normal);
-    MOZ_MUST_USE bool emitIteratorCloseInScope(BytecodeEmitter* bce,
+    [[nodiscard]] bool emitIteratorCloseInScope(BytecodeEmitter* bce,
                                                EmitterScope& currentScope,
                                                CompletionKind completionKind = CompletionKind::Normal);
 
-    MOZ_MUST_USE bool emitPrepareForNonLocalJumpFromScope(BytecodeEmitter* bce,
+    [[nodiscard]] bool emitPrepareForNonLocalJumpFromScope(BytecodeEmitter* bce,
                                                           EmitterScope& currentScope,
                                                           bool isTarget);
 };

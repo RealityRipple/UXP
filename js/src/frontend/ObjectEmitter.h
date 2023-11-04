@@ -6,7 +6,7 @@
 #ifndef frontend_ObjectEmitter_h
 #define frontend_ObjectEmitter_h
 
-#include "mozilla/Attributes.h"  // MOZ_MUST_USE, MOZ_STACK_CLASS, MOZ_ALWAYS_INLINE, MOZ_RAII
+#include "mozilla/Attributes.h"  // MOZ_STACK_CLASS, MOZ_ALWAYS_INLINE, MOZ_RAII
 #include "mozilla/Maybe.h"  // Maybe
 
 #include <stddef.h>  // size_t, ptrdiff_t
@@ -211,42 +211,42 @@ class MOZ_STACK_CLASS PropertyEmitter
     //   ^
     //   |
     //   keyPos
-    MOZ_MUST_USE bool prepareForProtoValue(
+    [[nodiscard]] bool prepareForProtoValue(
         const mozilla::Maybe<uint32_t>& keyPos);
-    MOZ_MUST_USE bool emitMutateProto();
+    [[nodiscard]] bool emitMutateProto();
 
     // { ...obj }
     //   ^
     //   |
     //   spreadPos
-    MOZ_MUST_USE bool prepareForSpreadOperand(
+    [[nodiscard]] bool prepareForSpreadOperand(
         const mozilla::Maybe<uint32_t>& spreadPos);
-    MOZ_MUST_USE bool emitSpread();
+    [[nodiscard]] bool emitSpread();
 
     // { key: value }
     //   ^
     //   |
     //   keyPos
-    MOZ_MUST_USE bool prepareForPropValue(const mozilla::Maybe<uint32_t>& keyPos,
+    [[nodiscard]] bool prepareForPropValue(const mozilla::Maybe<uint32_t>& keyPos,
                                           Kind kind = Kind::Prototype);
 
     // { 1: value }
     //   ^
     //   |
     //   keyPos
-    MOZ_MUST_USE bool prepareForIndexPropKey(
+    [[nodiscard]] bool prepareForIndexPropKey(
         const mozilla::Maybe<uint32_t>& keyPos, Kind kind = Kind::Prototype);
-    MOZ_MUST_USE bool prepareForIndexPropValue();
+    [[nodiscard]] bool prepareForIndexPropValue();
 
     // { [ key ]: value }
     //   ^
     //   |
     //   keyPos
-    MOZ_MUST_USE bool prepareForComputedPropKey(
+    [[nodiscard]] bool prepareForComputedPropKey(
         const mozilla::Maybe<uint32_t>& keyPos, Kind kind = Kind::Prototype);
-    MOZ_MUST_USE bool prepareForComputedPropValue();
+    [[nodiscard]] bool prepareForComputedPropValue();
 
-    MOZ_MUST_USE bool emitInitHomeObject(
+    [[nodiscard]] bool emitInitHomeObject(
         FunctionAsyncKind kind = FunctionAsyncKind::SyncFunction);
 
     // @param key
@@ -256,24 +256,24 @@ class MOZ_STACK_CLASS PropertyEmitter
     //        an anonymous class
     // @param anonFunction
     //        The anonymous function object for property value
-    MOZ_MUST_USE bool emitInitProp(
+    [[nodiscard]] bool emitInitProp(
         JS::Handle<JSAtom*> key, bool isPropertyAnonFunctionOrClass = false,
         JS::Handle<JSFunction*> anonFunction = nullptr);
-    MOZ_MUST_USE bool emitInitGetter(JS::Handle<JSAtom*> key);
-    MOZ_MUST_USE bool emitInitSetter(JS::Handle<JSAtom*> key);
+    [[nodiscard]] bool emitInitGetter(JS::Handle<JSAtom*> key);
+    [[nodiscard]] bool emitInitSetter(JS::Handle<JSAtom*> key);
 
-    MOZ_MUST_USE bool emitInitIndexProp(
+    [[nodiscard]] bool emitInitIndexProp(
         bool isPropertyAnonFunctionOrClass = false);
-    MOZ_MUST_USE bool emitInitIndexGetter();
-    MOZ_MUST_USE bool emitInitIndexSetter();
+    [[nodiscard]] bool emitInitIndexGetter();
+    [[nodiscard]] bool emitInitIndexSetter();
 
-    MOZ_MUST_USE bool emitInitComputedProp(
+    [[nodiscard]] bool emitInitComputedProp(
         bool isPropertyAnonFunctionOrClass = false);
-    MOZ_MUST_USE bool emitInitComputedGetter();
-    MOZ_MUST_USE bool emitInitComputedSetter();
+    [[nodiscard]] bool emitInitComputedGetter();
+    [[nodiscard]] bool emitInitComputedSetter();
 
   private:
-    MOZ_MUST_USE MOZ_ALWAYS_INLINE bool prepareForProp(
+    [[nodiscard]] MOZ_ALWAYS_INLINE bool prepareForProp(
         const mozilla::Maybe<uint32_t>& keyPos, bool isStatic, bool isComputed);
 
     // @param op
@@ -287,14 +287,14 @@ class MOZ_STACK_CLASS PropertyEmitter
     //        anonymous class
     // @param anonFunction
     //        Anonymous function object for the property
-    MOZ_MUST_USE bool emitInit(JSOp op, JS::Handle<JSAtom*> key,
+    [[nodiscard]] bool emitInit(JSOp op, JS::Handle<JSAtom*> key,
                                bool isPropertyAnonFunctionOrClass,
                                JS::Handle<JSFunction*> anonFunction);
-    MOZ_MUST_USE bool emitInitIndexOrComputed(JSOp op,
+    [[nodiscard]] bool emitInitIndexOrComputed(JSOp op,
                                               FunctionPrefixKind prefixKind,
                                               bool isPropertyAnonFunctionOrClass);
 
-    MOZ_MUST_USE bool emitPopClassConstructor();
+    [[nodiscard]] bool emitPopClassConstructor();
 };
 
 // Class for emitting bytecode for object literal.
@@ -439,8 +439,8 @@ class MOZ_STACK_CLASS ObjectEmitter : public PropertyEmitter
   public:
     explicit ObjectEmitter(BytecodeEmitter* bce);
 
-    MOZ_MUST_USE bool emitObject(size_t propertyCount);
-    MOZ_MUST_USE bool emitEnd();
+    [[nodiscard]] bool emitObject(size_t propertyCount);
+    [[nodiscard]] bool emitEnd();
 };
 
 // Save and restore the strictness.
@@ -813,16 +813,16 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter
   public:
     explicit ClassEmitter(BytecodeEmitter* bce);
 
-    MOZ_MUST_USE bool emitScope(JS::Handle<LexicalScope::Data*> scopeBindings);
+    [[nodiscard]] bool emitScope(JS::Handle<LexicalScope::Data*> scopeBindings);
 
     // @param name
     //        Name of the class (nullptr if this is anonymous class)
-    MOZ_MUST_USE bool emitClass(JS::Handle<JSAtom*> name);
-    MOZ_MUST_USE bool emitDerivedClass(JS::Handle<JSAtom*> name);
+    [[nodiscard]] bool emitClass(JS::Handle<JSAtom*> name);
+    [[nodiscard]] bool emitDerivedClass(JS::Handle<JSAtom*> name);
 
     // @param needsHomeObject
     //        True if the constructor contains `super.foo`
-    MOZ_MUST_USE bool emitInitConstructor(bool needsHomeObject);
+    [[nodiscard]] bool emitInitConstructor(bool needsHomeObject);
 
     // Parameters are the offset in the source code for each character below:
     //
@@ -833,23 +833,23 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter
     //   |
     //   classStart
     //
-    MOZ_MUST_USE bool emitInitDefaultConstructor(
+    [[nodiscard]] bool emitInitDefaultConstructor(
         const mozilla::Maybe<uint32_t>& classStart,
         const mozilla::Maybe<uint32_t>& classEnd);
 
-    MOZ_MUST_USE bool prepareForFieldInitializers(size_t numFields, bool isStatic);
-    MOZ_MUST_USE bool prepareForFieldInitializer();
-    MOZ_MUST_USE bool emitFieldInitializerHomeObject(bool isStatic);
-    MOZ_MUST_USE bool emitStoreFieldInitializer();
-    MOZ_MUST_USE bool emitFieldInitializersEnd();
+    [[nodiscard]] bool prepareForFieldInitializers(size_t numFields, bool isStatic);
+    [[nodiscard]] bool prepareForFieldInitializer();
+    [[nodiscard]] bool emitFieldInitializerHomeObject(bool isStatic);
+    [[nodiscard]] bool emitStoreFieldInitializer();
+    [[nodiscard]] bool emitFieldInitializersEnd();
 
-    MOZ_MUST_USE bool emitBinding();
+    [[nodiscard]] bool emitBinding();
 
-    MOZ_MUST_USE bool emitEnd(Kind kind);
+    [[nodiscard]] bool emitEnd(Kind kind);
 
   private:
     void setName(JS::Handle<JSAtom*> name);
-    MOZ_MUST_USE bool initProtoAndCtor();
+    [[nodiscard]] bool initProtoAndCtor();
 };
 
 } /* namespace frontend */

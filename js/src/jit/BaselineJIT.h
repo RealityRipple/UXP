@@ -416,7 +416,7 @@ struct BaselineScript
     // the result may not be accurate.
     jsbytecode* approximatePcForNativeAddress(JSScript* script, uint8_t* nativeAddress);
 
-    MOZ_MUST_USE bool addDependentWasmImport(JSContext* cx, wasm::Instance& instance, uint32_t idx);
+    [[nodiscard]] bool addDependentWasmImport(JSContext* cx, wasm::Instance& instance, uint32_t idx);
     void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
     void unlinkDependentWasmImports(FreeOp* fop);
     void clearDependentWasmImports();

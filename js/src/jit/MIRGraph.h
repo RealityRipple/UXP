@@ -46,11 +46,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 
   private:
     MBasicBlock(MIRGraph& graph, const CompileInfo& info, BytecodeSite* site, Kind kind);
-    MOZ_MUST_USE bool init();
+    [[nodiscard]] bool init();
     void copySlots(MBasicBlock* from);
-    MOZ_MUST_USE bool inherit(TempAllocator& alloc, BytecodeAnalysis* analysis, MBasicBlock* pred,
+    [[nodiscard]] bool inherit(TempAllocator& alloc, BytecodeAnalysis* analysis, MBasicBlock* pred,
                                         uint32_t popped, unsigned stackPhiCount = 0);
-    MOZ_MUST_USE bool inheritResumePoint(MBasicBlock* pred);
+    [[nodiscard]] bool inheritResumePoint(MBasicBlock* pred);
     void assertUsesAreNotWithin(MUseIterator use, MUseIterator end);
 
     // This block cannot be reached by any means.
@@ -154,8 +154,8 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     MDefinition* argumentsObject();
 
     // Increase the number of slots available
-    MOZ_MUST_USE bool increaseSlots(size_t num);
-    MOZ_MUST_USE bool ensureHasSlots(size_t num);
+    [[nodiscard]] bool increaseSlots(size_t num);
+    [[nodiscard]] bool ensureHasSlots(size_t num);
 
     // Initializes a slot value; must not be called for normal stack
     // operations, as it will not create new SSA names for copies.
@@ -166,7 +166,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 
     // In an OSR block, set all MOsrValues to use the MResumePoint attached to
     // the MStart.
-    MOZ_MUST_USE bool linkOsrValues(MStart* start);
+    [[nodiscard]] bool linkOsrValues(MStart* start);
 
     // Sets the instruction associated with various slot types. The
     // instruction must lie at the top of the stack.
@@ -220,17 +220,17 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     // Adds a predecessor. Every predecessor must have the same exit stack
     // depth as the entry state to this block. Adding a predecessor
     // automatically creates phi nodes and rewrites uses as needed.
-    MOZ_MUST_USE bool addPredecessor(TempAllocator& alloc, MBasicBlock* pred);
-    MOZ_MUST_USE bool addPredecessorPopN(TempAllocator& alloc, MBasicBlock* pred, uint32_t popped);
+    [[nodiscard]] bool addPredecessor(TempAllocator& alloc, MBasicBlock* pred);
+    [[nodiscard]] bool addPredecessorPopN(TempAllocator& alloc, MBasicBlock* pred, uint32_t popped);
 
     // Add a predecessor which won't introduce any new phis to this block.
     // This may be called after the contents of this block have been built.
     void addPredecessorSameInputsAs(MBasicBlock* pred, MBasicBlock* existingPred);
 
     // Stranger utilities used for inlining.
-    MOZ_MUST_USE bool addPredecessorWithoutPhis(MBasicBlock* pred);
+    [[nodiscard]] bool addPredecessorWithoutPhis(MBasicBlock* pred);
     void inheritSlots(MBasicBlock* parent);
-    MOZ_MUST_USE bool initEntrySlots(TempAllocator& alloc);
+    [[nodiscard]] bool initEntrySlots(TempAllocator& alloc);
 
     // Replaces an edge for a given block with a new block. This is
     // used for critical edge splitting.
@@ -255,8 +255,8 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     // Sets a back edge. This places phi nodes and rewrites instructions within
     // the current loop as necessary. If the backedge introduces new types for
     // phis at the loop header, returns a disabling abort.
-    MOZ_MUST_USE AbortReason setBackedge(TempAllocator& alloc, MBasicBlock* block);
-    MOZ_MUST_USE bool setBackedgeWasm(MBasicBlock* block);
+    [[nodiscard]] AbortReason setBackedge(TempAllocator& alloc, MBasicBlock* block);
+    [[nodiscard]] bool setBackedgeWasm(MBasicBlock* block);
 
     // Resets a LOOP_HEADER block to a NORMAL block.  This is needed when
     // optimizations remove the backedge.
@@ -271,11 +271,11 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
     void inheritPhis(MBasicBlock* header);
 
     // Propagates backedge slots into phis operands of the loop header.
-    MOZ_MUST_USE bool inheritPhisFromBackedge(TempAllocator& alloc, MBasicBlock* backedge,
+    [[nodiscard]] bool inheritPhisFromBackedge(TempAllocator& alloc, MBasicBlock* backedge,
                                               bool* hadTypeChange);
 
     // Compute the types for phis in this block according to their inputs.
-    MOZ_MUST_USE bool specializePhis(TempAllocator& alloc);
+    [[nodiscard]] bool specializePhis(TempAllocator& alloc);
 
     void insertBefore(MInstruction* at, MInstruction* ins);
     void insertAfter(MInstruction* at, MInstruction* ins);
@@ -683,7 +683,7 @@ class MBasicBlock : public TempObject, public InlineListNode<MBasicBlock>
 #endif
       public:
         explicit BackupPoint(MBasicBlock* current);
-        MOZ_MUST_USE bool init(TempAllocator& alloc);
+        [[nodiscard]] bool init(TempAllocator& alloc);
         MBasicBlock* restore();
     };
 
@@ -804,7 +804,7 @@ class MIRGraph
         return returnAccumulator_;
     }
 
-    MOZ_MUST_USE bool addReturn(MBasicBlock* returnBlock) {
+    [[nodiscard]] bool addReturn(MBasicBlock* returnBlock) {
         if (!returnAccumulator_)
             return true;
 

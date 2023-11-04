@@ -2,6 +2,7 @@
  *
  * ***** BEGIN LICENSE BLOCK *****
  * Copyright (C) 2008 Apple Inc. All rights reserved.
+ * Copyright (C) 2023 Moonchild Productions.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -112,7 +113,7 @@ namespace jit {
         MOZ_ALWAYS_INLINE void putInt(int value) { sizedAppend<4>(value); }
         MOZ_ALWAYS_INLINE void putInt64(int64_t value) { sizedAppend<8>(value); }
 
-        MOZ_MUST_USE bool append(const unsigned char* values, size_t size)
+        [[nodiscard]] bool append(const unsigned char* values, size_t size)
         {
             if (MOZ_UNLIKELY(!m_buffer.append(values, size))) {
                 oomDetected();

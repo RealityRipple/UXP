@@ -520,7 +520,7 @@ struct JSContext : public js::ExclusiveContext,
         return throwing;
     }
 
-    MOZ_MUST_USE
+    [[nodiscard]]
     bool getPendingException(JS::MutableHandleValue rval);
     
     js::SavedFrame* getPendingExceptionStack();

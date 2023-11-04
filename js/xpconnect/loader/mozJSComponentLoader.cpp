@@ -255,7 +255,7 @@ class MOZ_STACK_CLASS ComponentLoaderInfo {
         return mResolvedURI->GetSpec(*mKey);
     }
 
-    MOZ_MUST_USE nsresult GetLocation(nsCString& aLocation) {
+    [[nodiscard]] nsresult GetLocation(nsCString& aLocation) {
         nsresult rv = EnsureURI();
         NS_ENSURE_SUCCESS(rv, rv);
         return mURI->GetSpec(aLocation);

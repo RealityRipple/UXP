@@ -313,7 +313,7 @@ class LifoAlloc
     // allocation requests, not necessarily contiguous. Note that this does
     // not guarantee a successful single allocation of N bytes.
     MOZ_ALWAYS_INLINE
-    MOZ_MUST_USE bool ensureUnusedApproximate(size_t n) {
+    [[nodiscard]] bool ensureUnusedApproximate(size_t n) {
         AutoFallibleScope fallibleAllocator(this);
         size_t total = 0;
         for (BumpChunk* chunk = latest; chunk; chunk = chunk->next()) {
@@ -640,7 +640,7 @@ class LifoAllocPolicy
     }
     void reportAllocOverflow() const {
     }
-    MOZ_MUST_USE bool checkSimulatedOOM() const {
+    [[nodiscard]] bool checkSimulatedOOM() const {
         return fb == Infallible || !js::oom::ShouldFailWithOOM();
     }
 };

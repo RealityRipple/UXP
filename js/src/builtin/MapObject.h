@@ -41,7 +41,7 @@ class HashableValue
 
     HashableValue() : value(UndefinedValue()) {}
 
-    MOZ_MUST_USE bool setValue(JSContext* cx, HandleValue v);
+    [[nodiscard]] bool setValue(JSContext* cx, HandleValue v);
     HashNumber hash(const mozilla::HashCodeScrambler& hcs) const;
     bool operator==(const HashableValue& other) const;
     HashableValue mark(JSTracer* trc) const;
@@ -66,7 +66,7 @@ class MutableWrappedPtrOperations<HashableValue, Wrapper>
   : public WrappedPtrOperations<HashableValue, Wrapper>
 {
   public:
-    MOZ_MUST_USE bool setValue(JSContext* cx, HandleValue v) {
+    [[nodiscard]] bool setValue(JSContext* cx, HandleValue v) {
         return static_cast<Wrapper*>(this)->get().setValue(cx, v);
     }
 };
@@ -107,26 +107,26 @@ class MapObject : public NativeObject {
 
     enum { NurseryKeysSlot, SlotCount };
 
-    static MOZ_MUST_USE bool getKeysAndValuesInterleaved(JSContext* cx, HandleObject obj,
+    [[nodiscard]] static bool getKeysAndValuesInterleaved(JSContext* cx, HandleObject obj,
                                             JS::MutableHandle<GCVector<JS::Value>> entries);
-    static MOZ_MUST_USE bool entries(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool has(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool entries(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool has(JSContext* cx, unsigned argc, Value* vp);
     static MapObject* create(JSContext* cx, HandleObject proto = nullptr);
 
     // Publicly exposed Map calls for JSAPI access (webidl maplike/setlike
     // interfaces, etc.)
     static uint32_t size(JSContext *cx, HandleObject obj);
-    static MOZ_MUST_USE bool get(JSContext *cx, HandleObject obj, HandleValue key,
+    [[nodiscard]] static bool get(JSContext *cx, HandleObject obj, HandleValue key,
                                  MutableHandleValue rval);
-    static MOZ_MUST_USE bool has(JSContext *cx, HandleObject obj, HandleValue key, bool* rval);
-    static MOZ_MUST_USE bool delete_(JSContext *cx, HandleObject obj, HandleValue key, bool* rval);
+    [[nodiscard]] static bool has(JSContext *cx, HandleObject obj, HandleValue key, bool* rval);
+    [[nodiscard]] static bool delete_(JSContext *cx, HandleObject obj, HandleValue key, bool* rval);
 
     // Set call for public JSAPI exposure. Does not actually return map object
     // as stated in spec, expects caller to return a value. for instance, with
     // webidl maplike/setlike, should return interface object.
-    static MOZ_MUST_USE bool set(JSContext *cx, HandleObject obj, HandleValue key, HandleValue val);
-    static MOZ_MUST_USE bool clear(JSContext *cx, HandleObject obj);
-    static MOZ_MUST_USE bool iterator(JSContext *cx, IteratorKind kind, HandleObject obj,
+    [[nodiscard]] static bool set(JSContext *cx, HandleObject obj, HandleValue key, HandleValue val);
+    [[nodiscard]] static bool clear(JSContext *cx, HandleObject obj);
+    [[nodiscard]] static bool iterator(JSContext *cx, IteratorKind kind, HandleObject obj,
                                       MutableHandleValue iter);
 
     using UnbarrieredTable = OrderedHashMap<Value, Value, UnbarrieredHashPolicy, RuntimeAllocPolicy>;
@@ -143,29 +143,29 @@ class MapObject : public NativeObject {
     static ValueMap& extract(const CallArgs& args);
     static void mark(JSTracer* trc, JSObject* obj);
     static void finalize(FreeOp* fop, JSObject* obj);
-    static MOZ_MUST_USE bool construct(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool construct(JSContext* cx, unsigned argc, Value* vp);
 
     static bool is(HandleValue v);
     static bool is(HandleObject o);
 
-    static MOZ_MUST_USE bool iterator_impl(JSContext* cx, const CallArgs& args, IteratorKind kind);
+    [[nodiscard]] static bool iterator_impl(JSContext* cx, const CallArgs& args, IteratorKind kind);
 
-    static MOZ_MUST_USE bool size_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool size(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool get_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool get(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool has_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool set_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool set(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool delete_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool delete_(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool keys_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool keys(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool values_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool values(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool entries_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool clear_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool clear(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool size_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool size(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool get_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool get(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool has_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool set_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool set(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool delete_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool delete_(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool keys_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool keys(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool values_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool values(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool entries_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool clear_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool clear(JSContext* cx, unsigned argc, Value* vp);
 };
 
 class MapIteratorObject : public NativeObject
@@ -187,7 +187,7 @@ class MapIteratorObject : public NativeObject
                                      MapObject::IteratorKind kind);
     static void finalize(FreeOp* fop, JSObject* obj);
 
-    static MOZ_MUST_USE bool next(Handle<MapIteratorObject*> mapIterator,
+    [[nodiscard]] static bool next(Handle<MapIteratorObject*> mapIterator,
                                   HandleArrayObject resultPairObj, JSContext* cx);
 
     static JSObject* createResultPair(JSContext* cx);
@@ -213,21 +213,21 @@ class SetObject : public NativeObject {
 
     enum { NurseryKeysSlot, SlotCount };
 
-    static MOZ_MUST_USE bool keys(JSContext *cx, HandleObject obj,
+    [[nodiscard]] static bool keys(JSContext *cx, HandleObject obj,
                                   JS::MutableHandle<GCVector<JS::Value>> keys);
-    static MOZ_MUST_USE bool values(JSContext *cx, unsigned argc, Value *vp);
-    static MOZ_MUST_USE bool add(JSContext *cx, HandleObject obj, HandleValue key);
-    static MOZ_MUST_USE bool has(JSContext *cx, unsigned argc, Value *vp);
+    [[nodiscard]] static bool values(JSContext *cx, unsigned argc, Value *vp);
+    [[nodiscard]] static bool add(JSContext *cx, HandleObject obj, HandleValue key);
+    [[nodiscard]] static bool has(JSContext *cx, unsigned argc, Value *vp);
 
     // Publicly exposed Set calls for JSAPI access (webidl maplike/setlike
     // interfaces, etc.)
     static SetObject* create(JSContext *cx, HandleObject proto = nullptr);
     static uint32_t size(JSContext *cx, HandleObject obj);
-    static MOZ_MUST_USE bool has(JSContext *cx, HandleObject obj, HandleValue key, bool* rval);
-    static MOZ_MUST_USE bool clear(JSContext *cx, HandleObject obj);
-    static MOZ_MUST_USE bool iterator(JSContext *cx, IteratorKind kind, HandleObject obj,
+    [[nodiscard]] static bool has(JSContext *cx, HandleObject obj, HandleValue key, bool* rval);
+    [[nodiscard]] static bool clear(JSContext *cx, HandleObject obj);
+    [[nodiscard]] static bool iterator(JSContext *cx, IteratorKind kind, HandleObject obj,
                                       MutableHandleValue iter);
-    static MOZ_MUST_USE bool delete_(JSContext *cx, HandleObject obj, HandleValue key, bool *rval);
+    [[nodiscard]] static bool delete_(JSContext *cx, HandleObject obj, HandleValue key, bool *rval);
 
     using UnbarrieredTable = OrderedHashSet<Value, UnbarrieredHashPolicy, RuntimeAllocPolicy>;
     friend class OrderedHashTableRef<SetObject>;
@@ -251,20 +251,20 @@ class SetObject : public NativeObject {
 
     static bool isBuiltinAdd(HandleValue add, JSContext* cx);
 
-    static MOZ_MUST_USE bool iterator_impl(JSContext* cx, const CallArgs& args, IteratorKind kind);
+    [[nodiscard]] static bool iterator_impl(JSContext* cx, const CallArgs& args, IteratorKind kind);
 
-    static MOZ_MUST_USE bool size_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool size(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool has_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool add_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool add(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool delete_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool delete_(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool values_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool entries_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool entries(JSContext* cx, unsigned argc, Value* vp);
-    static MOZ_MUST_USE bool clear_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_MUST_USE bool clear(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool size_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool size(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool has_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool add_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool add(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool delete_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool delete_(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool values_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool entries_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool entries(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool clear_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool clear(JSContext* cx, unsigned argc, Value* vp);
 };
 
 class SetIteratorObject : public NativeObject
@@ -286,7 +286,7 @@ class SetIteratorObject : public NativeObject
                                      SetObject::IteratorKind kind);
     static void finalize(FreeOp* fop, JSObject* obj);
 
-    static MOZ_MUST_USE bool next(Handle<SetIteratorObject*> setIterator,
+    [[nodiscard]] static bool next(Handle<SetIteratorObject*> setIterator,
                                   HandleArrayObject resultObj, JSContext* cx);
 
     static JSObject* createResult(JSContext* cx);
@@ -299,7 +299,7 @@ using SetInitGetPrototypeOp = NativeObject* (*)(JSContext*, Handle<GlobalObject*
 using SetInitIsBuiltinOp = bool (*)(HandleValue, JSContext*);
 
 template <SetInitGetPrototypeOp getPrototypeOp, SetInitIsBuiltinOp isBuiltinOp>
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 IsOptimizableInitForSet(JSContext* cx, HandleObject setObject, HandleValue iterable, bool* optimized)
 {
     MOZ_ASSERT(!*optimized);

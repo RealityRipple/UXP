@@ -283,7 +283,7 @@ TokenKindIsAssignment(TokenKind tt)
     return TOK_ASSIGNMENT_START <= tt && tt <= TOK_ASSIGNMENT_LAST;
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsKeyword(TokenKind tt)
 {
     return (TOK_KEYWORD_FIRST <= tt && tt <= TOK_KEYWORD_LAST) ||
@@ -291,31 +291,31 @@ TokenKindIsKeyword(TokenKind tt)
            (TOK_KEYWORD_UNOP_FIRST <= tt && tt <= TOK_KEYWORD_UNOP_LAST);
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsContextualKeyword(TokenKind tt)
 {
     return TOK_CONTEXTUAL_KEYWORD_FIRST <= tt && tt <= TOK_CONTEXTUAL_KEYWORD_LAST;
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsFutureReservedWord(TokenKind tt)
 {
     return TOK_FUTURE_RESERVED_KEYWORD_FIRST <= tt && tt <= TOK_FUTURE_RESERVED_KEYWORD_LAST;
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsStrictReservedWord(TokenKind tt)
 {
     return TOK_STRICT_RESERVED_KEYWORD_FIRST <= tt && tt <= TOK_STRICT_RESERVED_KEYWORD_LAST;
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsReservedWordLiteral(TokenKind tt)
 {
     return TOK_RESERVED_WORD_LITERAL_FIRST <= tt && tt <= TOK_RESERVED_WORD_LITERAL_LAST;
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsReservedWord(TokenKind tt)
 {
     return TokenKindIsKeyword(tt) ||
@@ -323,7 +323,7 @@ TokenKindIsReservedWord(TokenKind tt)
            TokenKindIsReservedWordLiteral(tt);
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsPossibleIdentifier(TokenKind tt)
 {
     return tt == TOK_NAME ||
@@ -332,7 +332,7 @@ TokenKindIsPossibleIdentifier(TokenKind tt)
            TokenKindIsStrictReservedWord(tt);
 }
 
-inline MOZ_MUST_USE bool
+[[nodiscard]] inline bool
 TokenKindIsPossibleIdentifierName(TokenKind tt)
 {
     return TokenKindIsPossibleIdentifier(tt) ||

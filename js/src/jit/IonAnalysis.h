@@ -17,13 +17,13 @@ namespace jit {
 class MIRGenerator;
 class MIRGraph;
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 FoldTests(MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 SplitCriticalEdges(MIRGraph& graph);
 
 bool
@@ -34,7 +34,7 @@ enum Observability {
     AggressiveObservability
 };
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EliminatePhis(MIRGenerator* mir, MIRGraph& graph, Observability observe);
 
 size_t
@@ -43,38 +43,38 @@ MarkLoopBlocks(MIRGraph& graph, MBasicBlock* header, bool* canOsr);
 void
 UnmarkLoopBlocks(MIRGraph& graph, MBasicBlock* header);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 MakeLoopsContiguous(MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EliminateDeadCode(MIRGenerator* mir, MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ApplyTypeInformation(MIRGenerator* mir, MIRGraph& graph);
 
 void
 RenumberBlocks(MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AccountForCFGChanges(MIRGenerator* mir, MIRGraph& graph, bool updateAliasAnalysis,
                      bool underValueNumberer = false);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 RemoveUnmarkedBlocks(MIRGenerator* mir, MIRGraph& graph, uint32_t numMarkedBlocks);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CreateMIRRootList(IonBuilder& builder);
 
 void
 ClearDominatorTree(MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 BuildDominatorTree(MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 BuildPhiReverseMapping(MIRGraph& graph);
 
 void
@@ -86,10 +86,10 @@ AssertGraphCoherency(MIRGraph& graph);
 void
 AssertExtendedGraphCoherency(MIRGraph& graph, bool underValueNumberer = false);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EliminateRedundantChecks(MIRGraph& graph);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AddKeepAliveInstructions(MIRGraph& graph);
 
 class MDefinition;
@@ -121,7 +121,7 @@ enum class MathSpace {
 SimpleLinearSum
 ExtractLinearSum(MDefinition* ins, MathSpace space = MathSpace::Unknown);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ExtractLinearInequality(MTest* test, BranchDirection direction,
                         SimpleLinearSum* plhs, MDefinition** prhs, bool* plessEqual);
 
@@ -157,15 +157,15 @@ class LinearSum
 
     // These return false on an integer overflow, and afterwards the sum must
     // not be used.
-    MOZ_MUST_USE bool multiply(int32_t scale);
-    MOZ_MUST_USE bool add(const LinearSum& other, int32_t scale = 1);
-    MOZ_MUST_USE bool add(SimpleLinearSum other, int32_t scale = 1);
-    MOZ_MUST_USE bool add(MDefinition* term, int32_t scale);
-    MOZ_MUST_USE bool add(int32_t constant);
+    [[nodiscard]] bool multiply(int32_t scale);
+    [[nodiscard]] bool add(const LinearSum& other, int32_t scale = 1);
+    [[nodiscard]] bool add(SimpleLinearSum other, int32_t scale = 1);
+    [[nodiscard]] bool add(MDefinition* term, int32_t scale);
+    [[nodiscard]] bool add(int32_t constant);
 
     // Unlike the above function, on failure this leaves the sum unchanged and
     // it can still be used.
-    MOZ_MUST_USE bool divide(uint32_t scale);
+    [[nodiscard]] bool divide(uint32_t scale);
 
     int32_t constant() const { return constant_; }
     size_t numTerms() const { return terms_.length(); }
@@ -191,7 +191,7 @@ ConvertLinearSum(TempAllocator& alloc, MBasicBlock* block, const LinearSum& sum,
 MCompare*
 ConvertLinearInequality(TempAllocator& alloc, MBasicBlock* block, const LinearSum& sum);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AnalyzeNewScriptDefiniteProperties(JSContext* cx,
                                    DPAConstraintInfo& constraintInfo,
                                    HandleFunction fun,
@@ -199,7 +199,7 @@ AnalyzeNewScriptDefiniteProperties(JSContext* cx,
                                    HandlePlainObject baseobj,
                                    Vector<TypeNewScript::Initializer>* initializerList);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AnalyzeArgumentsUsage(JSContext* cx, JSScript* script);
 
 bool

@@ -140,7 +140,7 @@ class ParseContext : public Nestable<ParseContext>
             return id_;
         }
 
-        MOZ_MUST_USE bool init(ParseContext* pc) {
+        [[nodiscard]] bool init(ParseContext* pc) {
             if (id_ == UINT32_MAX) {
                 pc->tokenStream_.reportError(JSMSG_NEED_DIET, js_script_str);
                 return false;
@@ -157,7 +157,7 @@ class ParseContext : public Nestable<ParseContext>
             return declared_->lookupForAdd(name);
         }
 
-        MOZ_MUST_USE bool addDeclaredName(ParseContext* pc, AddDeclaredNamePtr& p, JSAtom* name,
+        [[nodiscard]] bool addDeclaredName(ParseContext* pc, AddDeclaredNamePtr& p, JSAtom* name,
                                           DeclarationKind kind, uint32_t pos)
         {
             return maybeReportOOM(pc, declared_->add(p, name, DeclaredNameInfo(kind, pos)));
@@ -379,7 +379,7 @@ class ParseContext : public Nestable<ParseContext>
 
     ~ParseContext();
 
-    MOZ_MUST_USE bool init();
+    [[nodiscard]] bool init();
 
     SharedContext* sc() {
         return sc_;
@@ -446,7 +446,7 @@ class ParseContext : public Nestable<ParseContext>
         return *closedOverBindingsForLazy_;
     }
 
-    MOZ_MUST_USE bool addInnerFunctionBoxForAnnexB(FunctionBox* funbox);
+    [[nodiscard]] bool addInnerFunctionBoxForAnnexB(FunctionBox* funbox);
     void removeInnerFunctionBoxesForAnnexB(JSAtom* name);
     void finishInnerFunctionBoxesForAnnexB();
 
@@ -703,7 +703,7 @@ class UsedNameTracker
         scopeCounter_(0)
     { }
 
-    MOZ_MUST_USE bool init() {
+    [[nodiscard]] bool init() {
         return map_.init();
     }
 
@@ -722,10 +722,10 @@ class UsedNameTracker
         return map_.lookup(name);
     }
 
-    MOZ_MUST_USE bool noteUse(ExclusiveContext* cx, JSAtom* name,
+    [[nodiscard]] bool noteUse(ExclusiveContext* cx, JSAtom* name,
                               uint32_t scriptId, uint32_t scopeId);
 
-    MOZ_MUST_USE bool markAsAlwaysClosedOver(ExclusiveContext* cx, JSAtom* name,
+    [[nodiscard]] bool markAsAlwaysClosedOver(ExclusiveContext* cx, JSAtom* name,
                                              uint32_t scriptId, uint32_t scopeId) {
         // This marks a variable as always closed over:
         // UsedNameInfo::noteBoundInScope only checks if scriptId and scopeId are
@@ -883,32 +883,32 @@ class ParserBase : public StrictModeGetter
      * strict mode code, or warn if not, using the given error number and
      * arguments.
      */
-    MOZ_MUST_USE bool strictModeError(unsigned errorNumber, ...);
+    [[nodiscard]] bool strictModeError(unsigned errorNumber, ...);
 
     /*
      * Handle a strict mode error at the given offset.  Report an error if in
      * strict mode code, or warn if not, using the given error number and
      * arguments.
      */
-    MOZ_MUST_USE bool strictModeErrorAt(uint32_t offset, unsigned errorNumber, ...);
+    [[nodiscard]] bool strictModeErrorAt(uint32_t offset, unsigned errorNumber, ...);
 
     /* Report the given warning at the current offset. */
-    MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
+    [[nodiscard]] bool warning(unsigned errorNumber, ...);
 
     /* Report the given warning at the given offset. */
-    MOZ_MUST_USE bool warningAt(uint32_t offset, unsigned errorNumber, ...);
+    [[nodiscard]] bool warningAt(uint32_t offset, unsigned errorNumber, ...);
 
     /*
      * If extra warnings are enabled, report the given warning at the current
      * offset.
      */
-    MOZ_MUST_USE bool extraWarning(unsigned errorNumber, ...);
+    [[nodiscard]] bool extraWarning(unsigned errorNumber, ...);
 
     /*
      * If extra warnings are enabled, report the given warning at the given
      * offset.
      */
-    MOZ_MUST_USE bool extraWarningAt(uint32_t offset, unsigned errorNumber, ...);
+    [[nodiscard]] bool extraWarningAt(uint32_t offset, unsigned errorNumber, ...);
 
     bool isValidStrictBinding(PropertyName* name);
 
@@ -1020,11 +1020,11 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 
         // If there is a pending error, report it and return false, otherwise
         // return true.
-        MOZ_MUST_USE bool checkForError(ErrorKind kind);
+        [[nodiscard]] bool checkForError(ErrorKind kind);
 
         // If there is a pending warning, report it and return either false or
         // true depending on the werror option, otherwise return true.
-        MOZ_MUST_USE bool checkForWarning(ErrorKind kind);
+        [[nodiscard]] bool checkForWarning(ErrorKind kind);
 
         // Transfer an existing error to another instance.
         void transferErrorTo(ErrorKind kind, PossibleError* other);
@@ -1053,12 +1053,12 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
         // If there is a pending destructuring error or warning, report it and
         // return false, otherwise return true. Clears any pending expression
         // error.
-        MOZ_MUST_USE bool checkForDestructuringErrorOrWarning();
+        [[nodiscard]] bool checkForDestructuringErrorOrWarning();
 
         // If there is a pending expression error, report it and return false,
         // otherwise return true. Clears any pending destructuring error or
         // warning.
-        MOZ_MUST_USE bool checkForExpressionError();
+        [[nodiscard]] bool checkForExpressionError();
 
         // Pass pending errors between possible error instances. This is useful
         // for extending the lifetime of a pending error beyond the scope of
@@ -1127,7 +1127,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
      * the signature of `errorReport` is [...](TokenKind actual).
      */
     template<typename ConditionT, typename ErrorReportT>
-    MOZ_MUST_USE bool mustMatchTokenInternal(ConditionT condition, Modifier modifier,
+    [[nodiscard]] bool mustMatchTokenInternal(ConditionT condition, Modifier modifier,
                                              ErrorReportT errorReport);
 
   public:
@@ -1141,7 +1141,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
      * If error number is passed instead of `errorReport`, it reports an
      * error with the passed errorNumber.
      */
-    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, Modifier modifier, JSErrNum errorNumber) {
+    [[nodiscard]] bool mustMatchToken(TokenKind expected, Modifier modifier, JSErrNum errorNumber) {
         return mustMatchTokenInternal([expected](TokenKind actual) {
                                           return actual == expected;
                                       },
@@ -1151,12 +1151,12 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
                                       });
     }
 
-    MOZ_MUST_USE bool mustMatchToken(TokenKind excpected, JSErrNum errorNumber) {
+    [[nodiscard]] bool mustMatchToken(TokenKind excpected, JSErrNum errorNumber) {
         return mustMatchToken(excpected, TokenStream::None, errorNumber);
     }
 
     template<typename ConditionT>
-    MOZ_MUST_USE bool mustMatchToken(ConditionT condition, JSErrNum errorNumber) {
+    [[nodiscard]] bool mustMatchToken(ConditionT condition, JSErrNum errorNumber) {
         return mustMatchTokenInternal(condition, TokenStream::None,
                                       [this, errorNumber](TokenKind) {
                                           this->error(errorNumber);
@@ -1164,7 +1164,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     }
 
     template<typename ErrorReportT>
-    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, Modifier modifier,
+    [[nodiscard]] bool mustMatchToken(TokenKind expected, Modifier modifier,
                                      ErrorReportT errorReport) {
         return mustMatchTokenInternal([expected](TokenKind actual) {
                                           return actual == expected;
@@ -1173,7 +1173,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     }
 
     template<typename ErrorReportT>
-    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, ErrorReportT errorReport) {
+    [[nodiscard]] bool mustMatchToken(TokenKind expected, ErrorReportT errorReport) {
         return mustMatchToken(expected, TokenStream::None, errorReport);
     }
 
@@ -1519,13 +1519,13 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
         // The number of static class fields with computed property names.
         size_t staticFieldKeys = 0;
     };
-    MOZ_MUST_USE bool classMember(YieldHandling yieldHandling,
+    [[nodiscard]] bool classMember(YieldHandling yieldHandling,
                                   const ParseContext::ClassStatement& classStmt,
                                   HandlePropertyName className,
                                   uint32_t classStartOffset, bool hasHeritage,
                                   ClassFields& classFields,
                                   ListNodeType& classMembers, bool* done);
-    MOZ_MUST_USE bool finishClassConstructor(
+    [[nodiscard]] bool finishClassConstructor(
         const ParseContext::ClassStatement& classStmt,
         HandlePropertyName className, bool hasHeritage,
         uint32_t classStartOffset, uint32_t classEndOffset,

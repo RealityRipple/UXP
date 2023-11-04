@@ -520,12 +520,12 @@ class ScriptSource
     void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                 JS::ScriptSourceInfo* info) const;
 
-    MOZ_MUST_USE bool setSource(ExclusiveContext* cx,
+    [[nodiscard]] bool setSource(ExclusiveContext* cx,
                                 mozilla::UniquePtr<char16_t[], JS::FreePolicy>&& source,
                                 size_t length);
     void setSource(SharedImmutableTwoByteString&& string);
 
-    MOZ_MUST_USE bool setCompressedSource(
+    [[nodiscard]] bool setCompressedSource(
         ExclusiveContext* cx,
         mozilla::UniquePtr<char[], JS::FreePolicy>&& raw,
         size_t rawLength,

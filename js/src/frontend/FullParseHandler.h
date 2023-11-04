@@ -319,7 +319,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return literal;
     }
 
-    MOZ_MUST_USE bool addElision(ListNodeType literal, const TokenPos& pos) {
+    [[nodiscard]] bool addElision(ListNodeType literal, const TokenPos& pos) {
         NullaryNode* elision = new_<NullaryNode>(PNK_ELISION, pos);
         if (!elision)
             return false;
@@ -329,7 +329,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return true;
     }
 
-    MOZ_MUST_USE bool addSpreadElement(ListNodeType literal, uint32_t begin, Node inner) {
+    [[nodiscard]] bool addSpreadElement(ListNodeType literal, uint32_t begin, Node inner) {
         ParseNode* spread = newSpread(begin, inner);
         if (!spread)
             return false;
@@ -400,7 +400,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return new_<UnaryNode>(PNK_SUPERBASE, JSOP_NOP, pos, thisName);
     }
 
-    MOZ_MUST_USE bool addPrototypeMutation(ListNodeType literal, uint32_t begin, Node expr) {
+    [[nodiscard]] bool addPrototypeMutation(ListNodeType literal, uint32_t begin, Node expr) {
         // Object literals with mutated [[Prototype]] are non-constant so that
         // singleton objects will have Object.prototype as their [[Prototype]].
         literal->setHasNonConstInitializer();
@@ -412,7 +412,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return true;
     }
 
-    MOZ_MUST_USE bool addPropertyDefinition(ListNodeType literal, Node key, Node val) {
+    [[nodiscard]] bool addPropertyDefinition(ListNodeType literal, Node key, Node val) {
         MOZ_ASSERT(literal->isKind(PNK_OBJECT));
         MOZ_ASSERT(key->isKind(PNK_NUMBER) ||
                    key->isKind(PNK_OBJECT_PROPERTY_NAME) ||
@@ -430,7 +430,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return true;
     }
 
-    MOZ_MUST_USE bool addShorthand(ListNodeType literal, NameNodeType name, NameNodeType expr) {
+    [[nodiscard]] bool addShorthand(ListNodeType literal, NameNodeType name, NameNodeType expr) {
         MOZ_ASSERT(literal->isKind(PNK_OBJECT));
         MOZ_ASSERT(name->isKind(PNK_OBJECT_PROPERTY_NAME));
         MOZ_ASSERT(expr->isKind(PNK_NAME));
@@ -444,7 +444,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return true;
     }
 
-    MOZ_MUST_USE bool addSpreadProperty(ListNodeType literal, uint32_t begin, Node inner) {
+    [[nodiscard]] bool addSpreadProperty(ListNodeType literal, uint32_t begin, Node inner) {
         MOZ_ASSERT(literal->isKind(PNK_OBJECT));
 
         literal->setHasNonConstInitializer();
@@ -455,8 +455,8 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return true;
     }
 
-    MOZ_MUST_USE bool addObjectMethodDefinition(ListNodeType literal, Node key, FunctionNodeType funNode,
-                                                JSOp op)
+    [[nodiscard]] bool addObjectMethodDefinition(ListNodeType literal, Node key, FunctionNodeType funNode,
+                                                 JSOp op)
     {
         MOZ_ASSERT(key->isKind(PNK_NUMBER) ||
                    key->isKind(PNK_OBJECT_PROPERTY_NAME) ||
@@ -471,27 +471,27 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return true;
     }
 
-    MOZ_MUST_USE ClassMethod* newClassMethodDefinition(Node key, FunctionNodeType funNode,
-                                                       JSOp op, bool isStatic)
+    [[nodiscard]] ClassMethod* newClassMethodDefinition(Node key, FunctionNodeType funNode,
+                                                        JSOp op, bool isStatic)
     {
         MOZ_ASSERT(isUsableAsObjectPropertyName(key));
 
         return new_<ClassMethod>(key, funNode, op, isStatic);
     }
 
-    MOZ_MUST_USE ClassField* newClassFieldDefinition(Node name, FunctionNodeType initializer, bool isStatic)
+    [[nodiscard]] ClassField* newClassFieldDefinition(Node name, FunctionNodeType initializer, bool isStatic)
     {
         MOZ_ASSERT(isUsableAsObjectPropertyName(name));
 
         return new_<ClassField>(name, initializer, isStatic);
     }
 
-    MOZ_MUST_USE StaticClassBlock* newStaticClassBlock(FunctionNodeType block)
+    [[nodiscard]] StaticClassBlock* newStaticClassBlock(FunctionNodeType block)
     {
         return new_<StaticClassBlock>(block);
     }
 
-    MOZ_MUST_USE bool addClassMemberDefinition(ListNodeType memberList, Node member)
+    [[nodiscard]] bool addClassMemberDefinition(ListNodeType memberList, Node member)
     {
         MOZ_ASSERT(memberList->isKind(PNK_CLASSMEMBERLIST));
         // Constructors can be surrounded by LexicalScopes.
@@ -536,7 +536,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return new_<ListNode>(PNK_STATEMENTLIST, pos);
     }
 
-    MOZ_MUST_USE bool isFunctionStmt(Node stmt) {
+    [[nodiscard]] bool isFunctionStmt(Node stmt) {
         while (stmt->isKind(PNK_LABEL))
             stmt = stmt->as<LabeledStatement>().statement();
         return stmt->is<FunctionNode>();
@@ -563,7 +563,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
             list->setHasTopLevelFunctionDeclarations();
     }
 
-    MOZ_MUST_USE bool prependInitialYield(ListNodeType stmtList, Node genName) {
+    [[nodiscard]] bool prependInitialYield(ListNodeType stmtList, Node genName) {
         MOZ_ASSERT(stmtList->isKind(PNK_STATEMENTLIST));
 
         TokenPos yieldPos(stmtList->pn_pos.begin, stmtList->pn_pos.begin + 1);
@@ -752,10 +752,10 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return new_<OptionalPropertyByValue>(lhs, index, lhs->pn_pos.begin, end);
     }
 
-    inline MOZ_MUST_USE bool addCatchBlock(ListNodeType catchList, LexicalScopeNodeType lexicalScope,
-                                           Node catchBinding, Node catchGuard, Node catchBody);
+    [[nodiscard]] inline bool addCatchBlock(ListNodeType catchList, LexicalScopeNodeType lexicalScope,
+                                            Node catchBinding, Node catchGuard, Node catchBody);
 
-    inline MOZ_MUST_USE bool setLastFunctionFormalParameterDefault(FunctionNodeType funNode,
+    [[nodiscard]] inline bool setLastFunctionFormalParameterDefault(FunctionNodeType funNode,
                                                                    Node defaultValue);
     inline void setLastFunctionFormalParameterDestructuring(Node funcpn, Node pn);
 
@@ -858,7 +858,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
                node->isKind(PNK_COMPUTED_NAME);
     }
 
-    inline MOZ_MUST_USE bool finishInitializerAssignment(NameNodeType nameNode, Node init);
+    [[nodiscard]] inline bool finishInitializerAssignment(NameNodeType nameNode, Node init);
 
     void setBeginPosition(Node pn, Node oth) {
         setBeginPosition(pn, oth->pn_pos.begin);
@@ -941,12 +941,12 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         literal->setHasNonConstInitializer();
     }
     template <typename NodeType>
-    MOZ_MUST_USE NodeType parenthesize(NodeType node) {
+    [[nodiscard]] NodeType parenthesize(NodeType node) {
         node->setInParens(true);
         return node;
     }
     template <typename NodeType>
-    MOZ_MUST_USE NodeType setLikelyIIFE(NodeType node) {
+    [[nodiscard]] NodeType setLikelyIIFE(NodeType node) {
         return parenthesize(node);
     }
     void setInDirectivePrologue(UnaryNodeType exprStmt) {

@@ -95,19 +95,19 @@ class MOZ_STACK_CLASS TryEmitter
     TryEmitter(BytecodeEmitter* bce, Kind kind,
                ShouldUseRetVal retValKind = UseRetVal, ShouldUseControl controlKind = UseControl);
 
-    MOZ_MUST_USE bool emitJumpOverCatchAndFinally();
+    [[nodiscard]] bool emitJumpOverCatchAndFinally();
 
-    MOZ_MUST_USE bool emitTry();
-    MOZ_MUST_USE bool emitCatch();
+    [[nodiscard]] bool emitTry();
+    [[nodiscard]] bool emitCatch();
 
-    MOZ_MUST_USE bool emitFinally(const mozilla::Maybe<uint32_t>& finallyPos = mozilla::Nothing());
+    [[nodiscard]] bool emitFinally(const mozilla::Maybe<uint32_t>& finallyPos = mozilla::Nothing());
 
-    MOZ_MUST_USE bool emitEnd();
+    [[nodiscard]] bool emitEnd();
 
   private:
-    MOZ_MUST_USE bool emitTryEnd();
-    MOZ_MUST_USE bool emitCatchEnd(bool hasNext);
-    MOZ_MUST_USE bool emitFinallyEnd();
+    [[nodiscard]] bool emitTryEnd();
+    [[nodiscard]] bool emitCatchEnd(bool hasNext);
+    [[nodiscard]] bool emitFinallyEnd();
 };
 
 } /* namespace frontend */

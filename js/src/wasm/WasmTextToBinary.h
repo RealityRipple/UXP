@@ -1,6 +1,7 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
  *
  * Copyright 2015 Mozilla Foundation
+ * Copyright 2023 Moonchild Productions
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +28,7 @@ namespace wasm {
 // null-terminated char16_t array) into serialized bytes. If there is an error
 // other than out-of-memory an error message string will be stored in 'error'.
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 TextToBinary(const char16_t* text, Bytes* bytes, UniqueChars* error);
 
 } // namespace wasm
