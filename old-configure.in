@@ -1127,9 +1127,9 @@ dnl default mode that relies on relative symlinks being handled a certain way.
     fi
 
     if test "$CPU_ARCH" = "x86"; then
-       MOZ_FIX_LINK_PATHS="-L${DIST}/bin -R'\$\$ORIGIN':/usr/gcc/7/lib"
+       MOZ_FIX_LINK_PATHS="-L${DIST}/bin -R'\$\$ORIGIN':/usr/gcc/10/lib"
     elif test "$CPU_ARCH" = "x86_64"; then
-       MOZ_FIX_LINK_PATHS="-L${DIST}/bin -R'\$\$ORIGIN':/usr/gcc/7/lib/amd64"
+       MOZ_FIX_LINK_PATHS="-L${DIST}/bin -R'\$\$ORIGIN':/usr/gcc/10/lib/amd64"
     fi    
     ;;
 
