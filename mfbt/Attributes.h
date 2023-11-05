@@ -236,25 +236,6 @@
 #  define MOZ_ALLOCATOR
 #endif
 
-/**
- * MOZ_MUST_USE tells the compiler to emit a warning if a function's
- * return value is not used by the caller.
- *
- * Place this attribute at the very beginning of a function declaration. For
- * example, write
- *
- *   MOZ_MUST_USE int foo();
- *
- * or
- *
- *   MOZ_MUST_USE int foo() { return 42; }
- */
-#if defined(__GNUC__) || defined(__clang__)
-#  define MOZ_MUST_USE __attribute__ ((warn_unused_result))
-#else
-#  define MOZ_MUST_USE
-#endif
-
 #ifdef __cplusplus
 
 /**
