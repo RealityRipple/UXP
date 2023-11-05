@@ -603,25 +603,25 @@ struct AssertionConditionType
 #  define MOZ_ALWAYS_TRUE(expr) \
      do { \
        if ((expr)) { \
-          /* Silence MOZ_MUST_USE. */ \
+          /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #  define MOZ_ALWAYS_FALSE(expr) \
      do { \
        if ((expr)) { \
-         /* Silence MOZ_MUST_USE. */ \
+         /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #  define MOZ_ALWAYS_OK(expr) \
      do { \
        if ((expr).isOk()) { \
-         /* Silence MOZ_MUST_USE. */ \
+         /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #  define MOZ_ALWAYS_ERR(expr) \
      do { \
        if ((expr).isErr()) { \
-         /* Silence MOZ_MUST_USE. */ \
+         /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #endif
