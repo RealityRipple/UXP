@@ -370,21 +370,21 @@ public:
    */
 
   void NS_FASTCALL Assign(char_type aChar);
-  MOZ_MUST_USE bool NS_FASTCALL Assign(char_type aChar, const fallible_t&);
+  [[nodiscard]] bool NS_FASTCALL Assign(char_type aChar, const fallible_t&);
 
   void NS_FASTCALL Assign(const char_type* aData);
-  MOZ_MUST_USE bool NS_FASTCALL Assign(const char_type* aData,
+  [[nodiscard]] bool NS_FASTCALL Assign(const char_type* aData,
                                        const fallible_t&);
 
   void NS_FASTCALL Assign(const char_type* aData, size_type aLength);
-  MOZ_MUST_USE bool NS_FASTCALL Assign(const char_type* aData,
+  [[nodiscard]] bool NS_FASTCALL Assign(const char_type* aData,
                                        size_type aLength, const fallible_t&);
 
   void NS_FASTCALL Assign(const self_type&);
-  MOZ_MUST_USE bool NS_FASTCALL Assign(const self_type&, const fallible_t&);
+  [[nodiscard]] bool NS_FASTCALL Assign(const self_type&, const fallible_t&);
 
   void NS_FASTCALL Assign(const substring_tuple_type&);
-  MOZ_MUST_USE bool NS_FASTCALL Assign(const substring_tuple_type&,
+  [[nodiscard]] bool NS_FASTCALL Assign(const substring_tuple_type&,
                                        const fallible_t&);
 
 #if defined(CharT_is_PRUnichar) && defined(MOZ_USE_CHAR16_WRAPPER)
@@ -398,7 +398,7 @@ public:
     Assign(static_cast<const char16_t*>(aData), aLength);
   }
 
-  MOZ_MUST_USE bool Assign(char16ptr_t aData, size_type aLength,
+  [[nodiscard]] bool Assign(char16ptr_t aData, size_type aLength,
                            const fallible_t& aFallible)
   {
     return Assign(static_cast<const char16_t*>(aData), aLength,
@@ -407,7 +407,7 @@ public:
 #endif
 
   void NS_FASTCALL AssignASCII(const char* aData, size_type aLength);
-  MOZ_MUST_USE bool NS_FASTCALL AssignASCII(const char* aData,
+  [[nodiscard]] bool NS_FASTCALL AssignASCII(const char* aData,
                                             size_type aLength,
                                             const fallible_t&);
 
@@ -415,7 +415,7 @@ public:
   {
     AssignASCII(aData, mozilla::AssertedCast<size_type, size_t>(strlen(aData)));
   }
-  MOZ_MUST_USE bool NS_FASTCALL AssignASCII(const char* aData,
+  [[nodiscard]] bool NS_FASTCALL AssignASCII(const char* aData,
                                             const fallible_t& aFallible)
   {
     return AssignASCII(aData,
@@ -479,14 +479,14 @@ public:
 
   void NS_FASTCALL Replace(index_type aCutStart, size_type aCutLength,
                            char_type aChar);
-  MOZ_MUST_USE bool NS_FASTCALL Replace(index_type aCutStart,
+  [[nodiscard]] bool NS_FASTCALL Replace(index_type aCutStart,
                                         size_type aCutLength,
                                         char_type aChar,
                                         const fallible_t&);
   void NS_FASTCALL Replace(index_type aCutStart, size_type aCutLength,
                            const char_type* aData,
                            size_type aLength = size_type(-1));
-  MOZ_MUST_USE bool NS_FASTCALL Replace(index_type aCutStart,
+  [[nodiscard]] bool NS_FASTCALL Replace(index_type aCutStart,
                                         size_type aCutLength,
                                         const char_type* aData,
                                         size_type aLength,
@@ -496,7 +496,7 @@ public:
   {
     Replace(aCutStart, aCutLength, aStr.Data(), aStr.Length());
   }
-  MOZ_MUST_USE bool Replace(index_type aCutStart,
+  [[nodiscard]] bool Replace(index_type aCutStart,
                             size_type aCutLength,
                             const self_type& aStr,
                             const fallible_t& aFallible)
@@ -511,7 +511,7 @@ public:
                                 const char* aData,
                                 size_type aLength = size_type(-1));
 
-  MOZ_MUST_USE bool NS_FASTCALL ReplaceASCII(index_type aCutStart, size_type aCutLength,
+  [[nodiscard]] bool NS_FASTCALL ReplaceASCII(index_type aCutStart, size_type aCutLength,
                                              const char* aData,
                                              size_type aLength,
                                              const fallible_t&);
@@ -530,7 +530,7 @@ public:
   {
     Replace(mLength, 0, aChar);
   }
-  MOZ_MUST_USE bool Append(char_type aChar, const fallible_t& aFallible)
+  [[nodiscard]] bool Append(char_type aChar, const fallible_t& aFallible)
   {
     return Replace(mLength, 0, aChar, aFallible);
   }
@@ -538,7 +538,7 @@ public:
   {
     Replace(mLength, 0, aData, aLength);
   }
-  MOZ_MUST_USE bool Append(const char_type* aData, size_type aLength,
+  [[nodiscard]] bool Append(const char_type* aData, size_type aLength,
                            const fallible_t& aFallible)
   {
     return Replace(mLength, 0, aData, aLength, aFallible);
@@ -555,7 +555,7 @@ public:
   {
     Replace(mLength, 0, aStr);
   }
-  MOZ_MUST_USE bool Append(const self_type& aStr, const fallible_t& aFallible)
+  [[nodiscard]] bool Append(const self_type& aStr, const fallible_t& aFallible)
   {
     return Replace(mLength, 0, aStr, aFallible);
   }
@@ -569,12 +569,12 @@ public:
     ReplaceASCII(mLength, 0, aData, aLength);
   }
 
-  MOZ_MUST_USE bool AppendASCII(const char* aData, const fallible_t& aFallible)
+  [[nodiscard]] bool AppendASCII(const char* aData, const fallible_t& aFallible)
   {
     return ReplaceASCII(mLength, 0, aData, size_type(-1), aFallible);
   }
 
-  MOZ_MUST_USE bool AppendASCII(const char* aData, size_type aLength, const fallible_t& aFallible)
+  [[nodiscard]] bool AppendASCII(const char* aData, size_type aLength, const fallible_t& aFallible)
   {
     return ReplaceASCII(mLength, 0, aData, aLength, aFallible);
   }
@@ -656,7 +656,7 @@ public:
   }
 
   template<int N>
-  MOZ_MUST_USE bool AppendLiteral(const char (&aStr)[N], const fallible_t& aFallible)
+  [[nodiscard]] bool AppendLiteral(const char (&aStr)[N], const fallible_t& aFallible)
   {
     return AppendASCII(aStr, N - 1, aFallible);
   }
@@ -742,11 +742,11 @@ public:
    * Also ensures that the buffer is mutable.
    */
   void NS_FASTCALL SetCapacity(size_type aNewCapacity);
-  MOZ_MUST_USE bool NS_FASTCALL SetCapacity(size_type aNewCapacity,
+  [[nodiscard]] bool NS_FASTCALL SetCapacity(size_type aNewCapacity,
                                             const fallible_t&);
 
   void NS_FASTCALL SetLength(size_type aNewLength);
-  MOZ_MUST_USE bool NS_FASTCALL SetLength(size_type aNewLength,
+  [[nodiscard]] bool NS_FASTCALL SetLength(size_type aNewLength,
                                           const fallible_t&);
 
   void Truncate(size_type aNewLength = 0)
@@ -839,7 +839,7 @@ public:
     Append(aSpan.Elements(), len);
   }
 
-  MOZ_MUST_USE bool Append(mozilla::Span<const char_type> aSpan,
+  [[nodiscard]] bool Append(mozilla::Span<const char_type> aSpan,
                            const fallible_t& aFallible)
   {
     auto len = aSpan.Length();
@@ -869,7 +869,7 @@ public:
     Append(reinterpret_cast<const char*>(aSpan.Elements()), len);
   }
 
-  MOZ_MUST_USE bool Append(mozilla::Span<const uint8_t> aSpan,
+  [[nodiscard]] bool Append(mozilla::Span<const uint8_t> aSpan,
                            const fallible_t& aFallible)
   {
     auto len = aSpan.Length();
@@ -1069,11 +1069,11 @@ protected:
    * this function returns false if is unable to allocate sufficient
    * memory.
    */
-  MOZ_MUST_USE bool ReplacePrep(index_type aCutStart,
+  [[nodiscard]] bool ReplacePrep(index_type aCutStart,
                                 size_type aCutLength,
                                 size_type aNewLength);
 
-  MOZ_MUST_USE bool NS_FASTCALL ReplacePrepInternal(
+  [[nodiscard]] bool NS_FASTCALL ReplacePrepInternal(
     index_type aCutStart,
     size_type aCutLength,
     size_type aNewFragLength,
@@ -1092,7 +1092,7 @@ protected:
    * this helper function can be called prior to directly manipulating
    * the contents of mData.  see, for example, BeginWriting.
    */
-  MOZ_MUST_USE bool NS_FASTCALL EnsureMutable(
+  [[nodiscard]] bool NS_FASTCALL EnsureMutable(
     size_type aNewLen = size_type(-1));
 
   /**
@@ -1114,7 +1114,7 @@ protected:
   /**
    * Checks if the given capacity is valid for this string type.
    */
-  static MOZ_MUST_USE bool CheckCapacity(size_type aCapacity) {
+  [[nodiscard]] static bool CheckCapacity(size_type aCapacity) {
     if (aCapacity > kMaxCapacity) {
       // Also assert for |aCapacity| equal to |size_type(-1)|, since we used to
       // use that value to flag immutability.

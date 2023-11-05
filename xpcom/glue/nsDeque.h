@@ -87,7 +87,7 @@ public:
     }
   }
 
-  MOZ_MUST_USE bool Push(void* aItem, const fallible_t&);
+  [[nodiscard]] bool Push(void* aItem, const fallible_t&);
 
   /**
    * Inserts new member at the front of the deque.
@@ -101,7 +101,7 @@ public:
     }
   }
 
-  MOZ_MUST_USE bool PushFront(void* aItem, const fallible_t&);
+  [[nodiscard]] bool PushFront(void* aItem, const fallible_t&);
 
   /**
    * Remove and return the last item in the container.
