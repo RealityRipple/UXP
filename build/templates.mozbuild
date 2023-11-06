@@ -8,9 +8,6 @@ def Binary():
     '''Generic template for target binaries. Meant to be used by other
     templates.'''
 
-    if CONFIG['MOZ_LIBSTDCXX_TARGET_VERSION']:
-        USE_LIBS += ['stdc++compat']
-
     # Ideally, we'd support not adding this to the LIB_IS_C_ONLY case,
     # but that variable is actually only set in db/sqlite/src, which
     # doesn't build a shared library on the relevant platforms anyways.
