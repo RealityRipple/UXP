@@ -6,6 +6,9 @@
 #ifndef mozilla_throw_gcc_h
 #define mozilla_throw_gcc_h
 
+// Wrapping shouldn't be needed on libcpp 14+
+#if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION < 14000
+
 #include "mozilla/Attributes.h"
 
 #include <stdio.h>              // snprintf
@@ -139,5 +142,7 @@ __throw_system_error(int err)
 } // namespace std
 
 #undef MOZ_THROW_NORETURN
+
+#endif // !_LIBCPP_VERSION || _LIBCPP_VERSION < 14000
 
 #endif  // mozilla_throw_gcc_h
