@@ -5570,10 +5570,17 @@ class JS_PUBLIC_API(JSErrorNotes)
     // Create a deep copy of notes.
     js::UniquePtr<JSErrorNotes> copy(JSContext* cx);
 
-    class iterator : public std::iterator<std::input_iterator_tag, js::UniquePtr<Note>>
+    class iterator
     {
+      private:
         js::UniquePtr<Note>* note_;
       public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type = js::UniquePtr<Note>;
+        using difference_type = ptrdiff_t;
+        using pointer = value_type*;
+        using reference = value_type&;
+
         explicit iterator(js::UniquePtr<Note>* note = nullptr) : note_(note)
         {}
 

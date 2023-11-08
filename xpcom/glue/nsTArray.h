@@ -2466,6 +2466,12 @@ MakeSpan(const nsTArray_Impl<ElementType, TArrayAlloc>& aTArray)
   return aTArray;
 }
 
+template <typename E, class Alloc>
+Span(nsTArray_Impl<E, Alloc>&) -> Span<E>;
+
+template <typename E, class Alloc>
+Span(const nsTArray_Impl<E, Alloc>&) -> Span<const E>;
+
 } // namespace mozilla
 
 // Assert that AutoTArray doesn't have any extra padding inside.

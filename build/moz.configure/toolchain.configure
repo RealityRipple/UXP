@@ -340,17 +340,16 @@ def check_compiler(compiler, language, target):
         if info.type in ('clang-cl', 'clang', 'gcc'):
             append_flag('-std=gnu99')
 
-    # Note: this is a strict version check because we used to always add
-    # -std=gnu++14.
-    cxx14_version = 201402
+    cxx17_version = 201703
     if info.language == 'C++':
-        if info.type in ('clang', 'gcc') and info.language_version != cxx14_version:
-            append_flag('-std=gnu++14')
-        # MSVC 2015 headers include C++14 features, but don't guard them
-        # with appropriate checks.
-        if info.type == 'clang-cl' and info.language_version != cxx14_version:
-            append_flag('-std=c++14')
-        # MSVC from 2015 on defaults to C++14.
+        if info.language_version != cxx17_version:
+            # Compiler doesn't default to C++17, so add the appropriate flag.
+            if info.type in ('clang', 'gcc'):
+                # We're on Clang or GCC, enable C++17 and add GNU extensions.
+                append_flag('-std=gnu++17')
+            else:
+                # We're on MSVC; enable C++17 language mode.
+                append_flag('-std:c++17')
 
     # We force clang-cl to emulate Visual C++ 2015 Update 3 with fallback to
     # cl.exe.
