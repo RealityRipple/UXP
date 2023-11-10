@@ -299,8 +299,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     Scope* outermostScope() const { return scopeList.vector[0]; }
     Scope* innermostScope() const;
 
-    MOZ_ALWAYS_INLINE
-    [[nodiscard]] bool makeAtomIndex(JSAtom* atom, uint32_t* indexp) {
+    [[nodiscard]] MOZ_ALWAYS_INLINE
+    bool makeAtomIndex(JSAtom* atom, uint32_t* indexp) {
         MOZ_ASSERT(atomIndices);
         AtomIndexMap::AddPtr p = atomIndices->lookupForAdd(atom);
         if (p) {

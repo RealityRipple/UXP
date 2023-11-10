@@ -90,8 +90,8 @@ class InlineTable
         return true;
     }
 
-    MOZ_NEVER_INLINE
-    [[nodiscard]] bool switchAndAdd(const InlineEntry& entry) {
+    [[nodiscard]] MOZ_NEVER_INLINE
+    bool switchAndAdd(const InlineEntry& entry) {
         if (!switchToTable())
             return false;
 
@@ -284,8 +284,8 @@ class InlineTable
 
     template <typename KeyInput,
               typename... Args>
-    MOZ_ALWAYS_INLINE
-    [[nodiscard]] bool add(AddPtr& p, KeyInput&& key, Args&&... args) {
+    [[nodiscard]] MOZ_ALWAYS_INLINE
+    bool add(AddPtr& p, KeyInput&& key, Args&&... args) {
         MOZ_ASSERT(!p);
         MOZ_ASSERT(keyNonZero(key));
 
@@ -530,8 +530,8 @@ class InlineMap
     }
 
     template <typename KeyInput, typename ValueInput>
-    MOZ_ALWAYS_INLINE
-    [[nodiscard]] bool add(AddPtr& p, KeyInput&& key, ValueInput&& value) {
+    [[nodiscard]] MOZ_ALWAYS_INLINE
+    bool add(AddPtr& p, KeyInput&& key, ValueInput&& value) {
         return impl_.add(p, mozilla::Forward<KeyInput>(key), mozilla::Forward<ValueInput>(value));
     }
 
@@ -661,8 +661,8 @@ class InlineSet
     }
 
     template <typename TInput>
-    MOZ_ALWAYS_INLINE
-    [[nodiscard]] bool add(AddPtr& p, TInput&& key) {
+    [[nodiscard]] MOZ_ALWAYS_INLINE
+    bool add(AddPtr& p, TInput&& key) {
         return impl_.add(p, mozilla::Forward<TInput>(key));
     }
 

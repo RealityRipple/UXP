@@ -38,22 +38,22 @@ class SymbolObject : public NativeObject
         setFixedSlot(PRIMITIVE_VALUE_SLOT, SymbolValue(symbol));
     }
 
-    static [[nodiscard]] bool construct(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool construct(JSContext* cx, unsigned argc, Value* vp);
 
     // Static methods.
-    static [[nodiscard]] bool for_(JSContext* cx, unsigned argc, Value* vp);
-    static [[nodiscard]] bool keyFor(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool for_(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool keyFor(JSContext* cx, unsigned argc, Value* vp);
 
     // Methods defined on Symbol.prototype.
-    static [[nodiscard]] bool toString_impl(JSContext* cx, const CallArgs& args);
-    static [[nodiscard]] bool toString(JSContext* cx, unsigned argc, Value* vp);
-    static [[nodiscard]] bool valueOf_impl(JSContext* cx, const CallArgs& args);
-    static [[nodiscard]] bool valueOf(JSContext* cx, unsigned argc, Value* vp);
-    static [[nodiscard]] bool toPrimitive(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool toString_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool toString(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool valueOf_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool valueOf(JSContext* cx, unsigned argc, Value* vp);
+    [[nodiscard]] static bool toPrimitive(JSContext* cx, unsigned argc, Value* vp);
 
     // Properties defined on Symbol.prototype.
-    static [[nodiscard]] bool descriptionGetter_impl(JSContext* cx, const CallArgs& args);
-    static [[nodiscard]] bool descriptionGetter(JSContext* cx, unsigned argc, Value *vp);
+    [[nodiscard]] static bool descriptionGetter_impl(JSContext* cx, const CallArgs& args);
+    [[nodiscard]] static bool descriptionGetter(JSContext* cx, unsigned argc, Value *vp);
 
     static const JSPropertySpec properties[];
     static const JSFunctionSpec methods[];
