@@ -526,8 +526,14 @@ EXPAND_MKSHLIB_ARGS += --symbol-order $(SYMBOL_ORDER)
 endif
 EXPAND_MKSHLIB = $(EXPAND_LIBS_EXEC) $(EXPAND_MKSHLIB_ARGS) -- $(MKSHLIB)
 
+ifeq ($(OS_ARCH),SunOS)
+ELF_TEST = elfdump -N .dynamic $(1)
+else
+ELF_TEST = $(TOOLCHAIN_PREFIX)readelf -d $(1)
+endif
+
 ifeq (,$(filter $(OS_TARGET),WINNT Darwin))
-CHECK_TEXTREL = @$(TOOLCHAIN_PREFIX)readelf -d $(1) | grep TEXTREL > /dev/null && echo 'TEST-UNEXPECTED-FAIL | check_textrel | We do not want text relocations in libraries and programs' || true
+CHECK_TEXTREL = @$(ELF_TEST) | grep TEXTREL > /dev/null && echo 'TEST-UNEXPECTED-FAIL | check_textrel | We do not want text relocations in libraries and programs' || true
 endif
 
 define CHECK_BINARY
