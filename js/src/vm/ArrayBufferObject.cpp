@@ -548,7 +548,7 @@ class js::WasmArrayRawBuffer
     }
 #endif
 
-    MOZ_MUST_USE bool growToSizeInPlace(uint32_t oldSize, uint32_t newSize) {
+    [[nodiscard]] bool growToSizeInPlace(uint32_t oldSize, uint32_t newSize) {
         MOZ_ASSERT(newSize >= oldSize);
         MOZ_ASSERT_IF(maxSize(), newSize <= maxSize().value());
         MOZ_ASSERT(newSize <= mappedSize());

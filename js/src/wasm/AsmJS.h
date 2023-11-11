@@ -39,7 +39,7 @@ typedef frontend::Parser<frontend::FullParseHandler> AsmJSParser;
 // indeterminate amount and the entire function should be reparsed from the
 // beginning.
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 CompileAsmJS(ExclusiveContext* cx, AsmJSParser& parser, frontend::ParseNode* stmtList,
              bool* validated);
 

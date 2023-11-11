@@ -1873,7 +1873,7 @@ public:
     aNodeName.SetStringBuffer(nsStringBuffer::FromString(nodeName),
                               nodeName.Length());
   }
-  MOZ_MUST_USE nsresult GetBaseURI(nsAString& aBaseURI) const;
+  [[nodiscard]] nsresult GetBaseURI(nsAString& aBaseURI) const;
   // Return the base URI for the document.
   // The returned value may differ if the document is loaded via XHR, and
   // when accessed from chrome privileged script and

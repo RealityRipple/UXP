@@ -50,7 +50,7 @@ InitIntlClass(JSContext* cx, JS::Handle<JSObject*> obj);
  *
  * NOTE: "calendar" and "locale" properties are *not* added to the object.
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_GetCalendarInfo(JSContext* cx, unsigned argc, JS::Value* vp);
 
 /**
@@ -92,7 +92,7 @@ intl_GetCalendarInfo(JSContext* cx, unsigned argc, JS::Value* vp);
  *   'AM'
  * ]
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_ComputeDisplayNames(JSContext* cx, unsigned argc, JS::Value* vp);
 
 /**
@@ -111,7 +111,7 @@ intl_ComputeDisplayNames(JSContext* cx, unsigned argc, JS::Value* vp);
  *
  * Usage: result = intl_BestAvailableLocale("Collator", locale, defaultOrNull)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_BestAvailableLocale(JSContext* cx, unsigned argc, JS::Value* vp);
 
 /**
@@ -121,7 +121,7 @@ intl_BestAvailableLocale(JSContext* cx, unsigned argc, JS::Value* vp);
  *
  * Usage: result = intl_supportedLocaleOrFallback(locale)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_supportedLocaleOrFallback(JSContext* cx, unsigned argc, JS::Value* vp);
 
 } // namespace js

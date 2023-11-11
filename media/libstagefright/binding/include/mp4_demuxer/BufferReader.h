@@ -182,7 +182,7 @@ public:
   }
 
   template <typename T>
-  MOZ_MUST_USE bool ReadArray(nsTArray<T>& aDest, size_t aLength)
+  [[nodiscard]] bool ReadArray(nsTArray<T>& aDest, size_t aLength)
   {
     const uint8_t* ptr;
     if (!Read(aLength * sizeof(T), &ptr)) {
@@ -196,7 +196,7 @@ public:
   }
 
   template <typename T>
-  MOZ_MUST_USE bool ReadArray(FallibleTArray<T>& aDest, size_t aLength)
+  [[nodiscard]] bool ReadArray(FallibleTArray<T>& aDest, size_t aLength)
   {
     const uint8_t* ptr;
     if (!Read(aLength * sizeof(T), &ptr)) {

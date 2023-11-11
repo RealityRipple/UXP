@@ -33,8 +33,8 @@ public:
 
   void Shutdown();
 
-  static MOZ_MUST_USE nsresult Create(nsISupports* aOuter, const nsIID& aIID,
-                                      void** aInstancePtr);
+  [[nodiscard]] static nsresult Create(nsISupports* aOuter, const nsIID& aIID,
+                                       void** aInstancePtr);
 
   // Unmark any strongly held observers implemented in JS so the cycle
   // collector will not traverse them.

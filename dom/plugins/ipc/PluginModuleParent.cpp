@@ -2210,7 +2210,10 @@ PluginModuleParent::NPP_NewInternal(NPMIMEType pluginType, NPP instance,
         if (supportsAsyncRender) {
           // Prefs indicates we want async plugin rendering, make sure
           // the flash module has support.
-          CallModuleSupportsAsyncRender(&supportsAsyncRender);
+          if (!CallModuleSupportsAsyncRender(&supportsAsyncRender)) {
+            // The actual support call failed. Should not happen; abort.
+            return NS_ERROR_FAILURE;
+          }
         }
 #ifdef _WIN64
         // For 64-bit builds force windowless if the flash library doesn't support

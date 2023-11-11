@@ -223,17 +223,15 @@ public:
     NS_DECL_ISUPPORTS_INHERITED
     NS_DECL_NSPIWIDGETCOCOA
 
-    virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
-                                         nsNativeWidget aNativeParent,
-                                         const DesktopIntRect& aRect,
-                                         nsWidgetInitData* aInitData = nullptr)
-                                         override;
+    [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
+                                          nsNativeWidget aNativeParent,
+                                          const DesktopIntRect& aRect,
+                                          nsWidgetInitData* aInitData = nullptr) override;
 
-    virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
-                                         nsNativeWidget aNativeParent,
-                                         const LayoutDeviceIntRect& aRect,
-                                         nsWidgetInitData* aInitData = nullptr)
-                                         override;
+    [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
+                                          nsNativeWidget aNativeParent,
+                                          const LayoutDeviceIntRect& aRect,
+                                          nsWidgetInitData* aInitData = nullptr) override;
 
     virtual void            Destroy() override;
 

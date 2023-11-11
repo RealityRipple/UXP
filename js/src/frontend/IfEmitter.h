@@ -171,14 +171,14 @@ class MOZ_STACK_CLASS IfEmitter
   public:
     explicit IfEmitter(BytecodeEmitter* bce);
 
-    MOZ_MUST_USE bool emitThen();
-    MOZ_MUST_USE bool emitCond();
-    MOZ_MUST_USE bool emitThenElse();
+    [[nodiscard]] bool emitThen();
+    [[nodiscard]] bool emitCond();
+    [[nodiscard]] bool emitThenElse();
 
-    MOZ_MUST_USE bool emitElse();
-    MOZ_MUST_USE bool emitElseIf();
+    [[nodiscard]] bool emitElse();
+    [[nodiscard]] bool emitElseIf();
 
-    MOZ_MUST_USE bool emitEnd();
+    [[nodiscard]] bool emitEnd();
 
 #ifdef DEBUG
     // Returns the number of values pushed onto the value stack inside
@@ -197,9 +197,9 @@ class MOZ_STACK_CLASS IfEmitter
 #endif
 
   private:
-    MOZ_MUST_USE bool emitIfInternal(SrcNoteType type);
+    [[nodiscard]] bool emitIfInternal(SrcNoteType type);
     void calculateOrCheckPushed();
-    MOZ_MUST_USE bool emitElseInternal();
+    [[nodiscard]] bool emitElseInternal();
 };
 
 // Class for emitting bytecode for blocks like if-then-else which doesn't touch

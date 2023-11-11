@@ -582,10 +582,10 @@ class AutoDetectInvalidation
     }
 };
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 InvokeFunction(JSContext* cx, HandleObject obj0, bool constructing, bool ignoresReturnValue,
                uint32_t argc, Value* argv, MutableHandleValue rval);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 InvokeFunctionShuffleNewTarget(JSContext* cx, HandleObject obj, uint32_t numActualArgs,
                                uint32_t numFormalArgs, Value* argv, MutableHandleValue rval);
 
@@ -594,15 +594,15 @@ bool CheckOverRecursedWithExtra(JSContext* cx, BaselineFrame* frame,
                                 uint32_t extra, uint32_t earlyCheck);
 
 JSObject* BindVar(JSContext* cx, HandleObject scopeChain);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DefVar(JSContext* cx, HandlePropertyName dn, unsigned attrs, HandleObject scopeChain);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DefLexical(JSContext* cx, HandlePropertyName dn, unsigned attrs, HandleObject scopeChain);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DefGlobalLexical(JSContext* cx, HandlePropertyName dn, unsigned attrs);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 MutatePrototype(JSContext* cx, HandlePlainObject obj, HandleValue value);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 InitProp(JSContext* cx, HandleObject obj, HandlePropertyName name, HandleValue value,
          jsbytecode* pc);
 
@@ -620,21 +620,21 @@ bool GreaterThanOrEqual(JSContext* cx, MutableHandleValue lhs, MutableHandleValu
 template<bool Equal>
 bool StringsEqual(JSContext* cx, HandleString left, HandleString right, bool* res);
 
-MOZ_MUST_USE bool ArrayPopDense(JSContext* cx, HandleObject obj, MutableHandleValue rval);
-MOZ_MUST_USE bool ArrayPushDense(JSContext* cx, HandleObject obj, HandleValue v, uint32_t* length);
-MOZ_MUST_USE bool ArrayShiftDense(JSContext* cx, HandleObject obj, MutableHandleValue rval);
+[[nodiscard]] bool ArrayPopDense(JSContext* cx, HandleObject obj, MutableHandleValue rval);
+[[nodiscard]] bool ArrayPushDense(JSContext* cx, HandleObject obj, HandleValue v, uint32_t* length);
+[[nodiscard]] bool ArrayShiftDense(JSContext* cx, HandleObject obj, MutableHandleValue rval);
 JSString* ArrayJoin(JSContext* cx, HandleObject array, HandleString sep);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CharCodeAt(JSContext* cx, HandleString str, int32_t index, uint32_t* code);
 JSFlatString* StringFromCharCode(JSContext* cx, int32_t code);
 JSString* StringFromCodePoint(JSContext* cx, int32_t codePoint);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 SetProperty(JSContext* cx, HandleObject obj, HandlePropertyName name, HandleValue value,
             bool strict, jsbytecode* pc);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 InterruptCheck(JSContext* cx);
 
 void* MallocWrapper(JSRuntime* rt, size_t nbytes);
@@ -645,10 +645,10 @@ JSObject* NewStringObject(JSContext* cx, HandleString str);
 bool OperatorIn(JSContext* cx, HandleValue key, HandleObject obj, bool* out);
 bool OperatorInI(JSContext* cx, uint32_t index, HandleObject obj, bool* out);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 GetIntrinsicValue(JSContext* cx, HandlePropertyName name, MutableHandleValue rval);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CreateThis(JSContext* cx, HandleObject callee, HandleObject newTarget, MutableHandleValue rval);
 
 void GetDynamicName(JSContext* cx, JSObject* scopeChain, JSString* str, Value* vp);
@@ -659,92 +659,92 @@ void PostGlobalWriteBarrier(JSRuntime* rt, JSObject* obj);
 
 uint32_t GetIndexFromString(JSString* str);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugPrologue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool* mustReturn);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugEpilogue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool ok);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugEpilogueOnBaselineReturn(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
 void FrameIsDebuggeeCheck(BaselineFrame* frame);
 
 JSObject* CreateGenerator(JSContext* cx, BaselineFrame* frame);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 NormalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame, jsbytecode* pc,
               uint32_t stackDepth);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 FinalSuspend(JSContext* cx, HandleObject obj, BaselineFrame* frame, jsbytecode* pc);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 InterpretResume(JSContext* cx, HandleObject obj, HandleValue val, HandlePropertyName kind,
                 MutableHandleValue rval);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugAfterYield(JSContext* cx, BaselineFrame* frame);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 GeneratorThrowOrClose(JSContext* cx, BaselineFrame* frame, Handle<GeneratorObject*> genObj,
                       HandleValue arg, uint32_t resumeKind);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 GlobalNameConflictsCheckFromIon(JSContext* cx, HandleScript script);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CheckGlobalOrEvalDeclarationConflicts(JSContext* cx, BaselineFrame* frame);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 InitFunctionEnvironmentObjects(JSContext* cx, BaselineFrame* frame);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 NewArgumentsObject(JSContext* cx, BaselineFrame* frame, MutableHandleValue res);
 
 JSObject* InitRestParameter(JSContext* cx, uint32_t length, Value* rest, HandleObject templateObj,
                             HandleObject res);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr, bool* mustReturn);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 OnDebuggerStatement(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool* mustReturn);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 GlobalHasLiveOnDebuggerStatement(JSContext* cx);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EnterWith(JSContext* cx, BaselineFrame* frame, HandleValue val, Handle<WithScope*> templ);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 LeaveWith(JSContext* cx, BaselineFrame* frame);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 PushLexicalEnv(JSContext* cx, BaselineFrame* frame, Handle<LexicalScope*> scope);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 PopLexicalEnv(JSContext* cx, BaselineFrame* frame);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugLeaveThenPopLexicalEnv(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 FreshenLexicalEnv(JSContext* cx, BaselineFrame* frame);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugLeaveThenFreshenLexicalEnv(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 RecreateLexicalEnv(JSContext* cx, BaselineFrame* frame);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugLeaveThenRecreateLexicalEnv(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DebugLeaveLexicalEnv(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 PushVarEnv(JSContext* cx, BaselineFrame* frame, HandleScope scope);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 PopVarEnv(JSContext* cx, BaselineFrame* frame);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 InitBaselineFrameForOsr(BaselineFrame* frame, InterpreterFrame* interpFrame,
                              uint32_t numStackValues);
 
 JSObject* CreateDerivedTypedObj(JSContext* cx, HandleObject descr,
                                 HandleObject owner, int32_t offset);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 Recompile(JSContext* cx);
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ForcedRecompile(JSContext* cx);
 JSString* StringReplace(JSContext* cx, HandleString string, HandleString pattern,
                         HandleString repl);
 
-MOZ_MUST_USE bool SetDenseOrUnboxedArrayElement(JSContext* cx, HandleObject obj, int32_t index,
+[[nodiscard]] bool SetDenseOrUnboxedArrayElement(JSContext* cx, HandleObject obj, int32_t index,
                                                 HandleValue value, bool strict);
 
 void AssertValidObjectPtr(JSContext* cx, JSObject* obj);
@@ -782,25 +782,25 @@ IonMarkFunction(MIRType type)
 bool ObjectIsCallable(JSObject* obj);
 bool ObjectIsConstructor(JSObject* obj);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ThrowRuntimeLexicalError(JSContext* cx, unsigned errorNumber);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ThrowReadOnlyError(JSContext* cx, int32_t index);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 BaselineThrowUninitializedThis(JSContext* cx, BaselineFrame* frame);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ThrowBadDerivedReturn(JSContext* cx, HandleValue v);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ThrowObjectCoercible(JSContext* cx, HandleValue v);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 BaselineGetFunctionThis(JSContext* cx, BaselineFrame* frame, MutableHandleValue res);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CheckIsCallable(JSContext* cx, HandleValue v, CheckIsCallableKind kind);
 
 extern const VMFunction ToNumberInfo;

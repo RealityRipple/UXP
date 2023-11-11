@@ -23,9 +23,9 @@ struct nsCaptureParams {
 class nsDeviceCaptureProvider : public nsISupports
 {
 public:
-  virtual MOZ_MUST_USE nsresult Init(nsACString& aContentType,
-                                     nsCaptureParams* aParams,
-                                     nsIInputStream** aStream) = 0;
+  [[nodiscard]] virtual nsresult Init(nsACString& aContentType,
+                                      nsCaptureParams* aParams,
+                                      nsIInputStream** aStream) = 0;
 };
 
 #endif

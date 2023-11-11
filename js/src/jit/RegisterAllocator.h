@@ -36,13 +36,13 @@ struct AllocationIntegrityState
 
     // Record all virtual registers in the graph. This must be called before
     // register allocation, to pick up the original LUses.
-    MOZ_MUST_USE bool record();
+    [[nodiscard]] bool record();
 
     // Perform the liveness analysis on the graph, and assert on an invalid
     // allocation. This must be called after register allocation, to pick up
     // all assigned physical values. If populateSafepoints is specified,
     // safepoints will be filled in with liveness information.
-    MOZ_MUST_USE bool check(bool populateSafepoints);
+    [[nodiscard]] bool check(bool populateSafepoints);
 
   private:
 
@@ -121,11 +121,11 @@ struct AllocationIntegrityState
     typedef HashSet<IntegrityItem, IntegrityItem, SystemAllocPolicy> IntegrityItemSet;
     IntegrityItemSet seen;
 
-    MOZ_MUST_USE bool checkIntegrity(LBlock* block, LInstruction* ins, uint32_t vreg,
+    [[nodiscard]] bool checkIntegrity(LBlock* block, LInstruction* ins, uint32_t vreg,
                                      LAllocation alloc, bool populateSafepoints);
-    MOZ_MUST_USE bool checkSafepointAllocation(LInstruction* ins, uint32_t vreg, LAllocation alloc,
+    [[nodiscard]] bool checkSafepointAllocation(LInstruction* ins, uint32_t vreg, LAllocation alloc,
                                                bool populateSafepoints);
-    MOZ_MUST_USE bool addPredecessor(LBlock* block, uint32_t vreg, LAllocation alloc);
+    [[nodiscard]] bool addPredecessor(LBlock* block, uint32_t vreg, LAllocation alloc);
 
     void dump();
 };
@@ -232,7 +232,7 @@ class InstructionDataMap
       : insData_()
     { }
 
-    MOZ_MUST_USE bool init(MIRGenerator* gen, uint32_t numInstructions) {
+    [[nodiscard]] bool init(MIRGenerator* gen, uint32_t numInstructions) {
         if (!insData_.init(gen->alloc(), numInstructions))
             return false;
         memset(&insData_[0], 0, sizeof(LNode*) * numInstructions);
@@ -296,7 +296,7 @@ class RegisterAllocator
         }
     }
 
-    MOZ_MUST_USE bool init();
+    [[nodiscard]] bool init();
 
     TempAllocator& alloc() const {
         return mir->alloc();

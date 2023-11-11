@@ -34,11 +34,11 @@ public:
   ServoStyleSheet* GetParentSheet() const;
   void AppendStyleSheet(ServoStyleSheet* aSheet);
 
-  MOZ_MUST_USE nsresult ParseSheet(const nsAString& aInput,
-                                   nsIURI* aSheetURI,
-                                   nsIURI* aBaseURI,
-                                   nsIPrincipal* aSheetPrincipal,
-                                   uint32_t aLineNumber);
+  [[nodiscard]] nsresult ParseSheet(const nsAString& aInput,
+                                    nsIURI* aSheetURI,
+                                    nsIURI* aBaseURI,
+                                    nsIPrincipal* aSheetPrincipal,
+                                    uint32_t aLineNumber);
 
   /**
    * Called instead of ParseSheet to initialize the Servo stylesheet object

@@ -73,10 +73,10 @@ class PromiseObject : public NativeObject
         return getFixedSlot(PromiseSlot_ReactionsOrResult);
     }
 
-    static MOZ_MUST_USE bool resolve(JSContext* cx, Handle<PromiseObject*> promise,
-                                     HandleValue resolutionValue);
-    static MOZ_MUST_USE bool reject(JSContext* cx, Handle<PromiseObject*> promise,
-                                    HandleValue rejectionValue);
+    [[nodiscard]] static bool resolve(JSContext* cx, Handle<PromiseObject*> promise,
+                                      HandleValue resolutionValue);
+    [[nodiscard]] static bool reject(JSContext* cx, Handle<PromiseObject*> promise,
+                                     HandleValue rejectionValue);
 
     static void onSettled(JSContext* cx, Handle<PromiseObject*> promise);
 
@@ -89,7 +89,7 @@ class PromiseObject : public NativeObject
         MOZ_ASSERT(state() != JS::PromiseState::Pending);
         return resolutionTime() - allocationTime();
     }
-    MOZ_MUST_USE bool dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> values);
+    [[nodiscard]] bool dependentPromises(JSContext* cx, MutableHandle<GCVector<Value>> values);
     uint64_t getID();
     bool isUnhandled() {
         MOZ_ASSERT(state() == JS::PromiseState::Rejected);
@@ -113,7 +113,7 @@ class PromiseObject : public NativeObject
  * Asserts that all objects in the `promises` vector are, maybe wrapped,
  * instances of `Promise` or a subclass of `Promise`.
  */
-MOZ_MUST_USE JSObject*
+[[nodiscard]] JSObject*
 GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
 
 enum class CreateDependentPromise {
@@ -132,7 +132,7 @@ enum class CreateDependentPromise {
  * `promise` field that can contain null. That field is only ever used by
  * devtools, which have to treat these reactions specially.
  */
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
                     HandleValue onFulfilled, HandleValue onRejected,
                     MutableHandleObject dependent, CreateDependentPromise createDependent);
@@ -143,41 +143,41 @@ OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
  * The abstract operation PromiseResolve, given a constructor and a value,
  * returns a new promise resolved with that value.
  */
-MOZ_MUST_USE JSObject*
+[[nodiscard]] JSObject*
 PromiseResolve(JSContext* cx, HandleObject constructor, HandleValue value);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 RejectPromiseWithPendingError(JSContext* cx, Handle<PromiseObject*> promise);
 
-MOZ_MUST_USE PromiseObject*
+[[nodiscard]] PromiseObject*
 CreatePromiseObjectForAsync(JSContext* cx, HandleValue generatorVal);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 IsPromiseForAsync(JSObject* promise);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AsyncFunctionReturned(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AsyncFunctionThrown(JSContext* cx, Handle<PromiseObject*> resultPromise);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value);
 
 class AsyncGeneratorObject;
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AsyncGeneratorAwait(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue value);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AsyncGeneratorResolve(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                       HandleValue value, bool done);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AsyncGeneratorReject(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                      HandleValue exception);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 AsyncGeneratorEnqueue(JSContext* cx, HandleValue asyncGenVal, CompletionKind completionKind,
                       HandleValue completionValue, MutableHandleValue result);
 

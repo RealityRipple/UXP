@@ -81,7 +81,7 @@ class JitContext
 };
 
 // Initialize Ion statically for all JSRuntimes.
-MOZ_MUST_USE bool InitializeIon();
+[[nodiscard]] bool InitializeIon();
 
 // Get and set the current JIT context.
 JitContext* GetJitContext();
@@ -91,7 +91,7 @@ void SetJitContext(JitContext* ctx);
 
 bool CanIonCompileScript(JSContext* cx, JSScript* script, bool osr);
 
-MOZ_MUST_USE bool IonCompileScriptForBaseline(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
+[[nodiscard]] bool IonCompileScriptForBaseline(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
 
 MethodStatus CanEnter(JSContext* cx, RunState& state);
 MethodStatus CanEnterUsingFastInvoke(JSContext* cx, HandleScript script, uint32_t numActualArgs);
@@ -122,8 +122,8 @@ IsErrorStatus(JitExecStatus status)
 
 struct EnterJitData;
 
-MOZ_MUST_USE bool SetEnterJitData(JSContext* cx, EnterJitData& data, RunState& state,
-                                  MutableHandle<GCVector<Value>> vals);
+[[nodiscard]] bool SetEnterJitData(JSContext* cx, EnterJitData& data, RunState& state,
+                                   MutableHandle<GCVector<Value>> vals);
 
 JitExecStatus IonCannon(JSContext* cx, RunState& state);
 
@@ -146,7 +146,7 @@ class MIRGenerator;
 class LIRGraph;
 class CodeGenerator;
 
-MOZ_MUST_USE bool OptimizeMIR(MIRGenerator* mir);
+[[nodiscard]] bool OptimizeMIR(MIRGenerator* mir);
 LIRGraph* GenerateLIR(MIRGenerator* mir);
 CodeGenerator* GenerateCode(MIRGenerator* mir, LIRGraph* lir);
 CodeGenerator* CompileBackEnd(MIRGenerator* mir);

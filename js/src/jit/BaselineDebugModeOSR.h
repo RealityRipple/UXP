@@ -134,7 +134,7 @@ struct BaselineDebugModeOSRInfo
     void popValueInto(PCMappingSlotInfo::SlotLocation loc, Value* vp);
 };
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 RecompileOnStackBaselineScriptsForDebugMode(JSContext* cx,
                                             const Debugger::ExecutionObservableSet& obs,
                                             Debugger::IsObserving observing);

@@ -10,13 +10,13 @@
 
 namespace js {
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DefineTestingFunctions(JSContext* cx, HandleObject obj, bool fuzzingSafe, bool disableOOMFunctions);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 testingFunc_assertFloat32(JSContext* cx, unsigned argc, Value* vp);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 testingFunc_assertRecoveredOnBailout(JSContext* cx, unsigned argc, Value* vp);
 
 } /* namespace js */

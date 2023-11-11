@@ -878,7 +878,7 @@ class ParseNode
         ForCopyOnWriteArray
     };
 
-    MOZ_MUST_USE bool getConstantValue(ExclusiveContext* cx, AllowConstantObjects allowObjects,
+    [[nodiscard]] bool getConstantValue(ExclusiveContext* cx, AllowConstantObjects allowObjects,
                                        MutableHandleValue vp, Value* compare = nullptr,
                                        size_t ncompare = 0, NewObjectKind newKind = TenuredObject);
     inline bool isConstant();
@@ -1258,17 +1258,17 @@ class ListNode : public ParseNode
         return count() == 0;
     }
 
-    MOZ_MUST_USE bool hasTopLevelFunctionDeclarations() const {
+    [[nodiscard]] bool hasTopLevelFunctionDeclarations() const {
         MOZ_ASSERT(isKind(PNK_STATEMENTLIST));
         return pn_u.list.xflags & hasTopLevelFunctionDeclarationsBit;
     }
 
-    MOZ_MUST_USE bool hasArrayHoleOrSpread() const {
+    [[nodiscard]] bool hasArrayHoleOrSpread() const {
         MOZ_ASSERT(isKind(PNK_ARRAY));
         return pn_u.list.xflags & hasArrayHoleOrSpreadBit;
     }
 
-    MOZ_MUST_USE bool hasNonConstInitializer() const {
+    [[nodiscard]] bool hasNonConstInitializer() const {
         MOZ_ASSERT(isKind(PNK_ARRAY) ||
                    isKind(PNK_OBJECT) ||
                    isKind(PNK_CLASSMEMBERLIST));
@@ -1463,7 +1463,7 @@ class ListNode : public ParseNode
     typedef std::function<bool(ParseNode*)> predicate_fun;
 
 #ifdef DEBUG
-  MOZ_MUST_USE bool contains(ParseNode* target) const {
+  [[nodiscard]] bool contains(ParseNode* target) const {
       MOZ_ASSERT(target);
       for (ParseNode* node : contents()) {
           if (target == node) {
@@ -2146,7 +2146,7 @@ class CallSiteNode : public ListNode
         return match;
     }
 
-    MOZ_MUST_USE bool getRawArrayValue(ExclusiveContext* cx, MutableHandleValue vp) {
+    [[nodiscard]] bool getRawArrayValue(ExclusiveContext* cx, MutableHandleValue vp) {
         return head()->getConstantValue(cx, AllowObjects, vp);
     }
 

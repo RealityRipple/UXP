@@ -104,14 +104,14 @@ struct CountType {
 
     // Implement the 'count' method for counts returned by this CountType
     // instance's 'newCount' method.
-    virtual MOZ_MUST_USE bool count(CountBase& count,
-                                    mozilla::MallocSizeOf mallocSizeOf,
-                                    const Node& node) = 0;
+    [[nodiscard]] virtual bool count(CountBase& count,
+                                     mozilla::MallocSizeOf mallocSizeOf,
+                                     const Node& node) = 0;
 
     // Implement the 'report' method for counts returned by this CountType
     // instance's 'newCount' method.
-    virtual MOZ_MUST_USE bool report(JSContext* cx, CountBase& count,
-                                     MutableHandleValue report) = 0;
+    [[nodiscard]] virtual bool report(JSContext* cx, CountBase& count,
+                                      MutableHandleValue report) = 0;
 };
 
 using CountTypePtr = js::UniquePtr<CountType>;
@@ -135,7 +135,7 @@ class CountBase {
     { }
 
     // Categorize and count |node| as appropriate for this count's type.
-    MOZ_MUST_USE bool count(mozilla::MallocSizeOf mallocSizeOf, const Node& node) {
+    [[nodiscard]] bool count(mozilla::MallocSizeOf mallocSizeOf, const Node& node) {
         total_++;
 
         auto id = node.identifier();
@@ -158,7 +158,7 @@ class CountBase {
     // Construct a JavaScript object reporting the counts recorded in this
     // count, and store it in |report|. Return true on success, or false on
     // failure.
-    MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
+    [[nodiscard]] bool report(JSContext* cx, MutableHandleValue report) {
         return type.report(cx, *this, report);
     }
 
@@ -202,7 +202,7 @@ struct Census {
 
     explicit Census(JSContext* cx) : cx(cx), atomsZone(nullptr) { }
 
-    MOZ_MUST_USE JS_PUBLIC_API(bool) init();
+    [[nodiscard]] JS_PUBLIC_API(bool) init();
 };
 
 // A BreadthFirst handler type that conducts a census, using a CountBase to
@@ -219,14 +219,14 @@ class CensusHandler {
         mallocSizeOf(mallocSizeOf)
     { }
 
-    MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
+    [[nodiscard]] bool report(JSContext* cx, MutableHandleValue report) {
         return rootCount->report(cx, report);
     }
 
     // This class needs to retain no per-node data.
     class NodeData { };
 
-    MOZ_MUST_USE JS_PUBLIC_API(bool) operator() (BreadthFirst<CensusHandler>& traversal,
+    [[nodiscard]] JS_PUBLIC_API(bool) operator() (BreadthFirst<CensusHandler>& traversal,
                                                  Node origin, const Edge& edge,
                                                  NodeData* referentData, bool first);
 };
@@ -235,7 +235,7 @@ using CensusTraversal = BreadthFirst<CensusHandler>;
 
 // Examine the census options supplied by the API consumer, and (among other
 // things) use that to build a CountType tree.
-MOZ_MUST_USE JS_PUBLIC_API(bool) ParseCensusOptions(JSContext* cx,
+[[nodiscard]] JS_PUBLIC_API(bool) ParseCensusOptions(JSContext* cx,
                                                     Census& census, HandleObject options,
                                                     CountTypePtr& outResult);
 

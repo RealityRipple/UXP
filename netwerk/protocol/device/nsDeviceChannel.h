@@ -15,10 +15,10 @@ public:
 
   nsDeviceChannel();
 
-  MOZ_MUST_USE nsresult Init(nsIURI* uri);
-  MOZ_MUST_USE nsresult OpenContentStream(bool aAsync,
-                                          nsIInputStream **aStream,
-                                          nsIChannel **aChannel) override;
+  [[nodiscard]] nsresult Init(nsIURI* uri);
+  [[nodiscard]] nsresult OpenContentStream(bool aAsync,
+                                           nsIInputStream **aStream,
+                                           nsIChannel **aChannel) override;
 
 protected:
   ~nsDeviceChannel();

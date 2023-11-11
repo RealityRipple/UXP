@@ -49,9 +49,9 @@ protected:
   //--------------------------------------------------------------------
   // Subclassing of nsDecoderSupport class [declaration]
 
-  MOZ_MUST_USE NS_IMETHOD GetMaxLength(const char* aSrc,
-                                       int32_t aSrcLength,
-                                       int32_t* aDestLength) override;
+  [[nodiscard]] NS_IMETHOD GetMaxLength(const char* aSrc,
+                                        int32_t aSrcLength,
+                                        int32_t* aDestLength) override;
 
   //--------------------------------------------------------------------
   // Subclassing of nsBasicDecoderSupport class [declaration]

@@ -19,7 +19,7 @@ class EffectiveAddressAnalysis
     MIRGraph& graph_;
 
     template <typename AsmJSMemoryAccess>
-    MOZ_MUST_USE bool tryAddDisplacement(AsmJSMemoryAccess* ins, int32_t o);
+    [[nodiscard]] bool tryAddDisplacement(AsmJSMemoryAccess* ins, int32_t o);
 
     template <typename AsmJSMemoryAccess>
     void analyzeAsmJSHeapAccess(AsmJSMemoryAccess* ins);
@@ -29,7 +29,7 @@ class EffectiveAddressAnalysis
       : mir_(mir), graph_(graph)
     {}
 
-    MOZ_MUST_USE bool analyze();
+    [[nodiscard]] bool analyze();
 };
 
 } /* namespace jit */

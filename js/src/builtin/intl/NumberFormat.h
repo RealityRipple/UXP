@@ -47,7 +47,7 @@ CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObjec
  *
  * Usage: numberFormat = intl_NumberFormat(locales, options)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp);
 
 /**
@@ -57,7 +57,7 @@ intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp);
  *
  * Usage: defaultNumberingSystem = intl_numberingSystem(locale)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_numberingSystem(JSContext* cx, unsigned argc, Value* vp);
 
 /**
@@ -68,9 +68,9 @@ intl_numberingSystem(JSContext* cx, unsigned argc, Value* vp);
  *
  * Usage: formatted = intl_FormatNumber(numberFormat, x, formatToParts)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp);
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 FormatNumeric(JSContext* cx, UNumberFormat* nf, HandleValue x, MutableHandleValue result);
 
 } // namespace js

@@ -1721,7 +1721,7 @@ NewEmptyBindingData(ExclusiveContext* cx, LifoAlloc& alloc, uint32_t numBindings
  * Copy-construct |BindingName|s from |bindings| into |cursor|, then return
  * the location one past the newly-constructed |BindingName|s.
  */
-static MOZ_MUST_USE BindingName*
+[[nodiscard]] static BindingName*
 FreshlyInitializeBindings(BindingName* cursor, const Vector<BindingName>& bindings)
 {
     for (const BindingName& binding : bindings)

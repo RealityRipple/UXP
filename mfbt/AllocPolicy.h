@@ -121,7 +121,7 @@ public:
   {
   }
 
-  MOZ_MUST_USE bool checkSimulatedOOM() const
+  [[nodiscard]] bool checkSimulatedOOM() const
   {
     return true;
   }

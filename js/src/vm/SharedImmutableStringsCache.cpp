@@ -91,7 +91,7 @@ SharedImmutableTwoByteString::clone() const
     return SharedImmutableTwoByteString(string_.clone());
 }
 
-MOZ_MUST_USE mozilla::Maybe<SharedImmutableString>
+[[nodiscard]] mozilla::Maybe<SharedImmutableString>
 SharedImmutableStringsCache::getOrCreate(OwnedChars&& chars, size_t length)
 {
     OwnedChars owned(mozilla::Move(chars));
@@ -99,13 +99,13 @@ SharedImmutableStringsCache::getOrCreate(OwnedChars&& chars, size_t length)
     return getOrCreate(owned.get(), length, [&]() { return mozilla::Move(owned); });
 }
 
-MOZ_MUST_USE mozilla::Maybe<SharedImmutableString>
+[[nodiscard]] mozilla::Maybe<SharedImmutableString>
 SharedImmutableStringsCache::getOrCreate(const char* chars, size_t length)
 {
     return getOrCreate(chars, length, [&]() { return DuplicateString(chars, length); });
 }
 
-MOZ_MUST_USE mozilla::Maybe<SharedImmutableTwoByteString>
+[[nodiscard]] mozilla::Maybe<SharedImmutableTwoByteString>
 SharedImmutableStringsCache::getOrCreate(OwnedTwoByteChars&& chars, size_t length)
 {
     OwnedTwoByteChars owned(mozilla::Move(chars));
@@ -113,7 +113,7 @@ SharedImmutableStringsCache::getOrCreate(OwnedTwoByteChars&& chars, size_t lengt
     return getOrCreate(owned.get(), length, [&]() { return mozilla::Move(owned); });
 }
 
-MOZ_MUST_USE mozilla::Maybe<SharedImmutableTwoByteString>
+[[nodiscard]] mozilla::Maybe<SharedImmutableTwoByteString>
 SharedImmutableStringsCache::getOrCreate(const char16_t* chars, size_t length)
 {
     return getOrCreate(chars, length, [&]() { return DuplicateString(chars, length); });

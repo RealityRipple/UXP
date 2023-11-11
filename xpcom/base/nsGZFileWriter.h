@@ -34,12 +34,12 @@ public:
    * duplicate them here so that you can call these overloads on a pointer to
    * the concrete nsGZFileWriter class.
    */
-  MOZ_MUST_USE nsresult Write(const char* aStr)
+  [[nodiscard]] nsresult Write(const char* aStr)
   {
     return nsIGZFileWriter::Write(aStr);
   }
 
-  MOZ_MUST_USE nsresult Write(const char* aStr, uint32_t aLen)
+  [[nodiscard]] nsresult Write(const char* aStr, uint32_t aLen)
   {
     return nsIGZFileWriter::Write(aStr, aLen);
   }

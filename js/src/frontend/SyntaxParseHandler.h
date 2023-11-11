@@ -306,8 +306,8 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
     // Expressions
 
     ListNodeType newArrayLiteral(uint32_t begin) { return NodeUnparenthesizedArray; }
-    MOZ_MUST_USE bool addElision(ListNodeType literal, const TokenPos& pos) { return true; }
-    MOZ_MUST_USE bool addSpreadElement(ListNodeType literal, uint32_t begin, Node inner) { return true; }
+    [[nodiscard]] bool addElision(ListNodeType literal, const TokenPos& pos) { return true; }
+    [[nodiscard]] bool addSpreadElement(ListNodeType literal, uint32_t begin, Node inner) { return true; }
     void addArrayElement(ListNodeType literal, Node element) { }
 
     BinaryNodeType newCall(Node callee, Node args) { return NodeFunctionCall; }
@@ -332,15 +332,15 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
     NullaryNodeType newPosHolder(const TokenPos& pos) { return NodeGeneric; }
     UnaryNodeType newSuperBase(Node thisName, const TokenPos& pos) { return NodeSuperBase; }
 
-    MOZ_MUST_USE bool addPrototypeMutation(ListNodeType literal, uint32_t begin, Node expr) { return true; }
-    MOZ_MUST_USE bool addPropertyDefinition(ListNodeType literal, Node name, Node expr) { return true; }
-    MOZ_MUST_USE bool addShorthand(ListNodeType literal, NameNodeType name, NameNodeType expr) { return true; }
-    MOZ_MUST_USE bool addSpreadProperty(ListNodeType literal, uint32_t begin, Node inner) { return true; }
-    MOZ_MUST_USE bool addObjectMethodDefinition(ListNodeType literal, Node name, FunctionNodeType funNode, JSOp op) { return true; }
-    MOZ_MUST_USE Node newClassMethodDefinition(Node key, FunctionNodeType funNode, JSOp op, bool isStatic) { return NodeGeneric; }
-    MOZ_MUST_USE Node newClassFieldDefinition(Node name, FunctionNodeType initializer, bool isStatic) { return NodeGeneric; }
-    MOZ_MUST_USE Node newStaticClassBlock(FunctionNodeType block) { return NodeGeneric; }
-    MOZ_MUST_USE bool addClassMemberDefinition(ListNodeType memberList, Node member) { return true; }
+    [[nodiscard]] bool addPrototypeMutation(ListNodeType literal, uint32_t begin, Node expr) { return true; }
+    [[nodiscard]] bool addPropertyDefinition(ListNodeType literal, Node name, Node expr) { return true; }
+    [[nodiscard]] bool addShorthand(ListNodeType literal, NameNodeType name, NameNodeType expr) { return true; }
+    [[nodiscard]] bool addSpreadProperty(ListNodeType literal, uint32_t begin, Node inner) { return true; }
+    [[nodiscard]] bool addObjectMethodDefinition(ListNodeType literal, Node name, FunctionNodeType funNode, JSOp op) { return true; }
+    [[nodiscard]] Node newClassMethodDefinition(Node key, FunctionNodeType funNode, JSOp op, bool isStatic) { return NodeGeneric; }
+    [[nodiscard]] Node newClassFieldDefinition(Node name, FunctionNodeType initializer, bool isStatic) { return NodeGeneric; }
+    [[nodiscard]] Node newStaticClassBlock(FunctionNodeType block) { return NodeGeneric; }
+    [[nodiscard]] bool addClassMemberDefinition(ListNodeType memberList, Node member) { return true; }
     UnaryNodeType newYieldExpression(uint32_t begin, Node value) { return NodeGeneric; }
     UnaryNodeType newYieldStarExpression(uint32_t begin, Node value) { return NodeGeneric; }
     UnaryNodeType newAwaitExpression(uint32_t begin, Node value) { return NodeGeneric; }
@@ -351,7 +351,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
     ListNodeType newStatementList(const TokenPos& pos) { return NodeGeneric; }
     void addStatementToList(ListNodeType list, Node stmt) {}
     void addCaseStatementToList(ListNodeType list, CaseClauseType caseClause) {}
-    MOZ_MUST_USE bool prependInitialYield(ListNodeType stmtList, Node genName) { return true; }
+    [[nodiscard]] bool prependInitialYield(ListNodeType stmtList, Node genName) { return true; }
     UnaryNodeType newEmptyStatement(const TokenPos& pos) { return NodeEmptyStatement; }
 
     UnaryNodeType newExportDeclaration(Node kid, const TokenPos& pos) {
@@ -419,10 +419,10 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
 
     Node newOptionalPropertyByValue(Node pn, Node kid, uint32_t end) { return NodeOptionalElement; }
 
-    MOZ_MUST_USE bool addCatchBlock(ListNodeType catchList, LexicalScopeNodeType lexicalScope,
+    [[nodiscard]] bool addCatchBlock(ListNodeType catchList, LexicalScopeNodeType lexicalScope,
                                     Node catchBinding, Node catchGuard, Node catchBody) { return true; }
 
-    MOZ_MUST_USE bool setLastFunctionFormalParameterDefault(FunctionNodeType funNode, Node pn) { return true; }
+    [[nodiscard]] bool setLastFunctionFormalParameterDefault(FunctionNodeType funNode, Node pn) { return true; }
 
     void checkAndSetIsDirectRHSAnonFunction(Node pn) {}
 
@@ -458,7 +458,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return NodeGeneric;
     }
 
-    MOZ_MUST_USE bool finishInitializerAssignment(NameNodeType nameNode, Node init) { return true; }
+    [[nodiscard]] bool finishInitializerAssignment(NameNodeType nameNode, Node init) { return true; }
 
     void setBeginPosition(Node pn, Node oth) {}
     void setBeginPosition(Node pn, uint32_t begin) {}
@@ -577,7 +577,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
 
     void setOp(Node pn, JSOp op) {}
     void setListHasNonConstInitializer(ListNodeType literal) {}
-    MOZ_MUST_USE Node parenthesize(Node node) {
+    [[nodiscard]] Node parenthesize(Node node) {
         // A number of nodes have different behavior upon parenthesization, but
         // only in some circumstances.  Convert these nodes to special
         // parenthesized forms.
@@ -608,7 +608,7 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return node;
     }
     template <typename NodeType>
-    MOZ_MUST_USE NodeType setLikelyIIFE(NodeType node) {
+    [[nodiscard]] NodeType setLikelyIIFE(NodeType node) {
         return node; // Remain in syntax-parse mode.
     }
     void setInDirectivePrologue(UnaryNodeType exprStmt) {}

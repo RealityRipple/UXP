@@ -441,7 +441,7 @@ class ProcessExecutableMemory
         pages_()
     {}
 
-    MOZ_MUST_USE bool init() {
+    [[nodiscard]] bool init() {
         pages_.init();
 
         MOZ_RELEASE_ASSERT(!initialized());

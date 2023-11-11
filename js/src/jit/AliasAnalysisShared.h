@@ -26,7 +26,7 @@ class AliasAnalysisShared
         graph_(graph)
     {}
 
-    virtual MOZ_MUST_USE bool analyze() {
+    [[nodiscard]] virtual bool analyze() {
         return true;
     }
 

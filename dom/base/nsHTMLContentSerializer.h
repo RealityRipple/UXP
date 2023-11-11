@@ -37,18 +37,16 @@ class nsHTMLContentSerializer final : public nsXHTMLContentSerializer {
                                  nsAString& aStr) override;
  protected:
 
-  MOZ_MUST_USE
-  virtual bool SerializeHTMLAttributes(nsIContent* aContent,
-                                       nsIContent *aOriginalElement,
-                                       nsAString& aTagPrefix,
-                                       const nsAString& aTagNamespaceURI,
-                                       nsIAtom* aTagName,
-                                       int32_t aNamespace,
-                                       nsAString& aStr);
+  [[nodiscard]] virtual bool SerializeHTMLAttributes(nsIContent* aContent,
+                                                     nsIContent* aOriginalElement,
+                                                     nsAString& aTagPrefix,
+                                                     const nsAString& aTagNamespaceURI,
+                                                     nsIAtom* aTagName,
+                                                     int32_t aNamespace,
+                                                     nsAString& aStr);
 
-  MOZ_MUST_USE
-  virtual bool AppendAndTranslateEntities(const nsAString& aStr,
-                                          nsAString& aOutputStr) override;
+  [[nodiscard]] virtual bool AppendAndTranslateEntities(const nsAString& aStr,
+                                                        nsAString& aOutputStr) override;
 
 };
 

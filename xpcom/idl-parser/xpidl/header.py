@@ -52,7 +52,7 @@ def attributeReturnType(a, macro):
     else:
         ret = macro
     if a.must_use:
-        ret = "MOZ_MUST_USE " + ret
+        ret = "[[nodiscard]] " + ret
     return ret
 
 
@@ -90,7 +90,7 @@ def methodReturnType(m, macro):
     else:
         ret = macro
     if m.must_use:
-        ret = "MOZ_MUST_USE " + ret
+        ret = "[[nodiscard]] " + ret
     return ret
 
 

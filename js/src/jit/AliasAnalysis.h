@@ -21,7 +21,7 @@ class AliasAnalysis : public AliasAnalysisShared
 
   public:
     AliasAnalysis(MIRGenerator* mir, MIRGraph& graph);
-    MOZ_MUST_USE bool analyze() override;
+    [[nodiscard]] bool analyze() override;
 };
 
 } // namespace jit

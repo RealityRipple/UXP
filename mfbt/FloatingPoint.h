@@ -523,7 +523,7 @@ FuzzyEqualsMultiplicative(T aValue1, T aValue2,
  *
  * This function isn't inlined to avoid buggy optimizations by MSVC.
  */
-MOZ_MUST_USE
+[[nodiscard]]
 extern MFBT_API bool
 IsFloat32Representable(double aFloat32);
 

@@ -43,7 +43,7 @@ class TempAllocator
         return lifoScope_.alloc().allocInfallible(bytes);
     }
 
-    MOZ_MUST_USE void* allocate(size_t bytes)
+    [[nodiscard]] void* allocate(size_t bytes)
     {
         LifoAlloc::AutoFallibleScope fallibleAllocator(lifoAlloc());
         void* p = lifoScope_.alloc().alloc(bytes);
@@ -53,7 +53,7 @@ class TempAllocator
     }
 
     template <typename T>
-    MOZ_MUST_USE T* allocateArray(size_t n)
+    [[nodiscard]] T* allocateArray(size_t n)
     {
         LifoAlloc::AutoFallibleScope fallibleAllocator(lifoAlloc());
         size_t bytes;
@@ -73,7 +73,7 @@ class TempAllocator
         return &lifoScope_.alloc();
     }
 
-    MOZ_MUST_USE bool ensureBallast() {
+    [[nodiscard]] bool ensureBallast() {
         JS_OOM_POSSIBLY_FAIL_BOOL();
         return lifoScope_.alloc().ensureUnusedApproximate(BallastSize);
     }
@@ -126,7 +126,7 @@ class JitAllocPolicy
     }
     void reportAllocOverflow() const {
     }
-    MOZ_MUST_USE bool checkSimulatedOOM() const {
+    [[nodiscard]] bool checkSimulatedOOM() const {
         return !js::oom::ShouldFailWithOOM();
     }
 };

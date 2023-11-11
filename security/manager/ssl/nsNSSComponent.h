@@ -30,7 +30,7 @@ class SmartCardThreadList;
 
 namespace mozilla { namespace psm {
 
-MOZ_MUST_USE
+[[nodiscard]]
   ::already_AddRefed<mozilla::psm::SharedCertVerifier>
   GetDefaultCertVerifier();
 

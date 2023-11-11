@@ -39,13 +39,13 @@ class TDZCheckCache : public Nestable<TDZCheckCache>
 {
     PooledMapPtr<CheckTDZMap> cache_;
 
-    MOZ_MUST_USE bool ensureCache(BytecodeEmitter* bce);
+    [[nodiscard]] bool ensureCache(BytecodeEmitter* bce);
 
   public:
     explicit TDZCheckCache(BytecodeEmitter* bce);
 
     mozilla::Maybe<MaybeCheckTDZ> needsTDZCheck(BytecodeEmitter* bce, JSAtom* name);
-    MOZ_MUST_USE bool noteTDZCheck(BytecodeEmitter* bce, JSAtom* name, MaybeCheckTDZ check);
+    [[nodiscard]] bool noteTDZCheck(BytecodeEmitter* bce, JSAtom* name, MaybeCheckTDZ check);
 };
 
 } /* namespace frontend */

@@ -136,7 +136,7 @@ public:
    * Append the contents of this string fragment to aString
    * @return false if an out of memory condition is detected, true otherwise
    */
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool AppendTo(nsAString& aString,
                 const mozilla::fallible_t& aFallible) const {
     if (mState.mIs2b) {
@@ -170,7 +170,7 @@ public:
    * @param aLength the length of the substring
    * @return false if an out of memory condition is detected, true otherwise
    */
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool AppendTo(nsAString& aString, int32_t aOffset, int32_t aLength,
                 const mozilla::fallible_t& aFallible) const
   {
