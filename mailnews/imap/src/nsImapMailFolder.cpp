@@ -3508,7 +3508,7 @@ NS_IMETHODIMP nsImapMailFolder::ApplyFilterHit(nsIMsgFilter *filter, nsIMsgWindo
           msgIsNew = false;
         }
         // note that delete falls through to move.
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
         case nsMsgFilterAction::MoveToFolder:
         {
           // if moving to a different file, do it.

@@ -334,7 +334,7 @@ nsresult nsMsgSearchAdapter::EncodeImapTerm (nsIMsgSearchTerm *term, bool really
   case nsMsgSearchAttrib::ToOrCC:
     orHeaderMnemonic = m_kImapCC;
     // fall through to case nsMsgSearchAttrib::To:
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case nsMsgSearchAttrib::To:
     whichMnemonic = m_kImapTo;
     break;

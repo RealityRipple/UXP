@@ -1794,7 +1794,7 @@ void nsExternalAppHandler::SendStatusChange(ErrorType type, nsresult rv, nsIRequ
           msgId.AssignLiteral("helperAppNotFound");
           break;
         }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
     default:
         // Generic read/write/launch error message.

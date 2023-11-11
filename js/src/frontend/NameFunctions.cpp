@@ -174,7 +174,7 @@ class NameResolver
                  * flagged as a contributor.
                  */
                 pos--;
-                MOZ_FALLTHROUGH;
+                [[fallthrough]];
 
               default:
                 /* Save any other nodes we encounter on the way up. */

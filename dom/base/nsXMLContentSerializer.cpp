@@ -1442,7 +1442,7 @@ nsXMLContentSerializer::AppendFormatedWrapped_WhitespaceSequence(
       case ' ':
       case '\t':
         sawBlankOrTab = true;
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case '\n':
         ++aPos;
         // do not increase mColPos,

@@ -345,7 +345,7 @@ public:
 
       case 63:  // 0x3f: Haswell-Server
         mHasRamUnitsQuirk = true;
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case 45:  // 0x2d: Sandy Bridge-EP
       case 62:  // 0x3e: Ivy Bridge-E
         // Supports package, cores, RAM.

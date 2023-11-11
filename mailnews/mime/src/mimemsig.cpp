@@ -256,7 +256,7 @@ MimeMultipartSigned_parse_line (const char *line, int32_t length, MimeObject *ob
     mult->hdrs = 0;
 
     /* fall through. */
-   MOZ_FALLTHROUGH;
+   [[fallthrough]];
   case MimeMultipartSignedBodyFirstHeader:
   case MimeMultipartSignedBodyHeaders:
   case MimeMultipartSignedBodyLine:
@@ -406,7 +406,7 @@ MimeMultipartSigned_parse_line (const char *line, int32_t length, MimeObject *ob
     }
 
     /* fall through. */
-   MOZ_FALLTHROUGH;
+   [[fallthrough]];
   case MimeMultipartSignedSignatureLine:
     if (hash_line_p)
     {
@@ -497,7 +497,7 @@ MimeMultipartSigned_parse_child_line (MimeObject *obj,
   case MimeMultipartSignedBodyHeaders:
     // How'd we get here?  Oh well, fall through.
     NS_ERROR("wrong state in parse child line");
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case MimeMultipartSignedBodyFirstLine:
     PR_ASSERT(first_line_p);
     if (!sig->part_buffer)
@@ -507,7 +507,7 @@ MimeMultipartSigned_parse_child_line (MimeObject *obj,
       return MIME_OUT_OF_MEMORY;
     }
     /* fall through */
-   MOZ_FALLTHROUGH;
+   [[fallthrough]];
   case MimeMultipartSignedBodyLine:
     {
     /* This is the first part; we are buffering it, and will emit it all
@@ -551,7 +551,7 @@ MimeMultipartSigned_parse_child_line (MimeObject *obj,
   case MimeMultipartSignedSignatureHeaders:
     // How'd we get here?  Oh well, fall through.
     NS_ERROR("should have already parse sig hdrs");
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case MimeMultipartSignedSignatureFirstLine:
   case MimeMultipartSignedSignatureLine:
     /* Nothing to do here -- hashing of the signature part is handled up

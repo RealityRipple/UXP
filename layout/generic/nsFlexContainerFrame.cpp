@@ -3012,7 +3012,7 @@ MainAxisPositionTracker::
       case NS_STYLE_JUSTIFY_BASELINE:
       case NS_STYLE_JUSTIFY_LAST_BASELINE:
         NS_WARNING("NYI: justify-content:left/right/baseline/last baseline");
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case NS_STYLE_JUSTIFY_FLEX_START:
         // All packing space should go at the end --> nothing to do here.
         break;
@@ -3220,7 +3220,7 @@ CrossAxisPositionTracker::
       case NS_STYLE_ALIGN_BASELINE:
       case NS_STYLE_ALIGN_LAST_BASELINE:
         NS_WARNING("NYI: align-items/align-self:left/right/self-start/self-end/baseline/last baseline");
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case NS_STYLE_ALIGN_FLEX_START:
         // All packing space should go at the end --> nothing to do here.
         break;
@@ -3522,7 +3522,7 @@ SingleLineCrossAxisPositionTracker::
     case NS_STYLE_ALIGN_SELF_START:
     case NS_STYLE_ALIGN_SELF_END:
       NS_WARNING("NYI: align-items/align-self:left/right/self-start/self-end");
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case NS_STYLE_ALIGN_FLEX_START:
       // No space to skip over -- we're done.
       break;

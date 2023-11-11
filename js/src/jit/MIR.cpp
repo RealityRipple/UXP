@@ -2409,7 +2409,7 @@ CanProduceNegativeZero(MDefinition* def)
         case MDefinition::Op_Constant:
             if (def->type() == MIRType::Double && def->toConstant()->toDouble() == -0.0)
                 return true;
-            MOZ_FALLTHROUGH;
+            [[fallthrough]];
         case MDefinition::Op_BitAnd:
         case MDefinition::Op_BitOr:
         case MDefinition::Op_BitXor:
@@ -2491,7 +2491,7 @@ NeedNegativeZeroCheck(MDefinition* def)
             if (rhs->id() < lhs->id() && CanProduceNegativeZero(lhs))
                 return true;
 
-            MOZ_FALLTHROUGH;
+            [[fallthrough]];
           }
           case MDefinition::Op_StoreElement:
           case MDefinition::Op_StoreElementHole:
@@ -3379,7 +3379,7 @@ MTypeOf::foldsTo(TempAllocator& alloc)
             type = JSTYPE_OBJECT;
             break;
         }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       default:
         return this;
     }

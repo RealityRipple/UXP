@@ -3199,7 +3199,7 @@ Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor)
   // Set the status bar similarly for mouseover and focus
   case eMouseOver:
     aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case eFocus: {
     InternalFocusEvent* focusEvent = aVisitor.mEvent->AsFocusEvent();
     if (!focusEvent || !focusEvent->mIsRefocus) {
@@ -3214,7 +3214,7 @@ Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor)
   }
   case eMouseOut:
     aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case eBlur:
     rv = LeaveLink(aVisitor.mPresContext);
     if (NS_SUCCEEDED(rv)) {

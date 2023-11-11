@@ -984,7 +984,7 @@ GfxInfoBase::EvaluateDownloadedBlacklist(nsTArray<GfxDriverInfo>& aDriverInfo)
           } else {
             RemovePrefForDriverVersion();
           }
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
 
         case nsIGfxInfo::FEATURE_BLOCKED_MISMATCHED_VERSION:
         case nsIGfxInfo::FEATURE_BLOCKED_DEVICE:

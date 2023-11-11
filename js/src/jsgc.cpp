@@ -5418,7 +5418,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
 
         incrementalState = State::MarkRoots;
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case State::MarkRoots:
         if (!beginMarkPhase(reason, lock)) {
@@ -5428,7 +5428,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
 
         incrementalState = State::Mark;
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case State::Mark:
         AutoGCRooter::traceAllWrappers(&marker);
@@ -5472,7 +5472,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
         if (budget.isOverBudget())
             break;
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case State::Sweep:
         if (performSweepActions(budget, lock) == NotFinished)
@@ -5482,7 +5482,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
 
         incrementalState = State::Finalize;
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case State::Finalize:
         {
@@ -5516,7 +5516,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
         if (isCompacting && isIncremental)
             break;
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case State::Compact:
         if (isCompacting) {
@@ -5532,7 +5532,7 @@ GCRuntime::incrementalCollectSlice(SliceBudget& budget, JS::gcreason::Reason rea
         startDecommit();
         incrementalState = State::Decommit;
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case State::Decommit:
         {

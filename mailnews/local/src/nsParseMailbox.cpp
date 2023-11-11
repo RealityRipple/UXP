@@ -2026,7 +2026,7 @@ NS_IMETHODIMP nsParseNewMailState::ApplyFilterHit(nsIMsgFilter *filter, nsIMsgWi
         }
 
         // FALLTHROUGH
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case nsMsgFilterAction::MoveToFolder:
         // if moving to a different file, do it.
         if (actionTargetFolderUri.get() && !m_inboxUri.Equals(actionTargetFolderUri,

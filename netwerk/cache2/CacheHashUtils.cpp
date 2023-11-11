@@ -58,17 +58,17 @@ CacheHash::Hash(const char *aData, uint32_t aSize, uint32_t aInitval)
   /*------------------------------------- handle the last 11 bytes */
   c += aSize;
   switch(len) {              /* all the case statements fall through */
-    case 11: c += (uint32_t(k[10])<<24);  MOZ_FALLTHROUGH;
-    case 10: c += (uint32_t(k[9])<<16);   MOZ_FALLTHROUGH;
-    case 9 : c += (uint32_t(k[8])<<8);    MOZ_FALLTHROUGH;
+    case 11: c += (uint32_t(k[10])<<24);  [[fallthrough]];
+    case 10: c += (uint32_t(k[9])<<16);   [[fallthrough]];
+    case 9 : c += (uint32_t(k[8])<<8);    [[fallthrough]];
     /* the low-order byte of c is reserved for the length */
-    case 8 : b += (uint32_t(k[7])<<24);   MOZ_FALLTHROUGH;
-    case 7 : b += (uint32_t(k[6])<<16);   MOZ_FALLTHROUGH;
-    case 6 : b += (uint32_t(k[5])<<8);    MOZ_FALLTHROUGH;
-    case 5 : b += k[4];                   MOZ_FALLTHROUGH;
-    case 4 : a += (uint32_t(k[3])<<24);   MOZ_FALLTHROUGH;
-    case 3 : a += (uint32_t(k[2])<<16);   MOZ_FALLTHROUGH;
-    case 2 : a += (uint32_t(k[1])<<8);    MOZ_FALLTHROUGH;
+    case 8 : b += (uint32_t(k[7])<<24);   [[fallthrough]];
+    case 7 : b += (uint32_t(k[6])<<16);   [[fallthrough]];
+    case 6 : b += (uint32_t(k[5])<<8);    [[fallthrough]];
+    case 5 : b += k[4];                   [[fallthrough]];
+    case 4 : a += (uint32_t(k[3])<<24);   [[fallthrough]];
+    case 3 : a += (uint32_t(k[2])<<16);   [[fallthrough]];
+    case 2 : a += (uint32_t(k[1])<<8);    [[fallthrough]];
     case 1 : a += k[0];
     /* case 0: nothing left to add */
   }
@@ -158,8 +158,8 @@ CacheHash::Update(const char *aData, uint32_t aLen)
   }
 
   switch (aLen) {
-    case 3: mBuf += data[2] << 16;  MOZ_FALLTHROUGH;
-    case 2: mBuf += data[1] << 8;   MOZ_FALLTHROUGH;
+    case 3: mBuf += data[2] << 16;  [[fallthrough]];
+    case 2: mBuf += data[1] << 8;   [[fallthrough]];
     case 1: mBuf += data[0];
   }
 
