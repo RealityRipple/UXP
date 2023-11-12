@@ -85,7 +85,7 @@ elif CONFIG['OS_TARGET'] == 'WINNT':
     else:
         DEFINES['_X86_'] = True
 else:
-    error('Not a supported OS_TARGET for NSPR in moz.build: "%s". Use --with-system-nspr' % CONFIG['OS_TARGET'])
+    error('Not a supported OS_TARGET for NSPR in moz.build: "%s". Cannot build.')
 
 
 LOCAL_INCLUDES += [
