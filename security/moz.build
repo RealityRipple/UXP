@@ -100,14 +100,6 @@ if CONFIG['OS_TARGET'] == 'WINNT':
     if CONFIG['CPU_ARCH'] == 'x86':
         # This should really be the default.
         sandbox_vars['ASFLAGS'] = ['-safeseh']
-if CONFIG['OS_TARGET'] == 'Android':
-    sandbox_vars['CFLAGS'] = [
-        '-include', TOPSRCDIR + '/security/manager/android_stub.h',
-        # Setting sandbox_vars['DEFINES'] is broken currently.
-        '-DCHECK_FORK_GETPID',
-    ]
-    if CONFIG['ANDROID_VERSION']:
-        sandbox_vars['CFLAGS'] += ['-DANDROID_VERSION=' + CONFIG['ANDROID_VERSION']]
 GYP_DIRS['nss'].sandbox_vars = sandbox_vars
 GYP_DIRS['nss'].no_chromium = True
 GYP_DIRS['nss'].no_unified = True
