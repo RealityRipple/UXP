@@ -491,7 +491,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to the next upgrade
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case 2: // Add referrer column to the database
     {
@@ -506,7 +506,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to the next upgrade
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case 3: // This version adds a column to the database (entityID)
     {
@@ -521,7 +521,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to the next upgrade
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case 4: // This version adds a column to the database (tempPath)
     {
@@ -536,7 +536,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to the next upgrade
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case 5: // This version adds two columns for tracking transfer progress
     {
@@ -556,7 +556,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to the next upgrade
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case 6: // This version adds three columns to DB (MIME type related info)
     {
@@ -581,7 +581,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to next upgrade
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case 7: // This version adds a column to remember to auto-resume downloads
     {
@@ -596,7 +596,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to the next upgrade
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
     // Warning: schema versions >=8 must take into account that they can
     // be operating on schemas from unknown, future versions that have
@@ -631,7 +631,7 @@ nsDownloadManager::InitFileDB()
 
   // Extra sanity checking for developers
 #ifndef DEBUG
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case DM_SCHEMA_VERSION:
 #endif
     break;
@@ -648,7 +648,7 @@ nsDownloadManager::InitFileDB()
       NS_ENSURE_SUCCESS(rv, rv);
     }
     // Fallthrough to downgrade check
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   // Downgrading
   // If columns have been added to the table, we can still use the ones we

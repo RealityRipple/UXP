@@ -3619,7 +3619,7 @@ nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFrame* a
       if (aFrame && aFrame->GetWritingMode().IsVertical()) {
         return false;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
 
     case NS_THEME_LISTBOX:
 

@@ -1613,13 +1613,13 @@ FirstCharMatcherUnrolled(const TextChar* text, uint32_t n, const PatChar pat)
     const TextChar* t = text;
 
     switch ((textend - t) & 7) {
-        case 0: if (*t++ == pat) return t - 1; MOZ_FALLTHROUGH;
-        case 7: if (*t++ == pat) return t - 1; MOZ_FALLTHROUGH;
-        case 6: if (*t++ == pat) return t - 1; MOZ_FALLTHROUGH;
-        case 5: if (*t++ == pat) return t - 1; MOZ_FALLTHROUGH;
-        case 4: if (*t++ == pat) return t - 1; MOZ_FALLTHROUGH;
-        case 3: if (*t++ == pat) return t - 1; MOZ_FALLTHROUGH;
-        case 2: if (*t++ == pat) return t - 1; MOZ_FALLTHROUGH;
+        case 0: if (*t++ == pat) return t - 1; [[fallthrough]];
+        case 7: if (*t++ == pat) return t - 1; [[fallthrough]];
+        case 6: if (*t++ == pat) return t - 1; [[fallthrough]];
+        case 5: if (*t++ == pat) return t - 1; [[fallthrough]];
+        case 4: if (*t++ == pat) return t - 1; [[fallthrough]];
+        case 3: if (*t++ == pat) return t - 1; [[fallthrough]];
+        case 2: if (*t++ == pat) return t - 1; [[fallthrough]];
         case 1: if (*t++ == pat) return t - 1;
     }
     while (textend != t) {

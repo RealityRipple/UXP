@@ -4109,7 +4109,7 @@ nsComputedDOMStyle::DoGetTextSizeAdjust()
   switch (StyleText()->mTextSizeAdjust) {
     default:
       NS_NOTREACHED("unexpected value");
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case NS_STYLE_TEXT_SIZE_ADJUST_AUTO:
       val->SetIdent(eCSSKeyword_auto);
       break;

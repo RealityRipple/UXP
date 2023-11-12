@@ -405,7 +405,7 @@ MacroAssembler::loadUnboxedProperty(T address, JSValueType type, TypedOrValueReg
               convertInt32ToDouble(address, output.typedReg().fpu());
               break;
           }
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
       }
 
       case JSVAL_TYPE_BOOLEAN:

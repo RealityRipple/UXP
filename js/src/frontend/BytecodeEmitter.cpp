@@ -1271,7 +1271,7 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
       // Any subexpression of a comma expression could be effectful.
       case PNK_COMMA:
         MOZ_ASSERT(!pn->as<ListNode>().empty());
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       // Subcomponents of a literal may be effectful.
       case PNK_ARRAY:
       case PNK_OBJECT:

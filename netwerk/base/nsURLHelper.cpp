@@ -427,7 +427,7 @@ net_ResolveRelativePath(const nsACString &relativePath,
           case '#':
           case '?':
             stop = true;
-            MOZ_FALLTHROUGH;
+            [[fallthrough]];
           case '/':
             // delimiter found
             if (name.EqualsLiteral("..")) {

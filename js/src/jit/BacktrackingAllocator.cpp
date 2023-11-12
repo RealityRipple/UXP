@@ -2533,7 +2533,7 @@ BacktrackingAllocator::computeSpillWeight(LiveBundle* bundle)
 
               case LUse::FIXED:
                 fixed = true;
-                MOZ_FALLTHROUGH;
+                [[fallthrough]];
               case LUse::REGISTER:
                 usesTotal += 2000;
                 break;

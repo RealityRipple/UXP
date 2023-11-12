@@ -263,7 +263,7 @@ MP4TrackDemuxer::GetNextSample()
       mp4_demuxer::H264::FrameType type =
         mp4_demuxer::H264::GetFrameType(sample);
       switch (type) {
-        case mp4_demuxer::H264::FrameType::I_FRAME: MOZ_FALLTHROUGH;
+        case mp4_demuxer::H264::FrameType::I_FRAME: [[fallthrough]];
         case mp4_demuxer::H264::FrameType::OTHER:
         {
           bool keyframe = type == mp4_demuxer::H264::FrameType::I_FRAME;

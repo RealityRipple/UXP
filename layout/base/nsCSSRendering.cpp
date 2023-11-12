@@ -4404,7 +4404,7 @@ nsCSSRendering::DrawTableBorderSegment(DrawTarget&              aDrawTarget,
     break;
   case NS_STYLE_BORDER_STYLE_GROOVE:
     ridgeGroove = NS_STYLE_BORDER_STYLE_GROOVE; // and fall through to ridge
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case NS_STYLE_BORDER_STYLE_RIDGE:
     if ((horizontal && (twipsPerPixel >= aBorder.height)) ||
         (!horizontal && (twipsPerPixel >= aBorder.width))) {
@@ -4571,7 +4571,7 @@ nsCSSRendering::DrawTableBorderSegment(DrawTarget&              aDrawTarget,
       break;
     }
     // else fall through to solid
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case NS_STYLE_BORDER_STYLE_SOLID:
     DrawSolidBorderSegment(aDrawTarget, aBorder, aBorderColor,
                            aAppUnitsPerDevPixel, twipsPerPixel, aStartBevelSide,

@@ -1544,12 +1544,12 @@ Parser<ParseHandler>::noteDeclaredName(HandlePropertyName name, DeclarationKind 
             return false;
         }
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case DeclarationKind::Import:
         // Module code is always strict, so 'let' is always a keyword and never a name.
         MOZ_ASSERT(name != context->names().let);
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case DeclarationKind::SimpleCatchParameter:
       case DeclarationKind::CatchParameter: {
@@ -6921,7 +6921,7 @@ Parser<ParseHandler>::yieldExpression(InHandling inHandling)
           case TOK_MUL:
             kind = PNK_YIELD_STAR;
             tokenStream.consumeKnownToken(TOK_MUL, TokenStream::Operand);
-            MOZ_FALLTHROUGH;
+            [[fallthrough]];
           default:
             exprNode = assignExpr(inHandling, YieldIsKeyword, TripledotProhibited);
             if (!exprNode)
@@ -6972,7 +6972,7 @@ Parser<ParseHandler>::yieldExpression(InHandling inHandling)
 
         pc->functionBox()->setGeneratorKind(LegacyGenerator);
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case LegacyGenerator:
       {
@@ -9618,7 +9618,7 @@ Parser<ParseHandler>::unaryExpr(YieldHandling yieldHandling, TripledotHandling t
         }
       }
 
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       default: {
         Node expr = optionalExpr(yieldHandling, tripledotHandling, tt,

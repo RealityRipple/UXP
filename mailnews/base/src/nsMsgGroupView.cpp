@@ -227,7 +227,7 @@ nsresult nsMsgGroupView::HashHdr(nsIMsgDBHdr *msgHdr, nsString& aHashKey)
       break;
     case nsMsgViewSortType::byReceived:
       rcvDate = true;
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case nsMsgViewSortType::byDate:
     {
       uint32_t ageBucket;
@@ -799,7 +799,7 @@ NS_IMETHODIMP nsMsgGroupView::CellTextForColumn(int32_t aRow,
       {
         case nsMsgViewSortType::byReceived:
           rcvDate = true;
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
         case nsMsgViewSortType::byDate:
         {
           uint32_t ageBucket = 0;

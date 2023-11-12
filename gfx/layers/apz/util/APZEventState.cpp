@@ -347,10 +347,10 @@ APZEventState::ProcessTouchEvent(const WidgetTouchEvent& aEvent,
       mTouchEndCancelled = true;
       mEndTouchIsClick = false;
     }
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case eTouchCancel:
     mActiveElementManager->HandleTouchEndEvent(mEndTouchIsClick);
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case eTouchMove: {
     if (mPendingTouchPreventedResponse) {
       MOZ_ASSERT(aGuid == mPendingTouchPreventedGuid);

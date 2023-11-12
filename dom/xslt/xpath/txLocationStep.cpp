@@ -42,7 +42,7 @@ LocationStep::evaluate(txIEvalContext* aContext, txAExprResult** aResult)
             if (!walker.moveToParent()) {
                 break;
             }
-            MOZ_FALLTHROUGH;
+            [[fallthrough]];
         }
         case ANCESTOR_OR_SELF_AXIS:
         {
@@ -74,7 +74,7 @@ LocationStep::evaluate(txIEvalContext* aContext, txAExprResult** aResult)
             if (mNodeTest->matches(walker.getCurrentPosition(), aContext)) {
                 nodes->append(walker.getCurrentPosition());
             }
-            MOZ_FALLTHROUGH;
+            [[fallthrough]];
         }
         case DESCENDANT_AXIS:
         {

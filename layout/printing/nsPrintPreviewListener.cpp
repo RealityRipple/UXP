@@ -195,7 +195,7 @@ nsPrintPreviewListener::HandleEvent(nsIDOMEvent* aEvent)
           }
         }
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
       case eEventAction_Suppress:
         aEvent->StopPropagation();
         aEvent->PreventDefault();

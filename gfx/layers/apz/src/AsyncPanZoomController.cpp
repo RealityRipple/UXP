@@ -1089,7 +1089,7 @@ nsEventStatus AsyncPanZoomController::OnTouchStart(const MultiTouchInput& aEvent
     case PAN_MOMENTUM:
       MOZ_ASSERT(GetCurrentTouchBlock());
       GetCurrentTouchBlock()->GetOverscrollHandoffChain()->CancelAnimations(ExcludeOverscroll);
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case NOTHING: {
       mX.StartTouch(point.x, aEvent.mTime);
       mY.StartTouch(point.y, aEvent.mTime);
@@ -1196,7 +1196,7 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
   case FLING:
     // Should never happen.
     NS_WARNING("Received impossible touch end in OnTouchEnd.");
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case ANIMATING_ZOOM:
   case SMOOTH_SCROLL:
   case NOTHING:
