@@ -921,6 +921,14 @@ NSSCertDBTrustDomain::VerifyRSAPKCS1SignedData(
 }
 
 Result
+NSSCertDBTrustDomain::VerifyRSAPSSSignedData(
+    Input data, DigestAlgorithm digestAlgorithm, Input signature,
+    Input subjectPublicKeyInfo) {
+  return VerifyRSAPSSSignedDataNSS(data, digestAlgorithm, signature,
+                                   subjectPublicKeyInfo, mPinArg);
+}
+
+Result
 NSSCertDBTrustDomain::CheckECDSACurveIsAcceptable(
   EndEntityOrCA /*endEntityOrCA*/, NamedCurve curve)
 {

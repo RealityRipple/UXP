@@ -181,6 +181,15 @@ CSTrustDomain::VerifyRSAPKCS1SignedData(Input data,
 }
 
 Result
+CSTrustDomain::VerifyRSAPSSSignedData(Input data,
+                                      DigestAlgorithm digestAlgorithm,
+                                      Input signature,
+                                      Input subjectPublicKeyInfo) {
+  return VerifyRSAPSSSignedDataNSS(data, digestAlgorithm, signature,
+                                   subjectPublicKeyInfo, nullptr);
+}
+
+Result
 CSTrustDomain::CheckECDSACurveIsAcceptable(EndEntityOrCA endEntityOrCA,
                                            NamedCurve curve)
 {

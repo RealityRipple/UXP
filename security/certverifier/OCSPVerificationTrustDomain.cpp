@@ -78,6 +78,14 @@ OCSPVerificationTrustDomain::VerifyRSAPKCS1SignedData(
 }
 
 Result
+OCSPVerificationTrustDomain::VerifyRSAPSSSignedData(
+    Input data, DigestAlgorithm digestAlgorithm, Input signature,
+    Input subjectPublicKeyInfo) {
+  return mCertDBTrustDomain.VerifyRSAPSSSignedData(
+      data, digestAlgorithm, signature, subjectPublicKeyInfo);
+}
+
+Result
 OCSPVerificationTrustDomain::CheckECDSACurveIsAcceptable(
   EndEntityOrCA aEEOrCA, NamedCurve aCurve)
 {
