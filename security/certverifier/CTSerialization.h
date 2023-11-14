@@ -7,8 +7,8 @@
 #define CTSerialization_h
 
 #include "mozilla/Vector.h"
-#include "pkix/Input.h"
-#include "pkix/Result.h"
+#include "mozpkix/Input.h"
+#include "mozpkix/Result.h"
 #include "SignedCertificateTimestamp.h"
 #include "SignedTreeHead.h"
 

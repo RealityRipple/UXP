@@ -19,7 +19,7 @@
 #include "nsITransportSecurityInfo.h"
 #include "nsNSSShutDown.h"
 #include "nsSSLStatus.h"
-#include "pkix/pkixtypes.h"
+#include "mozpkix/pkixtypes.h"
 
 namespace mozilla { namespace psm {
 

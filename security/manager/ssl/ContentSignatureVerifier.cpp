@@ -22,8 +22,8 @@
 #include "nsWhitespaceTokenizer.h"
 #include "nsXPCOMStrings.h"
 #include "nssb64.h"
-#include "pkix/pkix.h"
-#include "pkix/pkixtypes.h"
+#include "mozpkix/pkix.h"
+#include "mozpkix/pkixtypes.h"
 #include "secerr.h"
 
 NS_IMPL_ISUPPORTS(ContentSignatureVerifier,
