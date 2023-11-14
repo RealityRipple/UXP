@@ -621,11 +621,12 @@ public:
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  Result VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                 Input subjectPublicKeyInfo) override
-  {
-    return VerifyECDSASignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                      nullptr);
+  Result VerifyECDSASignedData(Input data,
+                                     DigestAlgorithm digestAlgorithm,
+                                     Input signature,
+                                     Input subjectPublicKeyInfo) override {
+    return VerifyECDSASignedDataNSS(data, digestAlgorithm, signature,
+                                    subjectPublicKeyInfo, nullptr);
   }
 
   Result CheckRSAPublicKeyModulusSizeInBits(EndEntityOrCA, unsigned int)
@@ -635,11 +636,12 @@ public:
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  Result VerifyRSAPKCS1SignedDigest(const SignedDigest& signedDigest,
-                                    Input subjectPublicKeyInfo) override
-  {
-    return VerifyRSAPKCS1SignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                         nullptr);
+  Result VerifyRSAPKCS1SignedData(Input data,
+                                        DigestAlgorithm digestAlgorithm,
+                                        Input signature,
+                                        Input subjectPublicKeyInfo) override {
+    return VerifyRSAPKCS1SignedDataNSS(data, digestAlgorithm, signature,
+                                       subjectPublicKeyInfo, nullptr);
   }
 
   Result CheckValidityIsAcceptable(Time, Time, EndEntityOrCA, KeyPurposeId)

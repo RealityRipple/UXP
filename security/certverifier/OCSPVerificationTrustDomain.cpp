@@ -70,11 +70,11 @@ OCSPVerificationTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
 }
 
 Result
-OCSPVerificationTrustDomain::VerifyRSAPKCS1SignedDigest(
-  const SignedDigest& aSignedDigest, Input aSubjectPublicKeyInfo)
-{
-  return mCertDBTrustDomain.VerifyRSAPKCS1SignedDigest(aSignedDigest,
-                                                       aSubjectPublicKeyInfo);
+OCSPVerificationTrustDomain::VerifyRSAPKCS1SignedData(
+    Input data, DigestAlgorithm digestAlgorithm, Input signature,
+    Input subjectPublicKeyInfo) {
+  return mCertDBTrustDomain.VerifyRSAPKCS1SignedData(
+      data, digestAlgorithm, signature, subjectPublicKeyInfo);
 }
 
 Result
@@ -85,11 +85,11 @@ OCSPVerificationTrustDomain::CheckECDSACurveIsAcceptable(
 }
 
 Result
-OCSPVerificationTrustDomain::VerifyECDSASignedDigest(
-  const SignedDigest& aSignedDigest, Input aSubjectPublicKeyInfo)
-{
-  return mCertDBTrustDomain.VerifyECDSASignedDigest(aSignedDigest,
-                                                    aSubjectPublicKeyInfo);
+OCSPVerificationTrustDomain::VerifyECDSASignedData(
+    Input data, DigestAlgorithm digestAlgorithm, Input signature,
+    Input subjectPublicKeyInfo) {
+  return mCertDBTrustDomain.VerifyECDSASignedData(
+      data, digestAlgorithm, signature, subjectPublicKeyInfo);
 }
 
 Result
