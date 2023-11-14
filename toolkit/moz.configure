@@ -236,25 +236,8 @@ def freetype2_combined_info(fontconfig_info, freetype2_info):
 add_old_configure_assignment('_HAVE_FREETYPE2',
                              depends_if(freetype2_info)(lambda _: True))
 
-# Build Freetype in the tree
-# ==============================================================
-@depends(target)
-def tree_freetype(target):
-    return None
-
-set_define('MOZ_TREE_FREETYPE', tree_freetype)
-set_config('MOZ_TREE_FREETYPE', tree_freetype)
-add_old_configure_assignment('MOZ_TREE_FREETYPE', tree_freetype)
-
-set_define('HAVE_FT_BITMAP_SIZE_Y_PPEM', tree_freetype)
-set_define('HAVE_FT_GLYPHSLOT_EMBOLDEN', tree_freetype)
-set_define('HAVE_FT_LOAD_SFNT_TABLE', tree_freetype)
-
-@depends(freetype2_combined_info, tree_freetype, check_build_environment)
-def ft2_info(freetype2_combined_info, tree_freetype, build_env):
-    if tree_freetype:
-        return namespace(cflags=('-I%s/modules/freetype2/include' % build_env.topsrcdir,),
-                         libs=())
+@depends(freetype2_combined_info, check_build_environment)
+def ft2_info(freetype2_combined_info, build_env):
     if freetype2_combined_info:
         return freetype2_combined_info
 
