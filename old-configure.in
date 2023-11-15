@@ -58,6 +58,7 @@ GLIB_VERSION=2.22
 GLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_26
 GIO_VERSION=2.22
 CAIRO_VERSION=1.10
+PANGO_VERSION=1.22.0
 GTK2_VERSION=2.18.0
 GTK3_VERSION=3.4.0
 GDK_VERSION_MAX_ALLOWED=GDK_VERSION_3_4
@@ -68,6 +69,7 @@ GCONF_VERSION=1.2.1
 STARTUP_NOTIFICATION_VERSION=0.8
 DBUS_VERSION=0.60
 SQLITE_VERSION=3.36.0
+FONTCONFIG_VERSION=2.7.0
 
 dnl Set various checks
 dnl ========================================================
@@ -2120,6 +2122,14 @@ dnl = Enable the toolkit as needed                         =
 dnl ========================================================
 
 case "$MOZ_WIDGET_TOOLKIT" in
+ 
+gtk3)
+    USE_FC_FREETYPE=1
+    ;;
+
+gtk2)
+    USE_FC_FREETYPE=1
+    ;;
 
 cocoa)
     LDFLAGS="$LDFLAGS -framework Cocoa -lobjc"
@@ -2306,6 +2316,15 @@ fi
 
 AC_DEFINE_UNQUOTED(MOZ_DISTRIBUTION_ID,"$MOZ_DISTRIBUTION_ID")
 AC_SUBST(MOZ_DISTRIBUTION_ID)
+
+ dnl ========================================================
+ dnl = Pango
+ dnl ========================================================
+if test "$MOZ_ENABLE_GTK"
+then
+    PKG_CHECK_MODULES(_PANGOCHK, pango >= $PANGO_VERSION)
+    PKG_CHECK_MODULES(MOZ_PANGO, pango >= $PANGO_VERSION pangoft2 >= $PANGO_VERSION pangocairo >= $PANGO_VERSION)
+fi
 
 dnl ========================================================
 dnl = GIO and GConf support module
@@ -3395,13 +3414,6 @@ if test -n "$MOZ_USE_NATIVE_POPUP_WINDOWS"; then
   AC_DEFINE(MOZ_USE_NATIVE_POPUP_WINDOWS)
 fi
 
-if test -n "$MOZ_TREE_FREETYPE"; then
-   MOZ_ENABLE_CAIRO_FT=1
-   FT_FONT_FEATURE="#define CAIRO_HAS_FT_FONT 1"
-   CAIRO_FT_CFLAGS="-I$_topsrcdir/modules/freetype2/include"
-   AC_SUBST_LIST(CAIRO_FT_CFLAGS)
-fi
-
 AC_CHECK_PROGS(WGET, wget, "")
 AC_SUBST(WGET)
 
@@ -4404,8 +4416,9 @@ AC_SUBST_LIST(GLIB_GMODULE_LIBS)
 if test "$USE_FC_FREETYPE"; then
     if test "$COMPILE_ENVIRONMENT"; then
         dnl ========================================================
-        dnl = Check for freetype2 functionality
+        dnl = Check for freetype2 and its functionality
         dnl ========================================================
+        PKG_CHECK_MODULES(FT2, freetype2 >= 6.1.0, _HAVE_FREETYPE2=1, _HAVE_FREETYPE2=)
         if test "$_HAVE_FREETYPE2" -a -z "$MOZ_TREE_FREETYPE"; then
             _SAVE_LIBS="$LIBS"
             _SAVE_CFLAGS="$CFLAGS"
@@ -4441,7 +4454,15 @@ if test "$USE_FC_FREETYPE"; then
         MOZ_CHECK_HEADERS([fontconfig/fcfreetype.h], ,
             [AC_MSG_ERROR(Can't find header fontconfig/fcfreetype.h.)], [#include <fontconfig/fontconfig.h>])
         CPPFLAGS="$_SAVE_CPPFLAGS"
+    else
+        AC_DEFINE(HAVE_FONTCONFIG_FCFREETYPE_H)
     fi
+
+    PKG_CHECK_MODULES(_FONTCONFIG, fontconfig >= $FONTCONFIG_VERSION,
+    [
+        FT2_CFLAGS="$FT2_CFLAGS $_FONTCONFIG_CFLAGS"
+        FT2_LIBS="$FT2_LIBS $_FONTCONFIG_LIBS"
+    ])
 fi
 
 dnl ========================================================
@@ -4499,6 +4520,7 @@ if test "$MOZ_TREE_CAIRO"; then
         FT_FONT_FEATURE="#define CAIRO_HAS_FT_FONT 1"
         MOZ_ENABLE_CAIRO_FT=1
         CAIRO_FT_CFLAGS="$FT2_CFLAGS"
+        AC_SUBST_LIST(CAIRO_FT_CFLAGS)
     fi
 
     case "$MOZ_WIDGET_TOOLKIT" in
@@ -5146,36 +5168,6 @@ NSS_DISABLE_LIBPKIX=1
 AC_SUBST(NSS_DISABLE_LIBPKIX)
 
 MOZ_CREATE_CONFIG_STATUS()
-
-# Run freetype configure script
-
-if test "$MOZ_TREE_FREETYPE"; then
-   export CFLAGS="$CFLAGS $MOZ_DEBUG_FLAGS -std=c99"
-   export CPPFLAGS="$CPPFLAGS $MOZ_DEBUG_FLAGS"
-   export CXXFLAGS="$CXXFLAGS $MOZ_DEBUG_FLAGS"
-   export LDFLAGS="$LDFLAGS $MOZ_DEBUG_LDFLAGS"
-   # Spaces in the *_CFLAGS and *_LIBS variables are intentionally placed
-   # to force freetype to use our settings rather than autodetecting
-   if test -n "$MOZ_SYSTEM_PNG"; then
-     export LIBPNG_CFLAGS="$MOZ_PNG_CFLAGS "
-   else
-     export LIBPNG_CFLAGS="-I$_objdir/dist/include"
-   fi
-   export LIBPNG_LIBS="$MOZ_PNG_LIBS "
-   export ZLIB_CFLAGS="$MOZ_ZLIB_CFLAGS "
-   export ZLIB_LIBS="$MOZ_ZLIB_LIBS "
-   export CONFIG_FILES="unix-cc.mk:unix-cc.in unix-def.mk:unix-def.in freetype-config freetype2.pc:freetype2.in"
-   ac_configure_args="$ac_configure_args --host=$target --disable-shared --with-pic=yes --with-zlib=yes --without-bzip2 --with-png=yes --without-harfbuzz"
-
-   if ! test -e modules; then
-     mkdir modules
-   fi
-   # Only export CC, CXX and RANLIB for the subconfigure, and avoid spilling
-   # that further down the road.
-   (export CC CXX RANLIB;
-    AC_OUTPUT_SUBDIRS(modules/freetype2)
-   ) || exit 1
-fi
 
 if test -z "$direct_nspr_config"; then
     dnl ========================================================
