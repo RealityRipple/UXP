@@ -23,7 +23,6 @@ LOCAL_INCLUDES += [
     '/dom/base',
     '/dom/crypto',
     '/security/manager/ssl',
-    '/security/pkix/include',
 ]
 
 MOCHITEST_MANIFESTS += ['tests/mochitest.ini']

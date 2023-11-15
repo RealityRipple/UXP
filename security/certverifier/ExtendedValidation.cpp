@@ -15,7 +15,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/PodOperations.h"
 #include "pk11pub.h"
-#include "pkix/pkixtypes.h"
+#include "mozpkix/pkixtypes.h"
 #include "prerror.h"
 #include "prinit.h"
 #include "secerr.h"

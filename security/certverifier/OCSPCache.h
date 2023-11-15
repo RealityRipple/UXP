@@ -7,6 +7,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 /* Copyright 2013 Mozilla Contributors
+ * Copyright 2023 Moonchild Productions
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +28,8 @@
 #include "hasht.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Vector.h"
-#include "pkix/Result.h"
-#include "pkix/Time.h"
+#include "mozpkix/Result.h"
+#include "mozpkix/Time.h"
 #include "prerror.h"
 #include "seccomon.h"
 

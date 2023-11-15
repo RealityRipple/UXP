@@ -13,13 +13,13 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Move.h"
 #include "mozilla/Vector.h"
-#include "pkix/Input.h"
-#include "pkix/pkix.h"
-#include "pkix/pkixnss.h"
-#include "pkix/pkixtypes.h"
-#include "pkix/Result.h"
-#include "pkixcheck.h"
-#include "pkixutil.h"
+#include "mozpkix/Input.h"
+#include "mozpkix/pkix.h"
+#include "mozpkix/pkixnss.h"
+#include "mozpkix/pkixtypes.h"
+#include "mozpkix/Result.h"
+#include "mozpkixcheck.h"
+#include "mozpkixutil.h"
 #include "SignedCertificateTimestamp.h"
 #include "SignedTreeHead.h"
 
@@ -621,11 +621,12 @@ public:
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  Result VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                 Input subjectPublicKeyInfo) override
-  {
-    return VerifyECDSASignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                      nullptr);
+  Result VerifyECDSASignedData(Input data,
+                                     DigestAlgorithm digestAlgorithm,
+                                     Input signature,
+                                     Input subjectPublicKeyInfo) override {
+    return VerifyECDSASignedDataNSS(data, digestAlgorithm, signature,
+                                    subjectPublicKeyInfo, nullptr);
   }
 
   Result CheckRSAPublicKeyModulusSizeInBits(EndEntityOrCA, unsigned int)
@@ -635,11 +636,20 @@ public:
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  Result VerifyRSAPKCS1SignedDigest(const SignedDigest& signedDigest,
-                                    Input subjectPublicKeyInfo) override
-  {
-    return VerifyRSAPKCS1SignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                         nullptr);
+  Result VerifyRSAPKCS1SignedData(Input data,
+                                        DigestAlgorithm digestAlgorithm,
+                                        Input signature,
+                                        Input subjectPublicKeyInfo) override {
+    return VerifyRSAPKCS1SignedDataNSS(data, digestAlgorithm, signature,
+                                       subjectPublicKeyInfo, nullptr);
+  }
+
+  Result VerifyRSAPSSSignedData(Input data,
+                                      DigestAlgorithm digestAlgorithm,
+                                      Input signature,
+                                      Input subjectPublicKeyInfo) override {
+    return VerifyRSAPSSSignedDataNSS(data, digestAlgorithm, signature,
+                                     subjectPublicKeyInfo, nullptr);
   }
 
   Result CheckValidityIsAcceptable(Time, Time, EndEntityOrCA, KeyPurposeId)

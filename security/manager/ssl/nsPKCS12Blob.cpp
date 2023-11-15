@@ -23,7 +23,7 @@
 #include "nsReadableUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
-#include "pkix/pkixtypes.h"
+#include "mozpkix/pkixtypes.h"
 #include "prmem.h"
 #include "prprf.h"
 #include "secerr.h"

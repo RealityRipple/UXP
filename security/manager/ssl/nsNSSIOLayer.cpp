@@ -34,7 +34,7 @@
 #include "nsNSSComponent.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
-#include "pkix/pkixtypes.h"
+#include "mozpkix/pkixtypes.h"
 #include "prmem.h"
 #include "prnetdb.h"
 #include "secder.h"
