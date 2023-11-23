@@ -39,7 +39,7 @@ interface nsIXULAppInfo : nsIPlatformInfo
   readonly attribute ACString version;
 
   /**
-   * The build ID/date of the application. For -app applications,
+   * The build ID/date of the application. For xulrunner applications,
    * this will be different than the build ID of the platform. Be careful
    * about which one you want.
    */
