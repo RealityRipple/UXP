@@ -4288,6 +4288,13 @@ pref("webgl.dxgl.enabled", true);
 pref("webgl.dxgl.needs-finish", false);
 #endif
 
+// Disable ANGLE's validation layer?
+#ifdef XP_WIN
+pref("webgl.gl_khr_no_validation", false);
+#else
+pref("webgl.gl_khr_no_validation", true);
+#endif
+
 pref("gfx.offscreencanvas.enabled", false);
 
 // Stagefright prefs
@@ -5105,3 +5112,5 @@ pref("media.sourceErrorDetails.enabled", false);
 pref("dom.events.asyncClipboard", true);
 // Whether arbitrary data transfer methods (not plaintext) are allowed.
 pref("dom.events.asyncClipboard.dataTransfer", true);
+// Whether to use ClipboardItem spec or not.
+pref("dom.events.asyncClipboard.clipboardItem", false);

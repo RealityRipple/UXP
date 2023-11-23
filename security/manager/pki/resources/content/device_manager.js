@@ -103,8 +103,10 @@ function SetFIPSButton()
   var can_toggle = secmoddb.canToggleFIPS;
   if (can_toggle) {
     fipsButton.removeAttribute("disabled");
+    fipsButton.removeAttribute("hidden");
   } else {
     fipsButton.setAttribute("disabled", "true");
+    fipsButton.setAttribute("hidden", "true");
   }
 }
 
