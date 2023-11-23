@@ -129,17 +129,6 @@ moz_xstrndup(const char* str, size_t strsize)
 
 #if defined(HAVE_POSIX_MEMALIGN)
 int
-moz_xposix_memalign(void **ptr, size_t alignment, size_t size)
-{
-    int err = posix_memalign_impl(ptr, alignment, size);
-    if (MOZ_UNLIKELY(err && ENOMEM == err)) {
-        mozalloc_handle_oom(size);
-        return moz_xposix_memalign(ptr, alignment, size);
-    }
-    // else: (0 == err) or (EINVAL == err)
-    return err;
-}
-int
 moz_posix_memalign(void **ptr, size_t alignment, size_t size)
 {
     int code = posix_memalign_impl(ptr, alignment, size);

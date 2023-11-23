@@ -47,7 +47,7 @@ VolatileBuffer::Init(size_t aSize, size_t aAlignment)
   }
 
 heap_alloc:
-#if !defined(__ppc__)
+#ifdef HAVE_POSIX_MEMALIGN
   (void)moz_posix_memalign(&mBuf, aAlignment, aSize);
 #else
   // 10.4 doesn't have memalign, but our malloc()s are always aligned to
