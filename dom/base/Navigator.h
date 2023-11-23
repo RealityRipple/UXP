@@ -37,6 +37,7 @@ class WakeLock;
 class ArrayBufferOrArrayBufferViewOrBlobOrFormDataOrUSVStringOrURLSearchParams;
 class ServiceWorkerContainer;
 class DOMRequest;
+class Clipboard;
 } // namespace dom
 } // namespace mozilla
 
@@ -210,6 +211,8 @@ public:
                               ErrorResult& aRv);
 
   already_AddRefed<ServiceWorkerContainer> ServiceWorker();
+  
+  dom::Clipboard* Clipboard();
 
   void GetLanguages(nsTArray<nsString>& aLanguages);
 
@@ -263,6 +266,7 @@ private:
   RefPtr<DesktopNotificationCenter> mNotification;
   RefPtr<PowerManager> mPowerManager;
   RefPtr<network::Connection> mConnection;
+  RefPtr<dom::Clipboard> mClipboard;
 #ifdef MOZ_AUDIO_CHANNEL_MANAGER
   RefPtr<system::AudioChannelManager> mAudioChannelManager;
 #endif
