@@ -126,7 +126,11 @@ void mozilla::plugins::PluginUtilsOSX::Repaint(void *caLayer, nsIntRect aRect) {
   [CATransaction begin];
   [bridgeLayer updateRect:aRect];
   [bridgeLayer setNeedsDisplay];
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   [bridgeLayer displayIfNeeded];
+#else
+  [bridgeLayer display];
+#endif
   [CATransaction commit];
 }
 
