@@ -13,10 +13,6 @@
 #ifdef XP_WIN
 #include <windows.h>
 #include <io.h>
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#define snprintf _snprintf
-#define vsnprintf _vsnprintf
-#endif
 #define strcasecmp _stricmp
 #define PATH_SEPARATOR_CHAR '\\'
 #define R_OK 04
@@ -57,7 +53,7 @@ static void Output(bool isError, const char *fmt, ... )
 		      -1,
 		      wide_msg,
 		      sizeof(wide_msg) / sizeof(wchar_t));
-  
+
   MessageBoxW(nullptr, wide_msg, L"XULRunner", flags);
 #else
   vfprintf(stderr, fmt, ap);
@@ -236,11 +232,11 @@ main(int argc, char **argv)
 
   strncpy(lastSlash, "application.ini", sizeof(iniPath) - (lastSlash - iniPath));
 
-  // If -app parameter was passed in, it is now time to take it under 
+  // If -app parameter was passed in, it is now time to take it under
   // consideration.
   const char *appDataFile;
   appDataFile = getenv("XUL_APP_FILE");
-  if (!appDataFile || !*appDataFile) 
+  if (!appDataFile || !*appDataFile)
     if (argc > 1 && IsArg(argv[1], "app")) {
       if (argc == 2) {
         Output(false, "specify APP-FILE (optional)\n");
@@ -257,7 +253,7 @@ main(int argc, char **argv)
 
       char kAppEnv[MAXPATHLEN];
       snprintf(kAppEnv, MAXPATHLEN, "XUL_APP_FILE=%s", appDataFile);
-      if (putenv(kAppEnv)) 
+      if (putenv(kAppEnv))
         Output(false, "Couldn't set %s.\n", kAppEnv);
 
       char *result = (char*) calloc(sizeof(char), MAXPATHLEN);
@@ -265,8 +261,8 @@ main(int argc, char **argv)
         Output(true, "Invalid application.ini path.\n");
         return 1;
       }
-      
-      // We have a valid application.ini path passed in to the -app parameter 
+
+      // We have a valid application.ini path passed in to the -app parameter
       // but not yet a valid greDir, so lets look for it also on the same folder
       // as the stub.
       if (!greFound) {
@@ -279,11 +275,11 @@ main(int argc, char **argv)
         snprintf(greDir, sizeof(greDir), "%s" XPCOM_DLL, iniPath);
         greFound = FolderExists(greDir);
       }
-      
+
       // copy it back.
       strcpy(iniPath, result);
     }
-  
+
   nsINIParser parser;
   rv = parser.Init(iniPath);
   if (NS_FAILED(rv)) {
