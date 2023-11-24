@@ -28,8 +28,3 @@ source-upload::
 
 hg-bundle::
 	@$(MAKE) -C xulrunner/installer hg-bundle
-
-ifeq ($(OS_TARGET),Linux)
-deb: package
-	@$(MAKE) -C xulrunner/installer deb
-endif
