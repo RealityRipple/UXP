@@ -226,7 +226,7 @@ VideoData::ShallowCopyUpdateTimestampAndDuration(const VideoData* aOther,
 }
 
 PlanarYCbCrData
-+ConstructPlanarYCbCrData(const VideoInfo& aInfo,
+ConstructPlanarYCbCrData(const VideoInfo& aInfo,
                          const VideoData::YCbCrBuffer& aBuffer,
                          const IntRect& aPicture)
 {
