@@ -109,11 +109,10 @@ IMFYCbCrImage::GetTextureClient(KnowsCompositor* aForwarder)
     return mTextureClient;
   }
 
-  RefPtr<ID3D11Device> device =
-    gfx::DeviceManagerDx::Get()->GetContentDevice();
+  RefPtr<ID3D11Device> device = gfx::DeviceManagerDx::Get()->GetContentDevice();
+
   if (!device) {
-    device =
-      gfx::DeviceManagerDx::Get()->GetCompositorDevice();
+    device = gfx::DeviceManagerDx::Get()->GetCompositorDevice();
   }
 
   LayersBackend backend = aForwarder->GetCompositorBackendType();
@@ -178,7 +177,7 @@ IMFYCbCrImage::GetTextureClient(KnowsCompositor* aForwarder)
     AutoLockD3D11Texture lockCr(textureCr);
     AutoLockD3D11Texture lockCb(textureCb);
 
-    mt->Enter();
+    D3D11MTAutoEnter mtAutoEnter(mt.forget());
 
     RefPtr<ID3D11DeviceContext> ctx;
     device->GetImmediateContext((ID3D11DeviceContext**)getter_AddRefs(ctx));
@@ -194,8 +193,6 @@ IMFYCbCrImage::GetTextureClient(KnowsCompositor* aForwarder)
     box.bottom = mData.mCbCrSize.height;
     ctx->UpdateSubresource(textureCb, 0, &box, mData.mCbChannel, mData.mCbCrStride, 0);
     ctx->UpdateSubresource(textureCr, 0, &box, mData.mCrChannel, mData.mCbCrStride, 0);
-
-    mt->Leave();
   }
 
   mTextureClient = TextureClient::CreateWithData(
