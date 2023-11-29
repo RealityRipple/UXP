@@ -4,6 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "D3D11YCbCrImage.h"
+
+#include "gfx2DGlue.h"
 #include "YCbCrUtils.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositableClient.h"
