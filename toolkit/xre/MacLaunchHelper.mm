@@ -12,15 +12,24 @@
 
 #include <Cocoa/Cocoa.h>
 #include <crt_externs.h>
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 #include <ServiceManagement/ServiceManagement.h>
+#endif
 #include <Security/Authorization.h>
 #include <spawn.h>
 #include <stdio.h>
+#ifdef __ppc__
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <mach/machine.h>
+#endif /* __ppc__ */
+
 
 using namespace mozilla;
 
 void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid)
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MacAutoreleasePool pool;
 
   @try {
@@ -41,8 +50,56 @@ void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid)
   } @catch (NSException* e) {
     NSLog(@"%@: %@", e.name, e.reason);
   }
+#else
+  /* Use the 3.6 code for 10.4Fx, except that we now extract the pid for
+     consumers, unless (!pid). -- Cameron */
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  int i;
+  NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+  NSTask* child = [[[NSTask alloc] init] autorelease];
+  if (aPid) *aPid = (pid_t)[child processIdentifier]; // XXX?
+  NSMutableArray* args = [[[NSMutableArray alloc] init] autorelease];
+
+#ifdef __ppc__
+  // It's possible that the app is a universal binary running under Rosetta
+  // translation because the user forced it to.  Relaunching via NSTask would
+  // launch the app natively, which the user apparently doesn't want.
+  // In that case, try to preserve translation.
+
+  // If the sysctl doesn't exist, it's because Rosetta doesn't exist,
+  // so don't try to force translation.  In case of other errors, just assume
+  // that the app is native.
+
+  int isNative = 0;
+  size_t sz = sizeof(isNative);
+
+  if (sysctlbyname("sysctl.proc_native", &isNative, &sz, NULL, 0) == 0 &&
+      !isNative) {
+    // Running translated on ppc.
+
+    cpu_type_t preferredCPU = CPU_TYPE_POWERPC;
+    sysctlbyname("sysctl.proc_exec_affinity", NULL, NULL,
+                 &preferredCPU, sizeof(preferredCPU));
+
+    // Nothing can be done to handle failure, relaunch anyway.
+  }
+#endif /* __ppc__ */
+
+  for (i = 1; i < aArgc; ++i)
+    [args addObject: [NSString stringWithCString: aArgv[i]]];
+
+  [child setCurrentDirectoryPath:[[[NSBundle mainBundle] executablePath] stringByDeletingLastPathComponent]];
+  [child setLaunchPath:[[NSBundle mainBundle] executablePath]];
+  [child setArguments:args];
+  [child launch];
+  [pool release];
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+#endif
 }
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 BOOL InstallPrivilegedHelper()
 {
   AuthorizationRef authRef = NULL;
@@ -125,13 +182,18 @@ void AbortElevatedUpdate()
   }
   NSLog(@"Unable to clean up updater.");
 }
+#endif
 
 bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid)
 {
   LaunchChildMac(aArgc, aArgv, aPid);
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   bool didSucceed = InstallPrivilegedHelper();
   if (!didSucceed) {
     AbortElevatedUpdate();
   }
   return didSucceed;
+#else
+  return YES;
+#endif
 }

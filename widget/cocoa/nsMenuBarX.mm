@@ -386,12 +386,14 @@ nsMenuX* nsMenuBarX::GetXULHelpMenu()
 // This resolves bugs 489196 and 539317.
 void nsMenuBarX::SetSystemHelpMenu()
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   nsMenuX* xulHelpMenu = GetXULHelpMenu();
   if (xulHelpMenu) {
     NSMenu* helpMenu = (NSMenu*)xulHelpMenu->NativeData();
     if (helpMenu)
       [NSApp setHelpMenu:helpMenu];
   }
+#endif
 }
 
 nsresult nsMenuBarX::Paint()
@@ -466,7 +468,15 @@ char nsMenuBarX::GetLocalizedAccelKey(const char *shortcutID)
 /* static */
 void nsMenuBarX::ResetNativeApplicationMenu()
 {
+#if defined(MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
   [sApplicationMenu removeAllItems];
+#else
+  // but we need this (see bug 1151345), so ...
+  uint32_t currentCount = [sApplicationMenu numberOfItems];
+  for (uint32_t i=0; i<currentCount; i++) {
+    [sApplicationMenu removeItemAtIndex:0];
+  }
+#endif
   [sApplicationMenu release];
   sApplicationMenu = nil;
   sApplicationMenuIsFallback = NO;
@@ -973,7 +983,11 @@ static BOOL gMenuItemsExecuteCommands = YES;
 - (void) _overrideClassOfMenuItem:(NSMenuItem *)menuItem
 {
   if ([menuItem class] == [NSMenuItem class])
+#if defined(MAC_OS_X_VERSION_10_5) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5
     object_setClass(menuItem, [GeckoServicesNSMenuItem class]);
+#else
+    ((struct objc10_object *)menuItem)->isa = [GeckoServicesNSMenuItem class];
+#endif
 }
 
 @end

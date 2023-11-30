@@ -194,6 +194,7 @@ void AddQuarantineMetadataToFile(const CFStringRef filePath,
                                  const CFURLRef sourceURL,
                                  const CFURLRef referrerURL,
                                  const bool isFromWeb) {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   CFURLRef fileURL = ::CFURLCreateWithFileSystemPath(kCFAllocatorDefault,
                                                      filePath,
                                                      kCFURLPOSIXPathStyle,
@@ -254,6 +255,7 @@ void AddQuarantineMetadataToFile(const CFStringRef filePath,
 
   ::CFRelease(fileURL);
   ::CFRelease(mutQuarantineProps);
+#endif
 }
 
 CFURLRef GetTemporaryFolderCFURLRef()

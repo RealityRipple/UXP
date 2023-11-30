@@ -51,7 +51,7 @@ nsPK11Token::refreshTokenInfo(const nsNSSShutDownPreventionLock& /*proofOfLock*/
 
   // Set the Label field
   const char* ccLabel = mozilla::BitwiseCast<char*, CK_UTF8CHAR*>(tokInfo.label);
-  mTokenLabel.Assign(ccLabel, strnlen(ccLabel, sizeof(tokInfo.label)));
+  mTokenLabel.Assign(ccLabel, PL_strnlen(ccLabel, sizeof(tokInfo.label)));
   mTokenLabel.Trim(" ", false, true);
 
   // Set the Manufacturer field
@@ -59,7 +59,7 @@ nsPK11Token::refreshTokenInfo(const nsNSSShutDownPreventionLock& /*proofOfLock*/
     mozilla::BitwiseCast<char*, CK_UTF8CHAR*>(tokInfo.manufacturerID);
   mTokenManufacturerID.Assign(
     ccManID,
-    strnlen(ccManID, sizeof(tokInfo.manufacturerID)));
+    PL_strnlen(ccManID, sizeof(tokInfo.manufacturerID)));
   mTokenManufacturerID.Trim(" ", false, true);
 
   // Set the Hardware Version field
@@ -78,7 +78,7 @@ nsPK11Token::refreshTokenInfo(const nsNSSShutDownPreventionLock& /*proofOfLock*/
   const char* ccSerial =
     mozilla::BitwiseCast<char*, CK_CHAR*>(tokInfo.serialNumber);
   mTokenSerialNum.Assign(ccSerial,
-                         strnlen(ccSerial, sizeof(tokInfo.serialNumber)));
+                         PL_strnlen(ccSerial, sizeof(tokInfo.serialNumber)));
   mTokenSerialNum.Trim(" ", false, true);
 
   return NS_OK;

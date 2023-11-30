@@ -662,9 +662,9 @@ bool nsMenuX::IsXULHelpMenu(nsIContent* aMenuContent)
 {
   bool retval = false;
   if (aMenuContent) {
-    nsAutoString id;
-    aMenuContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, id);
-    if (id.Equals(NS_LITERAL_STRING("helpMenu")))
+    nsAutoString sid;
+    aMenuContent->GetAttr(kNameSpaceID_None, nsGkAtoms::id, sid);
+    if (sid.Equals(NS_LITERAL_STRING("helpMenu")))
       retval = true;
   }
   return retval;

@@ -134,7 +134,7 @@ class RegExpShared : public gc::TenuredCell
     GCPtr<JSAtom*>     source;
 
     RegExpFlag         flags;
-    bool               canStringMatch;
+    bool               canStringMatch : 1;
     size_t             parenCount;
 
     uint32_t            numNamedCaptures_;

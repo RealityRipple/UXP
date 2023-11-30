@@ -164,7 +164,12 @@ SpeechTaskCallback::OnDidFinishSpeaking()
   mTask = nullptr;
 }
 
+// NSSpeechSynthesizerDelegate is not a protocol in SDK 10.5
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 @interface SpeechDelegate : NSObject<NSSpeechSynthesizerDelegate>
+#else
+@interface SpeechDelegate : NSObject
+#endif
 {
 @private
   SpeechTaskCallback* mCallback;
@@ -293,7 +298,8 @@ EnumVoicesRunnable::Run()
   NSArray* voices = [NSSpeechSynthesizer availableVoices];
   NSString* defaultVoice = [NSSpeechSynthesizer defaultVoice];
 
-  for (NSString* voice in voices) {
+  for (NSUInteger i = 0; i < [voices count]; i++) {
+	NSString* voice = (NSString *)[voices objectAtIndex:i];
     OSXVoice item;
 
     NSDictionary* attr = [NSSpeechSynthesizer attributesForVoice:voice];

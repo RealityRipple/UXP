@@ -104,6 +104,7 @@ enum {
 - (void)userNotificationCenter:(id<FakeNSUserNotificationCenter>)center
        didActivateNotification:(id<FakeNSUserNotification>)notification
 {
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   unsigned long long additionalActionIndex = ULLONG_MAX;
   if ([notification respondsToSelector:@selector(_alternateActionIndex)]) {
     NSNumber *alternateActionIndex = [(NSObject*)notification valueForKey:@"_alternateActionIndex"];
@@ -112,6 +113,7 @@ enum {
   mOSXNC->OnActivate([[notification userInfo] valueForKey:@"name"],
                      notification.activationType,
                      additionalActionIndex);
+#endif
 }
 
 - (BOOL)userNotificationCenter:(id<FakeNSUserNotificationCenter>)center
@@ -125,18 +127,22 @@ enum {
 - (void)userNotificationCenter:(id<FakeNSUserNotificationCenter>)center
   didRemoveDeliveredNotifications:(NSArray *)notifications
 {
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   for (id<FakeNSUserNotification> notification in notifications) {
     NSString *name = [[notification userInfo] valueForKey:@"name"];
     mOSXNC->CloseAlertCocoaString(name);
   }
+#endif
 }
 
 // This is an undocumented method that we need to be notified if a user clicks the close button.
 - (void)userNotificationCenter:(id<FakeNSUserNotificationCenter>)center
   didDismissAlert:(id<FakeNSUserNotification>)notification
 {
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   NSString *name = [[notification userInfo] valueForKey:@"name"];
   mOSXNC->CloseAlertCocoaString(name);
+#endif
 }
 
 @end
@@ -337,6 +343,7 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
     // OS X 10.8 only shows action buttons if the "Alerts" style is set in
     // Notification Center preferences, and doesn't support the alternate
     // action menu.
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     if ([notification respondsToSelector:@selector(set_showsButtons:)] &&
         [notification respondsToSelector:@selector(set_alwaysShowAlternateActionMenu:)] &&
         [notification respondsToSelector:@selector(set_alternateActionButtonTitles:)]) {
@@ -352,6 +359,7 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
                                           ]
                                forKey:@"_alternateActionButtonTitles"];
     }
+#endif
   }
   nsAutoString name;
   rv = aAlert->GetName(name);
@@ -377,6 +385,7 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
   OSXNotificationInfo *osxni = new OSXNotificationInfo(alertName, aAlertListener, cookie);
 
   // Show the favicon if supported on this version of OS X.
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   if (aIconSize > 0 &&
       [notification respondsToSelector:@selector(set_identityImage:)] &&
       [notification respondsToSelector:@selector(set_identityImageHasBorder:)]) {
@@ -387,6 +396,7 @@ OSXNotificationCenter::ShowAlertWithIconData(nsIAlertNotification* aAlert,
     [(NSObject*)notification setValue:icon forKey:@"_identityImage"];
     [(NSObject*)notification setValue:@(NO) forKey:@"_identityImageHasBorder"];
   }
+#endif
 
   bool inPrivateBrowsing;
   rv = aAlert->GetInPrivateBrowsing(&inPrivateBrowsing);
@@ -440,6 +450,7 @@ OSXNotificationCenter::CloseAlertCocoaString(NSString *aAlertName)
     return; // Can't do anything without a name
   }
 
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   NSArray *notifications = [GetNotificationCenter() deliveredNotifications];
   for (id<FakeNSUserNotification> notification in notifications) {
     NSString *name = [[notification userInfo] valueForKey:@"name"];
@@ -449,6 +460,7 @@ OSXNotificationCenter::CloseAlertCocoaString(NSString *aAlertName)
       break;
     }
   }
+#endif
 
   for (unsigned int i = 0; i < mActiveAlerts.Length(); i++) {
     OSXNotificationInfo *osxni = mActiveAlerts[i];

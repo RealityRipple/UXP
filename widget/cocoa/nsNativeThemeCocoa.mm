@@ -109,6 +109,7 @@ extern "C" {
 static void
 DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame, NSView* aInView)
 {
+#if defined(MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
   if ([aCell showsFirstResponder]) {
     CGContextRef cgContext = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
     CGContextSaveGState(cgContext);
@@ -133,6 +134,7 @@ DrawFocusRingForCellIfNeeded(NSCell* aCell, NSRect aWithFrame, NSView* aInView)
 
     CGContextRestoreGState(cgContext);
   }
+#endif
 }
 
 static bool
