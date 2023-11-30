@@ -47,6 +47,24 @@ ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray)
   return nativeArray;
 }
 
+// Convert to an object without @ syntax
+static inline id
+ConvertToId(NSInteger val)
+{
+    return [NSString stringWithFormat:@"%i", val];
+}
+
+// Missing from SDK 10.5
+#if !defined(MAC_OS_X_VERSION_10_6) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)
+#define __IntToNSString(x) ([NSString stringWithFormat:@"%i", x])
+#define NSAccessibilityRowIndexRangeAttribute @"AXRowIndexRange"
+#define NSAccessibilityColumnIndexRangeAttribute @"AXColumnIndexRange"
+#define NSAccessibilityRowHeaderUIElementsAttribute @"AXRowHeaderUIElements"
+#define NSAccessibilityColumnHeaderUIElementsAttribute @"AXColumnHeaderUIElements"
+#define NSAccessibilityRowCountAttribute @"AXRowCount"
+#define NSAccessibilityColumnCountAttribute @"AXColumnCount"
+#endif
+
 @implementation mozTablePartAccessible
 - (BOOL)isLayoutTablePart;
 {
@@ -83,10 +101,14 @@ ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSArray* additionalAttributes = [super additionalAccessibilityAttributeNames];
   if ([self isLayoutTablePart]) {
     return additionalAttributes;
   }
+#else
+  NSArray* additionalAttributes = [[NSArray alloc] init];
+#endif
 
   static NSArray* tableAttrs = nil;
   if (!tableAttrs) {
@@ -108,9 +130,9 @@ ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray)
   if (AccessibleWrap* accWrap = [self getGeckoAccessible]) {
     TableAccessible* table = accWrap->AsTable();
     if ([attribute isEqualToString:NSAccessibilityRowCountAttribute])
-      return @(table->RowCount());
+      return ConvertToId(table->RowCount());
     if ([attribute isEqualToString:NSAccessibilityColumnCountAttribute])
-      return @(table->ColCount());
+      return ConvertToId(table->ColCount());
     if ([attribute isEqualToString:NSAccessibilityRowsAttribute]) {
       // Create a new array with the list of table rows.
       NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
@@ -127,9 +149,9 @@ ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray)
     }
   } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
     if ([attribute isEqualToString:NSAccessibilityRowCountAttribute])
-      return @(proxy->TableRowCount());
+      return ConvertToId(proxy->TableRowCount());
     if ([attribute isEqualToString:NSAccessibilityColumnCountAttribute])
-      return @(proxy->TableColumnCount());
+      return ConvertToId(proxy->TableColumnCount());
     if ([attribute isEqualToString:NSAccessibilityRowsAttribute]) {
       // Create a new array with the list of table rows.
       NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
@@ -155,10 +177,14 @@ ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSArray* additionalAttributes = [super additionalAccessibilityAttributeNames];
   if ([self isLayoutTablePart]) {
     return additionalAttributes;
   }
+#else
+  NSArray* additionalAttributes = [[NSArray alloc] init];
+#endif
 
   static NSArray* tableRowAttrs = nil;
   if (!tableRowAttrs) {
@@ -214,10 +240,14 @@ ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSArray* additionalAttributes = [super additionalAccessibilityAttributeNames];
   if ([self isLayoutTablePart]) {
     return additionalAttributes;
   }
+#else
+  NSArray* additionalAttributes = [[NSArray alloc] init];
+#endif
 
   static NSArray* tableCellAttrs = nil;
   if (!tableCellAttrs) {

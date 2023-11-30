@@ -7,6 +7,10 @@
  * ROLE(geckoRole, stringRole, atkRole, macRole, msaaRole, ia2Role, nameRule)
  */
 
+#ifndef NSAccessibilityCellRole
+#define NSAccessibilityCellRole NSAccessibilityUnknownRole
+#endif
+
 ROLE(NOTHING,
      "nothing",
      ATK_ROLE_UNKNOWN,

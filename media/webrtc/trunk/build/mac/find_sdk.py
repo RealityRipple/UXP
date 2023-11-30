@@ -12,14 +12,14 @@ import sys
 given minimum sdk version to standard output.
 
 Usage:
-  python find_sdk.py 10.6  # Ignores SDKs < 10.6
+  python find_sdk.py 10.5  # Ignores SDKs < 10.5
 """
 
 from optparse import OptionParser
 
 
 def parse_version(version_str):
-  """'10.6' => [10, 6]"""
+  """'10.5' => [10, 5]"""
   return map(int, re.findall(r'(\d+)', version_str))
 
 

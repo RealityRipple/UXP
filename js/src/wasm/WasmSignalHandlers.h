@@ -62,8 +62,13 @@ class MachExceptionHandler
     void uninstall();
 
   public:
+#ifdef __ppc__
+    MachExceptionHandler() {}
+    ~MachExceptionHandler() {}
+#else
     MachExceptionHandler();
     ~MachExceptionHandler() { uninstall(); }
+#endif
     mach_port_t port() const { return port_; }
     bool installed() const { return installed_; }
     bool install(JSRuntime* rt);

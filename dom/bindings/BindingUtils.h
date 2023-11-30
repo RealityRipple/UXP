@@ -1986,10 +1986,10 @@ GetCallbackFromCallbackObject(T& aObj)
 }
 
 static inline bool
-AtomizeAndPinJSString(JSContext* cx, jsid& id, const char* chars)
+AtomizeAndPinJSString(JSContext* cx, jsid& jid, const char* chars)
 {
   if (JSString *str = ::JS_AtomizeAndPinString(cx, chars)) {
-    id = INTERNED_STRING_TO_JSID(cx, str);
+    jid = INTERNED_STRING_TO_JSID(cx, str);
     return true;
   }
   return false;
@@ -2156,17 +2156,17 @@ ConvertJSValueToUSVString(JSContext* cx, JS::Handle<JS::Value> v, T& result)
 
 template<typename T>
 inline bool
-ConvertIdToString(JSContext* cx, JS::HandleId id, T& result, bool& isSymbol)
+ConvertIdToString(JSContext* cx, JS::HandleId hid, T& result, bool& isSymbol)
 {
-  if (MOZ_LIKELY(JSID_IS_STRING(id))) {
-    if (!AssignJSString(cx, result, JSID_TO_STRING(id))) {
+  if (MOZ_LIKELY(JSID_IS_STRING(hid))) {
+    if (!AssignJSString(cx, result, JSID_TO_STRING(hid))) {
       return false;
     }
-  } else if (JSID_IS_SYMBOL(id)) {
+  } else if (JSID_IS_SYMBOL(hid)) {
     isSymbol = true;
     return true;
   } else {
-    JS::RootedValue nameVal(cx, js::IdToValue(id));
+    JS::RootedValue nameVal(cx, js::IdToValue(hid));
     if (!ConvertJSValueToString(cx, nameVal, eStringify, eStringify, result)) {
       return false;
     }
@@ -2502,10 +2502,10 @@ public:
 };
 
 inline bool
-IdEquals(jsid id, const char* string)
+IdEquals(jsid jid, const char* string)
 {
-  return JSID_IS_STRING(id) &&
-         JS_FlatStringEqualsAscii(JSID_TO_FLAT_STRING(id), string);
+  return JSID_IS_STRING(jid) &&
+         JS_FlatStringEqualsAscii(JSID_TO_FLAT_STRING(jid), string);
 }
 
 inline bool
@@ -2543,7 +2543,7 @@ Constructor(JSContext* cx, unsigned argc, JS::Value* vp);
 bool
 XrayResolveOwnProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
                        JS::Handle<JSObject*> obj,
-                       JS::Handle<jsid> id,
+                       JS::Handle<jsid> jid,
                        JS::MutableHandle<JS::PropertyDescriptor> desc,
                        bool& cacheOnHolder);
 
@@ -2560,7 +2560,7 @@ XrayResolveOwnProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
  */
 bool
 XrayDefineProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
-                   JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
+                   JS::Handle<JSObject*> obj, JS::Handle<jsid> jid,
                    JS::Handle<JS::PropertyDescriptor> desc,
                    JS::ObjectOpResult &result,
                    bool *defined);
@@ -2635,7 +2635,7 @@ XrayGetExpandoClass(JSContext* cx, JS::Handle<JSObject*> obj);
  */
 bool
 XrayDeleteNamedProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
-                        JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
+                        JS::Handle<JSObject*> obj, JS::Handle<jsid> jid,
                         JS::ObjectOpResult& opresult);
 
 /**
@@ -3225,26 +3225,26 @@ CreateGlobal(JSContext* aCx, T* aNative, nsWrapperCache* aCache,
  */
 class PinnedStringId
 {
-  jsid id;
+  jsid jid;
 
  public:
-  PinnedStringId() : id(JSID_VOID) {}
+  PinnedStringId() : jid(JSID_VOID) {}
 
   bool init(JSContext *cx, const char *string) {
     JSString* str = JS_AtomizeAndPinString(cx, string);
     if (!str)
       return false;
-    id = INTERNED_STRING_TO_JSID(cx, str);
+    jid = INTERNED_STRING_TO_JSID(cx, str);
     return true;
   }
 
   operator const jsid& () {
-    return id;
+    return jid;
   }
 
   operator JS::Handle<jsid> () {
     /* This is safe because we have pinned the string. */
-    return JS::Handle<jsid>::fromMarkedLocation(&id);
+    return JS::Handle<jsid>::fromMarkedLocation(&jid);
   }
 };
 

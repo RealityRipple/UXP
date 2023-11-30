@@ -68,8 +68,7 @@ extern NSMenu* sApplicationMenu; // Application menu shared by all menubars
 // defined in nsChildView.mm
 extern BOOL                gSomeMenuBarPainted;
 
-#if !defined(MAC_OS_X_VERSION_10_12) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+#if !defined(MAC_OS_X_VERSION_10_12) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12)
 
 @interface NSWindow(AutomaticWindowTabbing)
 + (void)setAllowsAutomaticWindowTabbing:(BOOL)allow;
@@ -461,8 +460,10 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect &aRect,
 
   // Make sure that window titles don't leak to disk in private browsing mode
   // due to macOS' resume feature.
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   [mWindow setRestorable:NO];
   [mWindow disableSnapshotRestoration];
+#endif
 
   // setup our notification delegate. Note that setDelegate: does NOT retain.
   mDelegate = [[WindowDelegate alloc] initWithGeckoWindow:this];
@@ -587,7 +588,7 @@ void nsCocoaWindow::Destroy()
     if (mInNativeFullScreenMode) {
       DestroyNativeWindow();
     } else if (mWindow) {
-      nsCocoaUtils::HideOSChromeOnScreen(false);
+      nsCocoaUtils::HideOSChromeOnScreen(false, [mWindow screen]);
     }
   }
 }
@@ -630,10 +631,12 @@ void* nsCocoaWindow::GetNativeData(uint32_t aDataType)
       if (retVal) {
         break;
       }
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
       NSView* view = mWindow ? [mWindow contentView] : nil;
       if (view) {
         retVal = [view inputContext];
       }
+#endif
       // If inputContext isn't available on this window, return this window's
       // pointer instead of nullptr since if this returns nullptr,
       // IMEStateManager cannot manage composition with TextComposition
@@ -878,6 +881,7 @@ NS_IMETHODIMP nsCocoaWindow::Show(bool bState)
                             ordered:NSWindowAbove];
     }
     else {
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
       NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
       if (mWindowType == eWindowType_toplevel &&
           [mWindow respondsToSelector:@selector(setAnimationBehavior:)]) {
@@ -901,6 +905,7 @@ NS_IMETHODIMP nsCocoaWindow::Show(bool bState)
       }
       [mWindow makeKeyAndOrderFront:nil];
       NS_OBJC_END_TRY_ABORT_BLOCK;
+#endif
       SendSetZLevelEvent();
     }
   }
@@ -1070,6 +1075,7 @@ static const NSUInteger kWindowBackgroundBlurRadius = 4;
 void
 nsCocoaWindow::SetWindowBackgroundBlur()
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   if (!mWindow || ![mWindow isVisible] || [mWindow windowNumber] == -1)
@@ -1084,6 +1090,7 @@ nsCocoaWindow::SetWindowBackgroundBlur()
   CGSSetWindowBackgroundBlurRadius(cid, [mWindow windowNumber], kWindowBackgroundBlurRadius);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
+#endif
 }
 
 nsresult
@@ -1388,7 +1395,11 @@ private:
 
 NS_IMPL_ISUPPORTS0(FullscreenTransitionData)
 
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
 @interface FullscreenTransitionDelegate : NSObject <NSAnimationDelegate>
+#else
+@interface FullscreenTransitionDelegate : NSObject
+#endif
 {
 @public
   nsCocoaWindow* mWindow;
@@ -1449,6 +1460,8 @@ nsCocoaWindow::PerformFullscreenTransition(FullscreenTransitionStage aStage,
                                            nsISupports* aData,
                                            nsIRunnable* aCallback)
 {
+// We don't have CoreAnimation, so essentially, don't do anything!
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   auto data = static_cast<FullscreenTransitionData*>(aData);
   FullscreenTransitionDelegate* delegate =
     [[FullscreenTransitionDelegate alloc] init];
@@ -1471,6 +1484,7 @@ nsCocoaWindow::PerformFullscreenTransition(FullscreenTransitionStage aStage,
   [mFullscreenTransitionAnimation setDelegate:delegate];
   [mFullscreenTransitionAnimation setDuration:aDuration / 1000.0];
   [mFullscreenTransitionAnimation startAnimation];
+#endif
 }
 
 void nsCocoaWindow::EnteredFullScreen(bool aFullScreen, bool aNativeMode)
@@ -1548,18 +1562,20 @@ nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition)
       EnteredFullScreen(false);
       return NS_OK;
     }
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
     MOZ_ASSERT(mInNativeFullScreenMode != aFullScreen,
                "We shouldn't have been in native fullscreen.");
     // Calling toggleFullScreen will result in windowDid(FailTo)?(Enter|Exit)FullScreen
     // to be called from the OS. We will call EnteredFullScreen from those methods,
     // where mInFullScreenMode will be set and a sizemode event will be dispatched.
     [mWindow toggleFullScreen:nil];
+#endif
   } else {
     NSDisableScreenUpdates();
     // The order here matters. When we exit full screen mode, we need to show the
     // Dock first, otherwise the newly-created window won't have its minimize
     // button enabled. See bug 526282.
-    nsCocoaUtils::HideOSChromeOnScreen(aFullScreen);
+    nsCocoaUtils::HideOSChromeOnScreen(aFullScreen, [mWindow screen]);
     nsBaseWidget::InfallibleMakeFullScreen(aFullScreen);
     NSEnableScreenUpdates();
     EnteredFullScreen(aFullScreen, /* aNativeMode */ false);
@@ -2815,8 +2831,7 @@ static NSMutableSet *gSwizzledFrameViewClasses = nil;
  - (void)_addKnownSubview:(NSView*)aView positioned:(NSWindowOrderingMode)place relativeTo:(NSView*)otherView;
 @end
 
-#if !defined(MAC_OS_X_VERSION_10_10) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_10
+#if !defined(MAC_OS_X_VERSION_10_10) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_10)
 
 @interface NSImage(CapInsets)
 - (void)setCapInsets:(NSEdgeInsets)capInsets;
@@ -2824,8 +2839,8 @@ static NSMutableSet *gSwizzledFrameViewClasses = nil;
 
 #endif
 
-#if !defined(MAC_OS_X_VERSION_10_8) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_8
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
+#if !defined(MAC_OS_X_VERSION_10_8) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_8)
 
 @interface NSImage(ImageCreationWithDrawingHandler)
 + (NSImage *)imageWithSize:(NSSize)size
@@ -2833,6 +2848,7 @@ static NSMutableSet *gSwizzledFrameViewClasses = nil;
             drawingHandler:(BOOL (^)(NSRect dstRect))drawingHandler;
 @end
 
+#endif
 #endif
 
 @interface NSView(NSVisualEffectViewSetMaskImage)
@@ -2925,6 +2941,7 @@ static NSMutableSet *gSwizzledFrameViewClasses = nil;
 }
 
 // Returns an autoreleased NSImage.
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
 static NSImage*
 GetMenuMaskImage()
 {
@@ -2940,6 +2957,7 @@ GetMenuMaskImage()
   [maskImage setCapInsets:insets];
   return maskImage;
 }
+#endif
 
 - (void)swapOutChildViewWrapper:(NSView*)aNewWrapper
 {
@@ -2957,6 +2975,7 @@ GetMenuMaskImage()
     return;
   }
 
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   if (aValue && !mUseMenuStyle) {
     // Turn on rounded corner masking.
     NSView* effectView = VibrancyManager::CreateEffectView(VibrancyType::MENU, YES);
@@ -2971,6 +2990,7 @@ GetMenuMaskImage()
     [self swapOutChildViewWrapper:wrapper];
     [wrapper release];
   }
+#endif
   mUseMenuStyle = aValue;
 }
 
@@ -3074,7 +3094,9 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
 - (void)setUseBrightTitlebarForeground:(BOOL)aBrightForeground
 {
   mBrightTitlebarForeground = aBrightForeground;
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   [[self standardWindowButton:NSWindowFullScreenButton] setNeedsDisplay:YES];
+#endif
 }
 
 - (BOOL)useBrightTitlebarForeground
@@ -3352,9 +3374,11 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
       [self setBottomCornerRounded:YES];
 
     // setTitlebarAppearsTransparent is only on 10.10+ so make sure it responds
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     if ([self respondsToSelector:@selector(setTitlebarAppearsTransparent:)])
         [self setTitlebarAppearsTransparent:YES];
-#if defined(MAC_OS_VERSION_11_0) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0
+#endif
+#if defined(MAC_OS_VERSION_11_0) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0)
     if (nsCocoaFeatures::OnBigSurOrLater()) {
        self.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
     }
@@ -3536,7 +3560,7 @@ static const NSString* kStateCollectionBehavior = @"collectionBehavior";
   BOOL stateChanged = ([self drawsContentsIntoWindowFrame] != aState);
   [super setDrawsContentsIntoWindowFrame:aState];
   if (stateChanged && [[self delegate] isKindOfClass:[WindowDelegate class]]) {
-#if defined(MAC_OS_X_VERSION_10_10) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_10
+#if defined(MAC_OS_X_VERSION_10_10) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_10)
     // Also need to hide the window title, or it will draw over the custom titlebar
     if ([self respondsToSelector:@selector(setTitleVisibility:)])
         [self setTitleVisibility:(aState ? NSWindowTitleHidden : NSWindowTitleVisible)];

@@ -705,7 +705,7 @@ enum FunctionAsyncKind { SyncFunction, AsyncFunction };
 struct FieldInitializers
 {
 #ifdef DEBUG
-    bool valid;
+    bool valid : 1;
 #endif
     // This struct will eventually have a vector of constant values for optimizing
     // field initializers.
@@ -2068,7 +2068,7 @@ class LazyScript : public gc::TenuredCell
     // Add padding so LazyScript is gc::Cell aligned. Make padding protected
     // instead of private to suppress -Wunused-private-field compiler warnings.
   protected:
-#if JS_BITS_PER_WORD == 32
+#if JS_BITS_PER_WORD == 32 && !(defined(XP_DARWIN) && defined(__ppc__))
     uint32_t padding;
 #endif
 
