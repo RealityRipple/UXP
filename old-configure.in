@@ -2112,6 +2112,16 @@ if test -n "$WITH_APP_BASENAME" ; then
     MOZ_APP_BASENAME="$WITH_APP_BASENAME"
 fi
 
+# Allow someone to change the xulrunner-stub name in mozconfig
+MOZ_ARG_WITH_STRING(xulrunner-stub-name,
+[  --with-xulrunner-stub-name=appname   Create the xulrunner stub with the given name],
+  XULRUNNER_STUB_NAME=$withval)
+
+if test -z "$XULRUNNER_STUB_NAME"; then
+  XULRUNNER_STUB_NAME=xulrunner-stub
+fi
+AC_SUBST(XULRUNNER_STUB_NAME)
+
 dnl ========================================================
 dnl =
 dnl = Toolkit Options
