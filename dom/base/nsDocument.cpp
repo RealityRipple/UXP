@@ -11871,6 +11871,7 @@ nsIDocument::InlineScriptAllowedByCSP()
                                        true,          // aParserCreated
                                        EmptyString(), // FIXME get script sample (bug 1314567)
                                        0,             // aLineNumber
+                                       0,             // aColumnNumber
                                        &allowsInlineScript);
     NS_ENSURE_SUCCESS(rv, true);
   }
