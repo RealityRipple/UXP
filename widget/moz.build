@@ -52,7 +52,7 @@ if toolkit in ('cocoa', 'gtk2', 'gtk3'):
 if 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT']:
     DIRS += ['gtk']
 
-    if CONFIG['MOZ_X11']:
+    if CONFIG['MOZ_X11'] and CONFIG['MOZ_ENABLE_NPAPI']:
         DIRS += ['gtkxtbin']
 
 XPIDL_SOURCES += [
