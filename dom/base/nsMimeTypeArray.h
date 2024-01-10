@@ -57,7 +57,11 @@ public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(nsMimeType)
 
   nsMimeType(nsPIDOMWindowInner* aWindow,
+#ifdef MOZ_ENABLE_NPAPI
              nsPluginElement* aPluginElement,
+#else
+             void* aPluginElement,
+#endif
              const nsAString& aType,
              const nsAString& aDescription,
              const nsAString& aExtension);
@@ -83,7 +87,11 @@ protected:
   // Strong reference to the active plugin. Note that this creates an explicit
   // reference cycle through the plugin element's mimetype array. We rely on the
   // cycle collector to break this cycle.
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsPluginElement> mPluginElement;
+#else
+  void* mPluginElement;
+#endif
   nsString mType;
   nsString mDescription;
   nsString mExtension;

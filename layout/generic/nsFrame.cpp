@@ -2117,8 +2117,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
       !(disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_OPACITY) &&
       !nsLayoutUtils::HasAnimationOfProperty(this, eCSSProperty_opacity)) {
-    if (needEventRegions ||
-        aBuilder->WillComputePluginGeometry()) {
+    if (needEventRegions
+#ifdef MOZ_ENABLE_NPAPI
+        || aBuilder->WillComputePluginGeometry()
+#endif
+	) {
       opacityItemForEventsAndPluginsOnly = true;
     } else {
       return;

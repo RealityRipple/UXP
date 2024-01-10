@@ -108,8 +108,10 @@ partial interface Navigator {
 partial interface Navigator {
   [Throws]
   readonly attribute MimeTypeArray mimeTypes;
+#ifdef MOZ_ENABLE_NPAPI
   [Throws]
   readonly attribute PluginArray plugins;
+#endif
 };
 
 // https://globalprivacycontrol.github.io/gpc-spec/

@@ -21,11 +21,15 @@
 #include "nsIDOMHTMLAppletElement.h"
 #include "nsIExternalProtocolHandler.h"
 #include "nsIInterfaceRequestorUtils.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsIObjectFrame.h"
+#endif
 #include "nsIPermissionManager.h"
 #include "nsPluginHost.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginInstanceOwner.h"
 #include "nsJSNPRuntime.h"
+#endif
 #include "nsINestedURI.h"
 #include "nsIPresShell.h"
 #include "nsScriptSecurityManager.h"
@@ -68,7 +72,9 @@
 #include "mozAutoDocUpdate.h"
 #include "nsIContentSecurityPolicy.h"
 #include "GeckoProfiler.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginFrame.h"
+#endif
 #include "nsDOMClassInfo.h"
 #include "nsWrapperCacheInlines.h"
 #include "nsDOMJSUtils.h"
@@ -101,7 +107,9 @@
 #include "mozilla/dom/HTMLObjectElement.h"
 #endif
 
+#ifdef MOZ_ENABLE_NPAPI
 static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
+#endif
 
 static const char *kPrefJavaMIME = "plugin.java.mime";
 static const char *kPrefYoutubeRewrite = "plugins.rewrite_youtube_embeds";
@@ -123,6 +131,7 @@ GetObjectLog()
 #define LOG(args) MOZ_LOG(GetObjectLog(), mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(GetObjectLog(), mozilla::LogLevel::Debug)
 
+#ifdef MOZ_ENABLE_NPAPI
 static bool
 IsJavaMIME(const nsACString & aMIMEType)
 {
@@ -136,6 +145,7 @@ IsFlashMIME(const nsACString & aMIMEType)
   return
     nsPluginHost::GetSpecialType(aMIMEType) == nsPluginHost::eSpecialType_Flash;
 }
+#endif
 
 static bool
 InActiveDocument(nsIContent *aContent)
@@ -371,6 +381,7 @@ nsPluginCrashedEvent::Run()
   return NS_OK;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 class nsStopPluginRunnable : public Runnable, public nsITimerCallback
 {
 public:
@@ -442,6 +453,7 @@ nsStopPluginRunnable::Run()
 
   return NS_OK;
 }
+#endif
 
 // You can't take the address of bitfield members, so we have two separate
 // classes for these :-/
@@ -561,6 +573,7 @@ GetExtensionFromURI(nsIURI* uri, nsCString& ext)
 bool
 IsPluginEnabledByExtension(nsIURI* uri, nsCString& mimeType)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsAutoCString ext;
   GetExtensionFromURI(uri, ext);
 
@@ -586,6 +599,9 @@ IsPluginEnabledByExtension(nsIURI* uri, nsCString& mimeType)
   }
 
   return pluginHost->HavePluginForExtension(ext, mimeType);
+#else
+  return false;
+#endif
 }
 
 ///
@@ -604,6 +620,7 @@ nsObjectLoadingContent::QueueCheckPluginStopEvent()
 
 // Tedious syntax to create a plugin stream listener with checks and put it in
 // mFinalListener
+#ifdef MOZ_ENABLE_NPAPI
 bool
 nsObjectLoadingContent::MakePluginListener()
 {
@@ -628,7 +645,13 @@ nsObjectLoadingContent::MakePluginListener()
   mFinalListener = finalListener;
   return true;
 }
-
+#else
+bool
+nsObjectLoadingContent::MakePluginListener()
+{
+  return false;
+}
+#endif // MOZ_ENABLE_NPAPI
 
 bool
 nsObjectLoadingContent::IsSupportedDocument(const nsCString& aMimeType)
@@ -699,7 +722,7 @@ nsObjectLoadingContent::UnbindFromTree(bool aDeep, bool aNullParent)
   MOZ_ASSERT(thisContent);
   nsIDocument* ownerDoc = thisContent->OwnerDoc();
   ownerDoc->RemovePlugin(this);
-
+#ifdef MOZ_ENABLE_NPAPI
   if (mType == eType_Plugin && (mInstanceOwner || mInstantiating)) {
     // we'll let the plugin continue to run at least until we get back to
     // the event loop. If we get back to the event loop and the node
@@ -707,6 +730,9 @@ nsObjectLoadingContent::UnbindFromTree(bool aDeep, bool aNullParent)
     // plugin
     QueueCheckPluginStopEvent();
   } else if (mType != eType_Image) {
+#else
+  if (mType != eType_Image) {
+#endif
     // nsImageLoadingContent handles the image case.
     // Reset state and clear pending events
     /// XXX(johns): The implementation for GenericFrame notes that ideally we
@@ -760,6 +786,7 @@ nsObjectLoadingContent::~nsObjectLoadingContent()
 nsresult
 nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading)
 {
+#ifdef MOZ_ENABLE_NPAPI
   if (mInstanceOwner || mType != eType_Plugin || (mIsLoading != aIsLoading) ||
       mInstantiating) {
     // If we hit this assertion it's probably because LoadObject re-entered :(
@@ -920,6 +947,9 @@ nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading)
 #endif
 
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif // MOZ_ENABLE_NPAPI
 }
 
 void
@@ -1023,9 +1053,11 @@ nsObjectLoadingContent::BuildParametersArray()
     atom->ToString(param.mName);
     mCachedAttributes.AppendElement(param);
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   bool isJava = IsJavaMIME(mContentType);
-
+#else
+  bool isJava = false;
+#endif
   nsCString codebase;
   if (isJava) {
       nsresult rv = mBaseURI->GetSpec(codebase);
@@ -1104,7 +1136,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest *aRequest,
     // happens when a new load starts before the previous one got here
     return NS_BINDING_ABORTED;
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   // If we already switched to type plugin, this channel can just be passed to
   // the final listener.
   if (mType == eType_Plugin) {
@@ -1120,6 +1152,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest *aRequest,
       return NS_BINDING_ABORTED;
     }
   }
+#endif
 
   // Otherwise we should be state loading, and call LoadObject with the channel
   if (mType != eType_Loading) {
@@ -1263,9 +1296,11 @@ nsObjectLoadingContent::GetDisplayedType(uint32_t* aType)
   return NS_OK;
 }
 
+
 NS_IMETHODIMP
 nsObjectLoadingContent::HasNewFrame(nsIObjectFrame* aFrame)
 {
+#ifdef MOZ_ENABLE_NPAPI
   if (mType != eType_Plugin) {
     return NS_OK;
   }
@@ -1298,11 +1333,15 @@ nsObjectLoadingContent::HasNewFrame(nsIObjectFrame* aFrame)
   mInstanceOwner->SetFrame(objFrame);
 
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP
 nsObjectLoadingContent::GetPluginInstance(nsNPAPIPluginInstance** aInstance)
 {
+#ifdef MOZ_ENABLE_NPAPI
   *aInstance = nullptr;
 
   if (!mInstanceOwner) {
@@ -1310,6 +1349,9 @@ nsObjectLoadingContent::GetPluginInstance(nsNPAPIPluginInstance** aInstance)
   }
 
   return mInstanceOwner->GetInstance(aInstance);
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP
@@ -1701,6 +1743,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
   bool isJava = false;
   // Set if this state can't be used to load anything, forces eType_Null
   bool stateInvalid = false;
+
   // Indicates what parameters changed.
   // eParamChannelChanged - means parameters that affect channel opening
   //                        decisions changed
@@ -1713,7 +1756,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
   // parameter changes require re-opening the channel even if we haven't gotten
   // that far.
   nsObjectLoadingContent::ParameterUpdateFlags retval = eParamNoChange;
-
+#ifdef MOZ_ENABLE_NPAPI
   ///
   /// Initial MIME Type
   ///
@@ -1733,11 +1776,11 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
       isJava = IsJavaMIME(newMime);
     }
   }
-
+#endif
   ///
   /// classID
   ///
-
+#ifdef MOZ_ENABLE_NPAPI
   if (caps & eSupportClassID) {
     nsAutoString classIDAttr;
     thisContent->GetAttr(kNameSpaceID_None, nsGkAtoms::classid, classIDAttr);
@@ -1761,7 +1804,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
       }
     }
   }
-
+#endif
   ///
   /// Codebase
   ///
@@ -1863,7 +1906,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
       stateInvalid = true;
     }
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   // For eAllowPluginSkipChannel tags, if we have a non-plugin type, but can get
   // a plugin type from the extension, prefer that to falling back to a channel.
   if (GetTypeOfContent(newMime) != eType_Plugin && newURI &&
@@ -1874,6 +1917,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
       return UpdateObjectParameters(true);
     }
   }
+#endif
 
   ///
   /// Check if the original (pre-channel) content-type or URI changed, and
@@ -1986,6 +2030,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
       }
     } else {
       newMime = channelType;
+#ifdef MOZ_ENABLE_NPAPI
       if (IsJavaMIME(newMime)) {
         // Java does not load with a channel, and being java retroactively
         // changes how we may have interpreted the codebase to construct this
@@ -1995,6 +2040,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
              this));
         stateInvalid = true;
       }
+#endif
     }
   } else if (newChannel) {
     LOG(("OBJLC [%p]: We failed to open a channel, marking invalid", this));
@@ -2107,6 +2153,7 @@ nsObjectLoadingContent::UpdateObjectParameters(bool aJavaURI)
 NS_IMETHODIMP
 nsObjectLoadingContent::InitializeFromChannel(nsIRequest *aChannel)
 {
+#ifdef MOZ_ENABLE_NPAPI
   LOG(("OBJLC [%p] InitializeFromChannel: %p", this, aChannel));
   if (mType != eType_Loading || mChannel) {
     // We could technically call UnloadObject() here, if consumers have a valid
@@ -2127,6 +2174,7 @@ nsObjectLoadingContent::InitializeFromChannel(nsIRequest *aChannel)
   // OnStartRequest will now see we have a channel in the loading state, and
   // call into LoadObject. There's a possibility LoadObject will decide not to
   // load anything from a channel - it will call CloseChannel() in that case.
+#endif
   return NS_OK;
 }
 
@@ -2257,9 +2305,11 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
 
   if (mType != eType_Null) {
     bool allowLoad = true;
+#ifdef MOZ_ENABLE_NPAPI
     if (IsJavaMIME(mContentType)) {
       allowLoad = CheckJavaCodebase();
     }
+#endif
     int16_t contentPolicy = nsIContentPolicy::ACCEPT;
     // If mChannelLoaded is set we presumably already passed load policy
     // If mType == eType_Loading then we call OpenChannel() which internally
@@ -2734,7 +2784,7 @@ nsObjectLoadingContent::UnloadObject(bool aResetState)
   mInstantiating = false;
 
   mScriptRequested = false;
-
+#ifdef MOZ_ENABLE_NPAPI
   if (mIsStopping) {
     // The protochain is normally thrown out after a plugin stops, but if we
     // re-enter while stopping a plugin and try to load something new, we need
@@ -2742,6 +2792,9 @@ nsObjectLoadingContent::UnloadObject(bool aResetState)
     TeardownProtoChain();
     mIsStopping = false;
   }
+#else
+  mIsStopping = false;
+#endif
 
   mCachedAttributes.Clear();
   mCachedParameters.Clear();
@@ -2840,6 +2893,7 @@ nsObjectLoadingContent::GetTypeOfContent(const nsCString& aMIMEType)
     return eType_Document;
   }
 
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
   if ((caps & eSupportPlugins) &&
       pluginHost &&
@@ -2847,10 +2901,12 @@ nsObjectLoadingContent::GetTypeOfContent(const nsCString& aMIMEType)
     // ShouldPlay will handle checking for disabled plugins
     return eType_Plugin;
   }
+#endif
 
   return eType_Null;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 nsPluginFrame*
 nsObjectLoadingContent::GetExistingFrame()
 {
@@ -2859,6 +2915,7 @@ nsObjectLoadingContent::GetExistingFrame()
   nsIObjectFrame* objFrame = do_QueryFrame(frame);
   return static_cast<nsPluginFrame*>(objFrame);
 }
+#endif
 
 void
 nsObjectLoadingContent::CreateStaticClone(nsObjectLoadingContent* aDest) const
@@ -2866,12 +2923,14 @@ nsObjectLoadingContent::CreateStaticClone(nsObjectLoadingContent* aDest) const
   nsImageLoadingContent::CreateStaticImageClone(aDest);
 
   aDest->mType = mType;
+#ifdef MOZ_ENABLE_NPAPI
   nsObjectLoadingContent* thisObj = const_cast<nsObjectLoadingContent*>(this);
   if (thisObj->mPrintFrame.IsAlive()) {
     aDest->mPrintFrame = thisObj->mPrintFrame;
   } else {
     aDest->mPrintFrame = const_cast<nsObjectLoadingContent*>(this)->GetExistingFrame();
   }
+#endif
 
   if (mFrameLoader) {
     nsCOMPtr<nsIContent> content =
@@ -2887,13 +2946,18 @@ nsObjectLoadingContent::CreateStaticClone(nsObjectLoadingContent* aDest) const
 NS_IMETHODIMP
 nsObjectLoadingContent::GetPrintFrame(nsIFrame** aFrame)
 {
+#ifdef MOZ_ENABLE_NPAPI
   *aFrame = mPrintFrame.GetFrame();
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP
 nsObjectLoadingContent::PluginDestroyed()
 {
+#ifdef MOZ_ENABLE_NPAPI
   // Called when our plugin is destroyed from under us, usually when reloading
   // plugins in plugin host. Invalidate instance owner / prototype but otherwise
   // don't take any action.
@@ -2902,6 +2966,7 @@ nsObjectLoadingContent::PluginDestroyed()
     mInstanceOwner->Destroy();
     mInstanceOwner = nullptr;
   }
+#endif
   return NS_OK;
 }
 
@@ -2911,6 +2976,7 @@ nsObjectLoadingContent::PluginCrashed(nsIPluginTag* aPluginTag,
                                       const nsAString& browserDumpID,
                                       bool submittedCrashReport)
 {
+#ifdef MOZ_ENABLE_NPAPI
   LOG(("OBJLC [%p]: Plugin Crashed, queuing crash event", this));
   NS_ASSERTION(mType == eType_Plugin, "PluginCrashed at non-plugin type");
 
@@ -2946,9 +3012,11 @@ nsObjectLoadingContent::PluginCrashed(nsIPluginTag* aPluginTag,
   if (NS_FAILED(rv)) {
     NS_WARNING("failed to dispatch nsPluginCrashedEvent");
   }
+#endif
   return NS_OK;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 nsresult
 nsObjectLoadingContent::ScriptRequestPluginInstance(JSContext* aCx,
                                                     nsNPAPIPluginInstance **aResult)
@@ -2991,6 +3059,7 @@ nsObjectLoadingContent::ScriptRequestPluginInstance(JSContext* aCx,
     SyncStartPluginInstance();
   }
 
+
   if (mInstanceOwner) {
     return mInstanceOwner->GetInstance(aResult);
   }
@@ -2998,10 +3067,12 @@ nsObjectLoadingContent::ScriptRequestPluginInstance(JSContext* aCx,
   // Note that returning a null plugin is expected (and happens often)
   return NS_OK;
 }
+#endif
 
 NS_IMETHODIMP
 nsObjectLoadingContent::SyncStartPluginInstance()
 {
+#ifdef MOZ_ENABLE_NPAPI
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(),
                "Must be able to run script in order to instantiate a plugin instance!");
 
@@ -3017,11 +3088,15 @@ nsObjectLoadingContent::SyncStartPluginInstance()
   mozilla::Unused << kungFuURIGrip; // This URI is not referred to within this function
   nsCString contentType(mContentType);
   return InstantiatePluginInstance();
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP
 nsObjectLoadingContent::AsyncStartPluginInstance()
 {
+#ifdef MOZ_ENABLE_NPAPI
   // OK to have an instance already or a pending spawn.
   if (mInstanceOwner || mPendingInstantiateEvent) {
     return NS_OK;
@@ -3042,6 +3117,9 @@ nsObjectLoadingContent::AsyncStartPluginInstance()
   }
 
   return rv;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP
@@ -3051,6 +3129,7 @@ nsObjectLoadingContent::GetSrcURI(nsIURI** aURI)
   return NS_OK;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 static bool
 DoDelayedStop(nsPluginInstanceOwner* aInstanceOwner,
               nsObjectLoadingContent* aContent,
@@ -3073,6 +3152,7 @@ DoDelayedStop(nsPluginInstanceOwner* aInstanceOwner,
   }
   return false;
 }
+#endif
 
 void
 nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
@@ -3136,6 +3216,7 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   NotifyStateChanged(oldType, oldState, false, true);
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 void
 nsObjectLoadingContent::DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner,
                                      bool aDelayedStop,
@@ -3180,6 +3261,7 @@ nsObjectLoadingContent::DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner,
   TeardownProtoChain();
   mIsStopping = false;
 }
+#endif
 
 NS_IMETHODIMP
 nsObjectLoadingContent::StopPluginInstance()
@@ -3193,6 +3275,7 @@ nsObjectLoadingContent::StopPluginInstance()
   // InstantiatePluginInstance's re-entrance check to destroy the created plugin
   mInstantiating = false;
 
+#ifdef MOZ_ENABLE_NPAPI
   if (!mInstanceOwner) {
     return NS_OK;
   }
@@ -3212,7 +3295,7 @@ nsObjectLoadingContent::StopPluginInstance()
   mInstanceOwner->SetFrame(nullptr);
 
   bool delayedStop = false;
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
   // Force delayed stop for Real plugin only; see bug 420886, 426852.
   RefPtr<nsNPAPIPluginInstance> inst;
   mInstanceOwner->GetInstance(getter_AddRefs(inst));
@@ -3233,9 +3316,11 @@ nsObjectLoadingContent::StopPluginInstance()
   // This can/will re-enter
   DoStopPlugin(ownerGrip, delayedStop);
 
+#endif // MOZ_ENABLE_NPAPI
   return NS_OK;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 void
 nsObjectLoadingContent::NotifyContentObjectWrapper()
 {
@@ -3255,10 +3340,12 @@ nsObjectLoadingContent::NotifyContentObjectWrapper()
 
   SetupProtoChain(cx, obj);
 }
+#endif
 
 NS_IMETHODIMP
 nsObjectLoadingContent::PlayPlugin()
 {
+#ifdef MOZ_ENABLE_NPAPI
   if (!nsContentUtils::IsCallerChrome())
     return NS_OK;
 
@@ -3273,6 +3360,7 @@ nsObjectLoadingContent::PlayPlugin()
   if (mType == eType_Null && mFallbackType >= eFallbackClickToPlay) {
     return LoadObject(true, true);
   }
+#endif
 
   return NS_OK;
 }
@@ -3316,9 +3404,13 @@ nsObjectLoadingContent::DefaultFallbackType()
 NS_IMETHODIMP
 nsObjectLoadingContent::GetHasRunningPlugin(bool *aHasPlugin)
 {
+#ifdef MOZ_ENABLE_NPAPI
   NS_ENSURE_TRUE(nsContentUtils::IsCallerChrome(), NS_ERROR_NOT_AVAILABLE);
   *aHasPlugin = HasRunningPlugin();
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 NS_IMETHODIMP
@@ -3364,10 +3456,11 @@ nsObjectLoadingContent::ShouldBlockContent()
   if (!sPrefsInitialized) {
     initializeObjectLoadingContentPrefs();
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   if (mContentBlockingEnabled && mURI && IsFlashMIME(mContentType) && sBlockURIs ) {
     return true;
   }
+#endif
 
   return false;
 }
@@ -3375,6 +3468,7 @@ nsObjectLoadingContent::ShouldBlockContent()
 bool
 nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentType)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsresult rv;
 
   if (!sPrefsInitialized) {
@@ -3514,10 +3608,14 @@ nsObjectLoadingContent::ShouldPlay(FallbackType &aReason, bool aIgnoreCurrentTyp
     return false;
   }
   MOZ_CRASH("Unexpected enabledState");
+#else
+  return true;
+#endif
 }
 
 bool
 nsObjectLoadingContent::FavorFallbackMode(bool aIsPluginClickToPlay) {
+#ifdef MOZ_ENABLE_NPAPI
   if (!IsFlashMIME(mContentType)) {
     return false;
   }
@@ -3533,7 +3631,7 @@ nsObjectLoadingContent::FavorFallbackMode(bool aIsPluginClickToPlay) {
       return true;
     }
   }
-
+#endif
   return false;
 }
 
@@ -3684,6 +3782,7 @@ nsObjectLoadingContent::LegacyCall(JSContext* aCx,
                                    JS::MutableHandle<JS::Value> aRetval,
                                    ErrorResult& aRv)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsCOMPtr<nsIContent> thisContent =
     do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
   JS::Rooted<JSObject*> obj(aCx, thisContent->GetWrapper());
@@ -3757,8 +3856,12 @@ nsObjectLoadingContent::LegacyCall(JSContext* aCx,
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
+#else
+  aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+  return;
+#endif
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 void
 nsObjectLoadingContent::SetupProtoChain(JSContext* aCx,
                                         JS::Handle<JSObject*> aObject)
@@ -3947,6 +4050,7 @@ nsObjectLoadingContent::TeardownProtoChain()
     obj = proto;
   }
 }
+#endif
 
 bool
 nsObjectLoadingContent::DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
@@ -3955,12 +4059,13 @@ nsObjectLoadingContent::DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
 {
   // We don't resolve anything; we just try to make sure we're instantiated.
   // This purposefully does not fire for chrome/xray resolves, see bug 967694
-
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsNPAPIPluginInstance> pi;
   nsresult rv = ScriptRequestPluginInstance(aCx, getter_AddRefs(pi));
   if (NS_FAILED(rv)) {
     return mozilla::dom::Throw(aCx, rv);
   }
+#endif
   return true;
 }
 
@@ -3977,11 +4082,13 @@ nsObjectLoadingContent::GetOwnPropertyNames(JSContext* aCx,
                                             nsTArray<nsString>& /* unused */,
                                             ErrorResult& aRv)
 {
+#ifdef MOZ_ENABLE_NPAPI
   // Just like DoResolve, just make sure we're instantiated.  That will do
   // the work our Enumerate hook needs to do.  This purposefully does not fire
   // for xray resolves, see bug 967694
   RefPtr<nsNPAPIPluginInstance> pi;
   aRv = ScriptRequestPluginInstance(aCx, getter_AddRefs(pi));
+#endif
 }
 
 void
@@ -4000,6 +4107,7 @@ nsObjectLoadingContent::MaybeFireErrorEvent()
   }
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 // SetupProtoChainRunner implementation
 nsObjectLoadingContent::SetupProtoChainRunner::SetupProtoChainRunner(
     nsObjectLoadingContent* aContent)
@@ -4032,3 +4140,4 @@ nsObjectLoadingContent::SetupProtoChainRunner::Run()
 }
 
 NS_IMPL_ISUPPORTS(nsObjectLoadingContent::SetupProtoChainRunner, nsIRunnable)
+#endif

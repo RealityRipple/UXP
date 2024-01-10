@@ -20,7 +20,9 @@
 class nsImageFrame;
 class nsIArray;
 class nsIPersistentProperties;
+#ifdef MOZ_ENABLE_NPAPI
 class nsPluginFrame;
+#endif
 class nsITreeView;
 
 namespace mozilla {
@@ -87,9 +89,11 @@ public:
 
   Accessible* GetRootDocumentAccessible(nsIPresShell* aPresShell,
                                         bool aCanCreate);
+#ifdef MOZ_ENABLE_NPAPI
   already_AddRefed<Accessible>
     CreatePluginAccessible(nsPluginFrame* aFrame, nsIContent* aContent,
                            Accessible* aContext);
+#endif
 
   /**
    * Adds/remove ATK root accessible for gtk+ native window to/from children

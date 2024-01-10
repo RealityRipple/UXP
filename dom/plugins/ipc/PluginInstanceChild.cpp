@@ -20,11 +20,15 @@
 #endif
 #ifdef XP_WIN
 #include "mozilla/D3DMessageUtils.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/gfx/SharedDIBSurface.h"
+#endif
 #include "nsCrashOnException.h"
 #include "gfxWindowsPlatform.h"
 extern const wchar_t* kFlashFullscreenClass;
+#ifdef MOZ_ENABLE_NPAPI
 using mozilla::gfx::SharedDIBSurface;
+#endif
 #endif
 #include "gfxSharedImageSurface.h"
 #include "gfxUtils.h"
@@ -94,7 +98,9 @@ static Imm32ImmNotifyIME sImm32ImmNotifyIME = nullptr;
 static PluginInstanceChild* sCurrentPluginInstance = nullptr;
 static const HIMC sHookIMC = (const HIMC)0xefefefef;
 
+#ifdef MOZ_ENABLE_NPAPI
 using mozilla::gfx::SharedDIB;
+#endif
 
 // Flash WM_USER message delay time for PostDelayedTask. Borrowed
 // from Chromium's web plugin delegate src. See 'flash msg throttling
@@ -176,7 +182,7 @@ PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
     , mCurrentEvent(nullptr)
 #endif
     , mLayersRendering(false)
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     , mCurrentSurfaceActor(nullptr)
     , mBackSurfaceActor(nullptr)
 #endif
@@ -224,11 +230,13 @@ PluginInstanceChild::~PluginInstanceChild()
         ClearUnityHooks();
     }
     // In the event that we registered for audio device changes, stop.
+#ifdef MOZ_ENABLE_NPAPI
     PluginModuleChild* chromeInstance = PluginModuleChild::GetChrome();
     if (chromeInstance) {
       NPError rv = chromeInstance->PluginRequiresAudioDeviceChanges(this, false);
     }
-#endif
+#endif // MOZ_ENABLE_NPAPI
+#endif // OS_WIN
 #if defined(MOZ_WIDGET_COCOA)
     if (mShColorSpace) {
         ::CGColorSpaceRelease(mShColorSpace);
@@ -469,7 +477,7 @@ PluginInstanceChild::NPN_GetValue(NPNVariable aVar,
         return NPERR_GENERIC_ERROR;
 #endif
     }
-
+#ifdef MOZ_ENABLE_NPAPI
     case NPNVsupportsAsyncBitmapSurfaceBool: {
         bool value = false;
         CallNPN_GetValue_SupportsAsyncBitmapSurface(&value);
@@ -495,7 +503,8 @@ PluginInstanceChild::NPN_GetValue(NPNVariable aVar,
         *reinterpret_cast<DXGI_ADAPTER_DESC*>(aValue) = desc.ToDesc();
         return NPERR_NO_ERROR;
     }
-#endif
+#endif // XP_WIN
+#endif // MOZ_ENABLE_NPAPI
 
 #ifdef XP_MACOSX
    case NPNVsupportsCoreGraphicsBool: {
@@ -691,7 +700,7 @@ PluginInstanceChild::NPN_SetValue(NPPVariable aVar, void* aValue)
         return rv;
     }
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     case NPPVpluginRequiresAudioDeviceChanges: {
       // Many other NPN_SetValue variables are forwarded to our
       // PluginInstanceParent, which runs on a content process.  We
@@ -880,7 +889,7 @@ PluginInstanceChild::AnswerNPP_SetValue_NPNVmuteAudioBool(const bool& value,
     return true;
 }
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
 NPError
 PluginInstanceChild::DefaultAudioDeviceChanged(NPAudioDeviceChangeDetails& details)
 {
@@ -3163,7 +3172,7 @@ PluginInstanceChild::NPN_InitAsyncSurface(NPSize *size, NPImageFormat format,
         mDirectBitmaps.Put(surface, holder);
         return NPERR_NO_ERROR;
     }
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     case NPDrawingModelAsyncWindowsDXGISurface: {
         // Validate that the caller does not expect initial data to be set.
         if (initData) {
@@ -3229,7 +3238,7 @@ PluginInstanceChild::NPN_FinalizeAsyncSurface(NPAsyncSurface *surface)
         mDirectBitmaps.Remove(surface);
         return NPERR_NO_ERROR;
     }
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     case NPDrawingModelAsyncWindowsDXGISurface: {
         WindowsHandle handle;
         if (!mDxgiSurfaces.Get(surface, &handle)) {
@@ -3280,7 +3289,7 @@ PluginInstanceChild::NPN_SetCurrentAsyncSurface(NPAsyncSurface *surface, NPRect 
         SendShowDirectBitmap(shmemHolder, bitmap->mFormat, bitmap->mStride, bitmap->mSize, dirty);
         break;
     }
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     case NPDrawingModelAsyncWindowsDXGISurface: {
         WindowsHandle handle;
         if (!mDxgiSurfaces.Get(surface, &handle)) {
@@ -3435,6 +3444,7 @@ PluginInstanceChild::CreateOptSurface(void)
 #endif
 
 #ifdef XP_WIN
+#ifdef MOZ_ENABLE_NPAPI
     if (mSurfaceType == gfxSurfaceType::Win32) {
         bool willHaveTransparentPixels = mIsTransparent && !mBackground;
 
@@ -3447,9 +3457,9 @@ PluginInstanceChild::CreateOptSurface(void)
         mCurrentSurface = s;
         return true;
     }
-
+#endif // MOZ_ENABLE_NPAPI
     NS_RUNTIMEABORT("Shared-memory drawing not expected on Windows.");
-#endif
+#endif // XP_WIN
 
     // Make common shmem implementation working for any platform
     mCurrentSurface =
@@ -3641,7 +3651,7 @@ PluginInstanceChild::UpdateWindowAttributes(bool aForceSetWindow)
         }
     }
 #endif // MOZ_X11
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     HDC dc = nullptr;
 
     if (curSurface) {
@@ -3746,7 +3756,7 @@ PluginInstanceChild::PaintRectToPlatformSurface(const nsIntRect& aRect,
         exposeEvent.minor_code = 0;
         mPluginIface->event(&mData, reinterpret_cast<void*>(&exposeEvent));
     }
-#elif defined(XP_WIN)
+#elif defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     NS_ASSERTION(SharedDIBSurface::IsSharedDIBSurface(aSurface),
                  "Expected (SharedDIB) image surface.");
 
@@ -3880,7 +3890,7 @@ PluginInstanceChild::PaintRectWithAlphaExtraction(const nsIntRect& aRect,
         return;
     }
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     // On windows, we need an HDC and so can't paint directly to
     // vanilla image surfaces.  Bifurcate this painting code so that
     // we don't accidentally attempt that.
@@ -4139,7 +4149,7 @@ PluginInstanceChild::ShowPluginFrame()
         XSync(mWsInfo.display, False);
     } else
 #endif
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     if (SharedDIBSurface::IsSharedDIBSurface(mCurrentSurface)) {
         SharedDIBSurface* s = static_cast<SharedDIBSurface*>(mCurrentSurface.get());
         if (!mCurrentSurfaceActor) {
@@ -4186,7 +4196,7 @@ PluginInstanceChild::ReadbackDifferenceRect(const nsIntRect& rect)
     if (mBackSurface->GetType() != gfxSurfaceType::Xlib &&
         !gfxSharedImageSurface::IsSharedImage(mBackSurface))
         return false;
-#elif defined(XP_WIN)
+#elif defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     if (!SharedDIBSurface::IsSharedDIBSurface(mBackSurface))
         return false;
 #endif
@@ -4431,17 +4441,17 @@ void
 PluginInstanceChild::SwapSurfaces()
 {
     RefPtr<gfxASurface> tmpsurf = mCurrentSurface;
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     PPluginSurfaceChild* tmpactor = mCurrentSurfaceActor;
 #endif
 
     mCurrentSurface = mBackSurface;
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     mCurrentSurfaceActor = mBackSurfaceActor;
 #endif
 
     mBackSurface = tmpsurf;
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     mBackSurfaceActor = tmpactor;
 #endif
 
@@ -4479,7 +4489,7 @@ PluginInstanceChild::ClearCurrentSurface()
         mDoubleBufferCARenderer.ClearFrontSurface();
     }
 #endif
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     if (mCurrentSurfaceActor) {
         PPluginSurfaceChild::Send__delete__(mCurrentSurfaceActor);
         mCurrentSurfaceActor = nullptr;
@@ -4505,7 +4515,7 @@ PluginInstanceChild::ClearAllSurfaces()
     mCurrentSurface = nullptr;
     mBackSurface = nullptr;
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     if (mCurrentSurfaceActor) {
         PPluginSurfaceChild::Send__delete__(mCurrentSurfaceActor);
         mCurrentSurfaceActor = nullptr;
@@ -4674,7 +4684,7 @@ PluginInstanceChild::AnswerNPP_Destroy(NPError* aResult)
 void
 PluginInstanceChild::ActorDestroy(ActorDestroyReason why)
 {
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     // ClearAllSurfaces() should not try to send anything after ActorDestroy.
     mCurrentSurfaceActor = nullptr;
     mBackSurfaceActor = nullptr;

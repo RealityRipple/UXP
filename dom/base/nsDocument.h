@@ -829,10 +829,11 @@ public:
   // RemovePlugin removes a plugin-related element to mPlugins when the
   // element is removed from the tree.
   virtual void RemovePlugin(nsIObjectLoadingContent* aPlugin) override;
+#ifdef MOZ_ENABLE_NPAPI
   // GetPlugins returns the plugin-related elements from
   // the frame and any subframes.
   virtual void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins) override;
-
+#endif
   // Adds an element to mResponsiveContent when the element is
   // added to the tree.
   virtual nsresult AddResponsiveContent(nsIContent* aContent) override;

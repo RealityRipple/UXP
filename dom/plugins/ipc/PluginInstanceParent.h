@@ -9,7 +9,9 @@
 #include "mozilla/plugins/PPluginInstanceParent.h"
 #include "mozilla/plugins/PluginScriptableObjectParent.h"
 #if defined(OS_WIN)
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/gfx/SharedDIBWin.h"
+#endif // MOZ_ENABLE_NPAPI
 #include <d3d10_1.h>
 #include "nsRefPtrHashtable.h"
 #elif defined(MOZ_WIDGET_COCOA)
@@ -117,7 +119,7 @@ public:
   
     virtual bool
     AnswerNPN_GetValue_NPNVdocumentOrigin(nsCString* value, NPError* result) override;
-
+#ifdef MOZ_ENABLE_NPAPI
     virtual bool
     AnswerNPN_GetValue_SupportsAsyncBitmapSurface(bool* value) override;
 
@@ -126,7 +128,7 @@ public:
 
     virtual bool
     AnswerNPN_GetValue_PreferredDXGIAdapter(DxgiAdapterDesc* desc) override;
-
+#endif
     virtual bool
     AnswerNPN_SetValue_NPPVpluginWindow(const bool& windowed, NPError* result) override;
     virtual bool
@@ -176,7 +178,7 @@ public:
 
     virtual bool
     RecvRevokeCurrentDirectSurface() override;
-
+#ifdef MOZ_ENABLE_NPAPI
     virtual bool
     RecvInitDXGISurface(const gfx::SurfaceFormat& format,
                          const gfx::IntSize& size,
@@ -184,6 +186,7 @@ public:
                          NPError* outError) override;
     virtual bool
     RecvFinalizeDXGISurface(const WindowsHandle& handle) override;
+#endif
 
     virtual bool
     RecvShowDirectBitmap(Shmem&& buffer,
@@ -191,17 +194,18 @@ public:
                          const uint32_t& stride,
                          const gfx::IntSize& size,
                          const gfx::IntRect& dirty) override;
-
+#ifdef MOZ_ENABLE_NPAPI
     virtual bool
     RecvShowDirectDXGISurface(const WindowsHandle& handle,
                                const gfx::IntRect& rect) override;
+#endif
 
     // Async rendering
     virtual bool
     RecvShow(const NPRect& updatedRect,
              const SurfaceDescriptor& newSurface,
              SurfaceDescriptor* prevSurface) override;
-
+#ifdef MOZ_ENABLE_NPAPI
     virtual PPluginSurfaceParent*
     AllocPPluginSurfaceParent(const WindowsSharedMemoryHandle& handle,
                               const mozilla::gfx::IntSize& size,
@@ -209,7 +213,7 @@ public:
 
     virtual bool
     DeallocPPluginSurfaceParent(PPluginSurfaceParent* s) override;
-
+#endif
     virtual bool
     AnswerNPN_PushPopupsEnabledState(const bool& aState) override;
 
@@ -404,7 +408,7 @@ private:
     // This is used to tell the compositor that it should invalidate the ImageLayer.
     uint32_t mFrameID;
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     // Note: DXGI 1.1 surface handles are global across all processes, and are not
     // marshaled. As long as we haven't freed a texture its handle should be valid
     // as a unique cross-process identifier for the texture.

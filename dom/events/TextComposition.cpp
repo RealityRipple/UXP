@@ -28,7 +28,9 @@
 #define Comment _Comment
 #endif
 
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginInstanceOwner.h"
+#endif
 
 #ifdef XP_MACOSX
 #undef TextRange
@@ -147,9 +149,10 @@ TextComposition::DispatchEvent(WidgetCompositionEvent* aDispatchEvent,
                                EventDispatchingCallback* aCallBack,
                                const WidgetCompositionEvent *aOriginalEvent)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsPluginInstanceOwner::GeneratePluginEvent(aOriginalEvent,
                                              aDispatchEvent);
-
+#endif
   EventDispatcher::Dispatch(mNode, mPresContext,
                             aDispatchEvent, nullptr, aStatus, aCallBack);
 

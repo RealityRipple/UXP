@@ -42,7 +42,9 @@
 #include "mozilla/Preferences.h"
 #include "nsViewManager.h"
 #include "GeckoProfiler.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsNPAPIPluginInstance.h"
+#endif
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/RestyleManager.h"
@@ -1576,11 +1578,13 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
   NS_PRECONDITION(!nsContentUtils::GetCurrentJSContext(),
                   "Shouldn't have a JSContext on the stack");
 
+#ifdef MOZ_ENABLE_NPAPI
   if (nsNPAPIPluginInstance::InPluginCallUnsafeForReentry()) {
     NS_ERROR("Refresh driver should not run during plugin call!");
     // Try to survive this by just ignoring the refresh tick.
     return;
   }
+#endif
 
   PROFILER_LABEL("nsRefreshDriver", "Tick",
     js::ProfileEntry::Category::GRAPHICS);

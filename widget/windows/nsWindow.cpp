@@ -4367,6 +4367,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
          ("Msg Time: %d Click Count: %d\n", curMsgTime, event.mClickCount));
 #endif
 
+#ifdef MOZ_ENABLE_NPAPI
   NPEvent pluginEvent;
 
   switch (aEventMessage) {
@@ -4430,6 +4431,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   pluginEvent.lParam = lParam;
 
   event.mPluginEvent.Copy(pluginEvent);
+#endif // MOZ_ENABLE_NPAPI
 
   // call the event callback
   if (mWidgetListener) {

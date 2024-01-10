@@ -16,7 +16,9 @@
 #include "nsIPresShell.h"
 #include "nsIScrollableFrame.h"
 #include "nsITimer.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginFrame.h"
+#endif
 #include "nsPresContext.h"
 #include "prtime.h"
 #include "Units.h"
@@ -51,11 +53,18 @@ WheelHandlingUtils::CanScrollOn(nsIFrame* aFrame,
                                 double aDirectionX, double aDirectionY)
 {
   nsIScrollableFrame* scrollableFrame = do_QueryFrame(aFrame);
+#ifdef MOZ_ENABLE_NPAPI
   if (scrollableFrame) {
     return CanScrollOn(scrollableFrame, aDirectionX, aDirectionY);
   }
   nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
   return pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction();
+#else
+  if (!scrollableFrame) {
+    return false;
+   }
+  return CanScrollOn(scrollableFrame, aDirectionX, aDirectionY);
+#endif
 }
 
 /* static */ bool

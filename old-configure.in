@@ -2491,6 +2491,24 @@ then
 fi
 AC_SUBST(MOZ_ENABLE_DBUS)
 
+dnl ========================================================
+dnl = NPAPI support
+dnl ========================================================
+
+MOZ_ENABLE_NPAPI=1
+
+MOZ_ARG_DISABLE_BOOL(npapi,
+[  --disable-npapi          Disable NPAPI support ],
+    MOZ_ENABLE_NPAPI=,
+    MOZ_ENABLE_NPAPI=1)
+
+if test "$MOZ_ENABLE_NPAPI"
+then
+    AC_DEFINE(MOZ_ENABLE_NPAPI)
+fi
+
+AC_SUBST(MOZ_ENABLE_NPAPI)
+
 dnl =========================================================
 dnl = Whether to exclude hyphenations files in the build
 dnl =========================================================

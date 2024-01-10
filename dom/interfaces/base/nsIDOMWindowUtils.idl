@@ -1661,6 +1661,7 @@ interface nsIDOMWindowUtils : nsISupports {
    * Will throw a DOM security error if called without chrome privileges.
    *
    */
+
   [implicit_jscontext]
   readonly attribute jsval plugins;
 

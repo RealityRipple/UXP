@@ -143,10 +143,11 @@ public:
 
 #if defined(XP_WIN)
   void SetCOMProxy(const RefPtr<IAccessible>& aCOMProxy);
-
+#ifdef MOZ_ENABLE_NPAPI
   virtual bool RecvGetWindowedPluginIAccessible(
       const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy) override;
-#endif
+#endif // MOZ_ENABLE_NPAPI
+#endif // XP_WIN
 
 private:
 

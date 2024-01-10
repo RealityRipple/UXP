@@ -22,7 +22,7 @@
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
 
-#ifdef MOZ_WIDGET_COCOA
+#if defined(MOZ_WIDGET_COCOA) && defined(MOZ_ENABLE_NPAPI)
 #include "PluginInterposeOSX.h"
 #endif
 
@@ -194,6 +194,7 @@ public:
         SendPluginHideWindow(window_id);
     }
 
+#ifdef MOZ_ENABLE_NPAPI
     void SetCursor(NSCursorInfo& cursorInfo) {
         SendSetCursor(cursorInfo);
     }
@@ -209,6 +210,7 @@ public:
     void PopCursor() {
         SendPopCursor();
     }
+#endif
 
     bool GetNativeCursorsSupported() {
         return Settings().nativeCursorsSupported();
@@ -219,10 +221,12 @@ public:
 
     const PluginSettings& Settings() const { return mCachedSettings; }
 
+#ifdef MOZ_ENABLE_NPAPI
     NPError PluginRequiresAudioDeviceChanges(PluginInstanceChild* aInstance,
                                              NPBool aShouldRegister);
     bool RecvNPP_SetValue_NPNVaudioDeviceChangeDetails(
                     const NPAudioDeviceChangeDetailsIPC& detailsIPC) override;
+#endif
 
 private:
     NPError DoNP_Initialize(const PluginSettings& aSettings);
@@ -308,7 +312,7 @@ private:
 #  endif
 #endif
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
   typedef nsTHashtable<nsPtrHashKey<PluginInstanceChild>> PluginInstanceSet;
   // Set of plugins that have registered to be notified when the audio device
   // changes.

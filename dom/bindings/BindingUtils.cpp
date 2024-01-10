@@ -2234,7 +2234,7 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
       MOZ_CRASH();
     }
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   JS::Rooted<JSObject*> maybeObjLC(aCx, aObj);
   nsObjectLoadingContent* htmlobject;
   nsresult rv = UNWRAP_OBJECT(HTMLObjectElement, &maybeObjLC, htmlobject);
@@ -2252,6 +2252,7 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg, ErrorResult& aErr
   if (htmlobject) {
     htmlobject->SetupProtoChain(aCx, aObj);
   }
+#endif
 }
 
 GlobalObject::GlobalObject(JSContext* aCx, JSObject* aObject)

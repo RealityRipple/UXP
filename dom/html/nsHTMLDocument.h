@@ -39,7 +39,9 @@ class nsHTMLDocument : public nsDocument,
 {
 public:
   using nsDocument::SetDocumentURI;
+#ifdef MOZ_ENABLE_NPAPI
   using nsDocument::GetPlugins;
+#endif
 
   nsHTMLDocument();
   virtual nsresult Init() override;

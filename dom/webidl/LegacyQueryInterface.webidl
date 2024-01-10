@@ -53,8 +53,10 @@ OfflineResourceList implements LegacyQueryInterface;
 PaintRequest implements LegacyQueryInterface;
 PaintRequestList implements LegacyQueryInterface;
 Performance implements LegacyQueryInterface;
+#ifdef MOZ_ENABLE_NPAPI
 Plugin implements LegacyQueryInterface;
 PluginArray implements LegacyQueryInterface;
+#endif
 ProcessingInstruction implements LegacyQueryInterface;
 Range implements LegacyQueryInterface;
 Rect implements LegacyQueryInterface;
