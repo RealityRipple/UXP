@@ -648,7 +648,7 @@ if CONFIG['MOZ_SECUREELEMENT']:
 if CONFIG['MOZ_ENABLE_NPAPI']:
     WEBIDL_FILES += [
          'Plugin.webidl',
-	 'PluginArray.webidl',
+         'PluginArray.webidl',
     ]
 
 WEBIDL_FILES += [

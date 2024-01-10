@@ -59,7 +59,7 @@ if CONFIG['OS_ARCH'] == 'WINNT':
         ]
 
         UNIFIED_SOURCES += [
-	    'PluginSurfaceParent.cpp',
+            'PluginSurfaceParent.cpp',
         ]
 
 
@@ -125,12 +125,12 @@ if CONFIG['MOZ_ENABLE_NPAPI']:
 
     EXPORTS.mozilla.plugins += [
         'PluginWidgetChild.h',
-	'PluginWidgetParent.h',
+        'PluginWidgetParent.h',
     ]
 
     SOURCES += [
         'PluginWidgetChild.cpp',
-	'PluginWidgetParent.cpp',
+        'PluginWidgetParent.cpp',
     ]
 
 include('/ipc/chromium/chromium-config.mozbuild')

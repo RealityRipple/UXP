@@ -11,10 +11,10 @@ if CONFIG['MOZ_ENABLE_NPAPI']:
     XPIDL_SOURCES += [
         'nsIHTTPHeaderListener.idl',
         'nsIPluginDocument.idl',
-	'nsIPluginHost.idl',
+        'nsIPluginHost.idl',
         'nsIPluginInputStream.idl',
         'nsIPluginInstanceOwner.idl',
-	'nspluginroot.idl',
+        'nspluginroot.idl',
     ]
 else:
     XPIDL_SOURCES += ['no_npapi/nsIPluginHost.idl']
@@ -36,11 +36,11 @@ if CONFIG['MOZ_ENABLE_NPAPI']:
         'npfunctions.h',
         'npruntime.h',
         'nsJSNPRuntime.h',
-	'nsNPAPIPluginInstance.h',
-	'nsPluginInstanceOwner.h',
-	'nsPluginNativeWindow.h',
-	'nsPluginsCID.h',
-	'nsPluginsDir.h',
+        'nsNPAPIPluginInstance.h',
+        'nsPluginInstanceOwner.h',
+        'nsPluginNativeWindow.h',
+        'nsPluginsCID.h',
+        'nsPluginsDir.h',
     ]
 
 
@@ -55,23 +55,19 @@ UNIFIED_SOURCES += [
 if CONFIG['MOZ_ENABLE_NPAPI']:
     UNIFIED_SOURCES += [
         'nsJSNPRuntime.cpp',
-	'nsNPAPIPluginInstance.cpp',
+        'nsNPAPIPluginInstance.cpp',
         'nsNPAPIPluginStreamListener.cpp',
         'nsPluginInstanceOwner.cpp',
         'nsPluginModule.cpp',
         'nsPluginStreamListenerPeer.cpp',
-	'PluginPRLibrary.cpp',
+        'PluginPRLibrary.cpp',
     ]
 
     SOURCES += [
         'nsNPAPIPlugin.cpp', # Conflict with X11 headers
-	'nsPluginHost.cpp', # Conflict with NS_NPAPIPLUGIN_CALLBACK
+        'nsPluginHost.cpp', # Conflict with NS_NPAPIPLUGIN_CALLBACK
     ]
 
-
-#SOURCES += [
-#    'nsPluginHost.cpp',  # Conflict with NS_NPAPIPLUGIN_CALLBACK
-#]
 
 if CONFIG['OS_ARCH'] == 'WINNT' and CONFIG['MOZ_ENABLE_NPAPI']:
     UNIFIED_SOURCES += [

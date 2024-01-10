@@ -105,7 +105,7 @@ EXPORTS += [
 
 if CONFIG['MOZ_ENABLE_NPAPI']:
     EXPORTS += [
-	'nsIPluginWidget.h',
+        'nsIPluginWidget.h',
         'PluginWidgetProxy.h',
     ]
 
