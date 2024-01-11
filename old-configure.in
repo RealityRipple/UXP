@@ -2731,6 +2731,8 @@ if test -n "$MOZ_WEBRTC"; then
     AC_DEFINE(MOZ_WEBRTC_ASSERT_ALWAYS)
     MOZ_RAW=1
     MOZ_VPX_ERROR_CONCEALMENT=1
+    if test -z "$MOZ_ENABLE_NPAPI"; then
+        AC_MSG_ERROR([--enable-webrtc requires NPAPI to be enabled. You must either build with --disable-webrtc, or remove --disable-npapi from your .mozconfig.])
 
 dnl enable once Signaling lands
     MOZ_WEBRTC_SIGNALING=1
