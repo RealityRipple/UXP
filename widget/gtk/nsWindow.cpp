@@ -47,7 +47,7 @@
 #include <gdk/gdkkeysyms-compat.h>
 #endif
 
-#if (MOZ_WIDGET_GTK == 2)
+#if (MOZ_WIDGET_GTK == 2) && defined(MOZ_ENABLE_NPAPI)
 #include "gtk2xtbin.h"
 #endif
 #endif /* MOZ_X11 */
