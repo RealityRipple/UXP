@@ -640,7 +640,8 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
 #else
     const char* interpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
     if (interpose && strlen(interpose) > 0) {
-      mLaunchOptions->env_map["DYLD_INSERT_LIBRARIES"] = interpose;
+      newEnvVars["DYLD_INSERT_LIBRARIES"] = interpose;
+    }
 #endif // MOZ_ENABLE_NPAPI
 
 # endif  // OS_LINUX
