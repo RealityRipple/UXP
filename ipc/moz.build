@@ -12,8 +12,8 @@ DIRS += [
 
 if CONFIG['MOZ_ENABLE_NPAPI']:
     DIRS += [
-        'app'
-        'contentproc'
+        'app',
+        'contentproc',
     ]
 
 if CONFIG['MOZ_ENABLE_DBUS']:
