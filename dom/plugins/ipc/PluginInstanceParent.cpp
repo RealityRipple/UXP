@@ -43,7 +43,7 @@
 #include "mozilla/layers/TextureWrapperImage.h"
 #include "mozilla/layers/TextureClientRecycleAllocator.h"
 #include "mozilla/layers/ImageBridgeChild.h"
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
 # include "mozilla/layers/D3D11ShareHandleImage.h"
 # include "mozilla/gfx/DeviceManagerDx.h"
 # include "mozilla/layers/TextureD3D11.h"
@@ -56,7 +56,9 @@
 #if defined(OS_WIN)
 #include <windowsx.h>
 #include "gfxWindowsPlatform.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/plugins/PluginSurfaceParent.h"
+#endif
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "nsIWidget.h"
@@ -349,7 +351,7 @@ PluginInstanceParent::AnswerNPN_GetValue_NPNVdocumentOrigin(nsCString* value,
     }
     return true;
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 static inline bool
 AllowDirectBitmapSurfaceDrawing()
 {
@@ -418,6 +420,7 @@ PluginInstanceParent::AnswerNPN_GetValue_PreferredDXGIAdapter(DxgiAdapterDesc* a
 #endif
     return true;
 }
+#endif // MOZ_ENABLE_NPAPI
 
 bool
 PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginWindow(
@@ -467,17 +470,21 @@ PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginDrawingModel(
         case NPDrawingModelSyncWin:
             allowed = true;
             break;
+#ifdef MOZ_ENABLE_NPAPI
         case NPDrawingModelAsyncWindowsDXGISurface:
             allowed = AllowDirectDXGISurfaceDrawing();
             break;
+#endif // MOZ_ENABLE_NPAPI
 #elif defined(MOZ_X11)
         case NPDrawingModelSyncX:
             allowed = true;
             break;
-#endif
+#endif // MOZ_X11
+#ifdef MOZ_ENABLE_NPAPI
         case NPDrawingModelAsyncBitmapSurface:
             allowed = AllowDirectBitmapSurfaceDrawing();
             break;
+#endif // MOZ_ENABLE_NPAPI
         default:
             allowed = false;
             break;
@@ -647,6 +654,7 @@ PluginInstanceParent::RecvRevokeCurrentDirectSurface()
     return true;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 bool
 PluginInstanceParent::RecvInitDXGISurface(const gfx::SurfaceFormat& format,
                                            const gfx::IntSize& size,
@@ -706,18 +714,21 @@ PluginInstanceParent::RecvInitDXGISurface(const gfx::SurfaceFormat& format,
 
     *outHandle = reinterpret_cast<uintptr_t>(sharedHandle);
     *outError = NPERR_NO_ERROR;
-#endif
+#endif // XP_WIN
     return true;
 }
+
 
 bool
 PluginInstanceParent::RecvFinalizeDXGISurface(const WindowsHandle& handle)
 {
 #if defined(XP_WIN)
     mD3D11Surfaces.Remove(reinterpret_cast<void*>(handle));
-#endif
+#endif // XP_WIN
     return true;
 }
+
+#endif // MOZ_ENABLE_NPAPI
 
 bool
 PluginInstanceParent::RecvShowDirectBitmap(Shmem&& buffer,
@@ -805,6 +816,7 @@ PluginInstanceParent::SetCurrentImage(Image* aImage)
     RecvNPN_InvalidateRect(nprect);
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 bool
 PluginInstanceParent::RecvShowDirectDXGISurface(const WindowsHandle& handle,
                                                  const gfx::IntRect& dirty)
@@ -848,8 +860,9 @@ PluginInstanceParent::RecvShowDirectDXGISurface(const WindowsHandle& handle,
     return true;
 #else
     return false;
-#endif
+#endif // XP_WIN
 }
+#endif // MOZ_ENABLE_NPAPI
 
 bool
 PluginInstanceParent::RecvShow(const NPRect& updatedRect,
@@ -907,7 +920,7 @@ PluginInstanceParent::RecvShow(const NPRect& updatedRect,
         surface = newSurface.get_SurfaceDescriptorX11().OpenForeign();
     }
 #endif
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
     else if (newSurface.type() == SurfaceDescriptor::TPPluginSurfaceParent) {
         PluginSurfaceParent* s =
             static_cast<PluginSurfaceParent*>(newSurface.get_PPluginSurfaceParent());
@@ -1945,6 +1958,7 @@ PluginInstanceParent::GetActorForNPObject(NPObject* aObject)
     return actor;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 PPluginSurfaceParent*
 PluginInstanceParent::AllocPPluginSurfaceParent(const WindowsSharedMemoryHandle& handle,
                                                 const mozilla::gfx::IntSize& size,
@@ -1955,7 +1969,7 @@ PluginInstanceParent::AllocPPluginSurfaceParent(const WindowsSharedMemoryHandle&
 #else
     NS_ERROR("This shouldn't be called!");
     return nullptr;
-#endif
+#endif // XP_WIN
 }
 
 bool
@@ -1966,8 +1980,9 @@ PluginInstanceParent::DeallocPPluginSurfaceParent(PPluginSurfaceParent* s)
     return true;
 #else
     return false;
-#endif
+#endif // XP_WIN
 }
+#endif // MOZ_ENABLE_NPAPI
 
 bool
 PluginInstanceParent::AnswerNPN_PushPopupsEnabledState(const bool& aState)

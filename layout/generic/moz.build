@@ -189,8 +189,14 @@ UNIFIED_SOURCES += [
 # nsPluginFrame.cpp needs to be built separately because of name clashes in the OS X headers.
 SOURCES += [
     'nsLineLayout.cpp',
-    'nsPluginFrame.cpp',
 ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    SOURCES += [
+        'nsPluginFrame.cpp',
+    ]
+
+
 
 include('/ipc/chromium/chromium-config.mozbuild')
 

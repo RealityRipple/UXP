@@ -88,12 +88,16 @@ PREPROCESSED_IPDL_SOURCES += [
     'PCycleCollectWithLogs.ipdl',
     'PFilePicker.ipdl',
     'PMemoryReportRequest.ipdl',
-    'PPluginWidget.ipdl',
     'PProcessHangMonitor.ipdl',
     'PScreenManager.ipdl',
     'PTabContext.ipdlh',
     'ServiceWorkerConfiguration.ipdlh',
 ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    PREPROCESSED_IPDL_SOURCES += [
+        'PPluginWidget.ipdl',
+    ]
 
 include('/ipc/chromium/chromium-config.mozbuild')
 

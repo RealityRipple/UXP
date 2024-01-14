@@ -289,6 +289,7 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
     return false;
   }
 
+#ifdef MOZ_ENABLE_NPAPI
   // If an external plugin which can handle quicktime video is available
   // (and not disabled), prefer it over native playback as there are
   // several codecs found in the wild that we do not handle.
@@ -299,6 +300,7 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
       return false;
     }
   }
+#endif
 
   MediaContentType parsed{nsDependentCString(aMIMEType)};
   return CanHandleMediaType(parsed, aDiagnostics)

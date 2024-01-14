@@ -101,8 +101,9 @@
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
 #include "nsISimpleEnumerator.h"
-
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsIPluginDocument.h"
+#endif
 
 #endif // NS_PRINTING
 
@@ -3875,12 +3876,13 @@ nsDocumentViewer::Print(nsIPrintSettings*       aPrintSettings,
   nsAutoPtr<AutoPrintEventDispatcher> autoBeforeAndAfterPrint(
     new AutoPrintEventDispatcher(mDocument));
   NS_ENSURE_STATE(!GetIsPrinting());
+#ifdef MOZ_ENABLE_NPAPI
   // If we are hosting a full-page plugin, tell it to print
   // first. It shows its own native print UI.
   nsCOMPtr<nsIPluginDocument> pDoc(do_QueryInterface(mDocument));
   if (pDoc)
     return pDoc->Print();
-
+#endif
   if (!mPrintEngine) {
     NS_ENSURE_STATE(mDeviceContext);
     mPrintEngine = new nsPrintEngine();

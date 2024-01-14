@@ -486,13 +486,14 @@ DocAccessibleParent::SetCOMProxy(const RefPtr<IAccessible>& aCOMProxy)
   IAccessibleHolder holder(Move(ptr));
   Unused << SendParentCOMProxy(holder);
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 bool
 DocAccessibleParent::RecvGetWindowedPluginIAccessible(
       const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy)
 {
   return false;
 }
+#endif
 
 #endif // defined(XP_WIN)
 

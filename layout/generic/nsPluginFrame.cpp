@@ -12,7 +12,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/MouseEvents.h"
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
 // This is needed for DoublePassRenderingEvent.
 #include "mozilla/plugins/PluginMessageUtils.h"
 #endif
@@ -1608,7 +1608,7 @@ nsPluginFrame::HandleWheelEventAsDefaultAction(WidgetWheelEvent* aWheelEvent)
 bool
 nsPluginFrame::WantsToHandleWheelEventAsDefaultAction() const
 {
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
   if (!mInstanceOwner) {
     return false;
   }
@@ -1740,12 +1740,13 @@ nsPluginFrame::EndSwapDocShells(nsISupports* aSupports, void*)
     objectFrame->RegisterPluginForGeometryUpdates();
   }
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 nsIFrame*
 NS_NewObjectFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
   return new (aPresShell) nsPluginFrame(aContext);
 }
+#endif
 
 bool
 nsPluginFrame::IsPaintedByGecko() const

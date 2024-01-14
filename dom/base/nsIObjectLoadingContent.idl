@@ -114,6 +114,7 @@ interface nsIObjectLoadingContent : nsISupports
    * printing the plugin. The returned nsIFrame is in the original document,
    * not in the static clone.
    */
+
   [noscript] nsIFrame getPrintFrame();
 
   /*

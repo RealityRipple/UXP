@@ -116,10 +116,13 @@ if CONFIG['USE_ICU']:
         'icu',
     ]
 
-if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3' and CONFIG['MOZ_ENABLE_NPAPI']:
     USE_LIBS += [
         'mozgtk_stub',
     ]
+
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3' and not CONFIG['MOZ_ENABLE_NPAPI']:
+    OS_LIBS += CONFIG['MOZ_GTK3_LIBS']
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
     CXXFLAGS += CONFIG['TK_CFLAGS']

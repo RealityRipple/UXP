@@ -31,7 +31,7 @@ include protocol PGMPContent;
 include protocol PGMPService;
 include protocol PPluginModule;
 include protocol PGMP;
-#else
+#elif MOZ_ENABLE_NPAPI
 include protocol PPluginModule;
 #endif
 include protocol PPrinting;
@@ -52,7 +52,9 @@ include JavaScriptTypes;
 include InputStreamParams;
 include PTabContext;
 include URIParams;
+#ifdef MOZ_ENABLE_NPAPI
 include PluginTypes;
+#endif
 include ProtocolTypes;
 include PBackgroundSharedTypes;
 include PContentPermission;
@@ -232,7 +234,9 @@ struct GMPCapabilityData
 
 nested(upto inside_cpow) sync protocol PContent
 {
+#ifdef MOZ_ENABLE_NPAPI
     parent spawns PPluginModule;
+#endif
 
     parent opens PProcessHangMonitor;
 #ifdef MOZ_GMP
@@ -447,7 +451,7 @@ child:
      * Notify idle observers in the child
      */
     async NotifyIdleObserver(uint64_t observerId, nsCString topic, nsString str);
-
+#ifdef MOZ_ENABLE_NPAPI
     /**
      * Called during plugin initialization to map a plugin id to a child process
      * id.
@@ -460,7 +464,7 @@ child:
      * init has completed.
      */
     async LoadPluginResult(uint32_t aPluginId, bool aResult);
-
+#endif
     async InvokeDragSession(IPCDataTransfer[] transfers, uint32_t action);
 
     async EndDragSession(bool aDoneDrag, bool aUserCancelled,
@@ -577,7 +581,9 @@ parent:
      * the specified plugin id. When this call returns, the requested bridge
      * connection has been made.
      */
+#ifdef MOZ_ENABLE_NPAPI
     sync ConnectPluginBridge(uint32_t aPluginId) returns (nsresult rv);
+#endif
 
     /**
      * Return the current blocklist state for a particular plugin.
@@ -596,8 +602,9 @@ parent:
      * process. |newPluginEpoch| is the current epoch in the chrome process. If
      * |pluginEpoch == newPluginEpoch|, then |plugins| will be left empty.
      */
+#ifdef MOZ_ENABLE_NPAPI
     sync FindPlugins(uint32_t pluginEpoch) returns (nsresult aResult, PluginTag[] plugins, uint32_t newPluginEpoch);
-
+#endif
     async PJavaScript();
 
     async PRemoteSpellcheckEngine();

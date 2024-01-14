@@ -44,7 +44,9 @@
 #ifdef XP_WIN
 #include "mozilla/a11y/Compatibility.h"
 #include "mozilla/dom/ContentChild.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "HTMLWin32ObjectAccessible.h"
+#endif
 #include "mozilla/StaticPtr.h"
 #endif
 
@@ -55,7 +57,9 @@
 #include "nsImageFrame.h"
 #include "nsIObserverService.h"
 #include "nsLayoutUtils.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginFrame.h"
+#endif
 #include "nsSVGPathGeometryFrame.h"
 #include "nsTreeBodyFrame.h"
 #include "nsTreeColumns.h"
@@ -79,7 +83,7 @@
 #include "XULTabAccessible.h"
 #include "XULTreeGridAccessibleWrap.h"
 
-#if defined(XP_WIN) || defined(MOZ_ACCESSIBILITY_ATK)
+#if (defined(XP_WIN) || defined(MOZ_ACCESSIBILITY_ATK)) && defined(MOZ_ENABLE_NPAPI)
 #include "nsNPAPIPluginInstance.h"
 #endif
 
@@ -431,6 +435,7 @@ private:
 NS_IMPL_ISUPPORTS(PluginTimerCallBack, nsITimerCallback)
 #endif
 
+#ifdef MOZ_ENABLE_NPAPI
 already_AddRefed<Accessible>
 nsAccessibilityService::CreatePluginAccessible(nsPluginFrame* aFrame,
                                                nsIContent* aContent,
@@ -493,6 +498,7 @@ nsAccessibilityService::CreatePluginAccessible(nsPluginFrame* aFrame,
 
   return nullptr;
 }
+#endif // MOZ_ENABLE_NPAPI
 
 void
 nsAccessibilityService::DeckPanelSwitched(nsIPresShell* aPresShell,
@@ -1638,11 +1644,13 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
     case eOuterDocType:
       newAcc = new OuterDocAccessible(aContent, document);
       break;
+#ifdef MOZ_ENABLE_NPAPI
     case ePluginType: {
       nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
       newAcc = CreatePluginAccessible(pluginFrame, aContent, aContext);
       break;
     }
+#endif
     case eTextLeafType:
       newAcc = new TextLeafAccessibleWrap(aContent, document);
       break;

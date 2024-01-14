@@ -11,24 +11,43 @@
 #include "nsTArray.h"
 #include "nsPIDOMWindow.h"
 #include "nsITimer.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsIPluginInstanceOwner.h"
+#endif
 #include "nsIURI.h"
 #include "nsIChannel.h"
 #include "nsHashKeys.h"
 #include <prinrval.h>
 #include "js/TypeDecls.h"
 #include "nsIAudioChannelAgent.h"
+#ifndef MOZ_ENABLE_NPAPI
+#include "npapi.h"
+#include "nsRect.h"
+#include "mozilla/gfx/2D.h"
+#endif
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/PluginLibrary.h"
+#endif
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 
+#ifdef MOZ_ENABLE_NPAPI
 class nsPluginStreamListenerPeer; // browser-initiated stream class
 class nsNPAPIPluginStreamListener; // plugin-initiated stream class
 class nsIPluginInstanceOwner;
+#endif
 class nsIOutputStream;
+#ifdef MOZ_ENABLE_NPAPI
 class nsPluginInstanceOwner;
+#endif
+
+namespace mozilla {
+namespace layers {
+class ImageContainer;
+} // namespace layers
+} // namespace mozilla
 
 #if defined(OS_WIN)
 const NPDrawingModel kDefaultDrawingModel = NPDrawingModelSyncWin;
@@ -71,7 +90,9 @@ class nsNPAPIPluginInstance final : public nsIAudioChannelAgentCallback
                                   , public mozilla::SupportsWeakPtr<nsNPAPIPluginInstance>
 {
 private:
+#ifdef MOZ_ENABLE_NPAPI
   typedef mozilla::PluginLibrary PluginLibrary;
+#endif
 
 public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -80,7 +101,9 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIAUDIOCHANNELAGENTCALLBACK
 
+#ifdef MOZ_ENABLE_NPAPI
   nsresult Initialize(nsNPAPIPlugin *aPlugin, nsPluginInstanceOwner* aOwner, const nsACString& aMIMEType);
+#endif
   nsresult Start();
   nsresult Stop();
   nsresult SetWindow(NPWindow* window);
@@ -118,8 +141,10 @@ public:
   nsresult HandledWindowedPluginKeyEvent(
              const mozilla::NativeEventData& aKeyEventData,
              bool aIsConsumed);
+#ifdef MOZ_ENABLE_NPAPI
   nsPluginInstanceOwner* GetOwner();
   void SetOwner(nsPluginInstanceOwner *aOwner);
+#endif
   void DidComposite();
 
   bool HasAudioChannelAgent() const
@@ -131,7 +156,9 @@ public:
 
   nsresult SetMuted(bool aIsMuted);
 
+#ifdef MOZ_ENABLE_NPAPI
   nsNPAPIPlugin* GetPlugin();
+#endif
 
   nsresult GetNPP(NPP * aNPP);
 
@@ -154,9 +181,10 @@ public:
   }
 #endif
 
+#ifdef MOZ_ENABLE_NPAPI
   nsresult NewStreamListener(const char* aURL, void* notifyData,
                              nsNPAPIPluginStreamListener** listener);
-
+#endif
   nsNPAPIPluginInstance();
 
   // To be called when an instance becomes orphaned, when
@@ -196,9 +224,11 @@ public:
   NPBool        ConvertPoint(double sourceX, double sourceY, NPCoordinateSpace sourceSpace, double *destX, double *destY, NPCoordinateSpace destSpace);
 
 
+#ifdef MOZ_ENABLE_NPAPI
   nsTArray<nsNPAPIPluginStreamListener*> *StreamListeners();
 
   nsTArray<nsPluginStreamListenerPeer*> *FileCachedStreamListeners();
+#endif
 
   nsresult AsyncSetWindow(NPWindow& window);
 
@@ -240,7 +270,9 @@ protected:
 
   virtual ~nsNPAPIPluginInstance();
 
+#ifdef MOZ_ENABLE_NPAPI
   nsresult GetTagType(nsPluginTagType *result);
+#endif
   nsresult GetMode(int32_t *result);
 
   // check if this is a Java applet and affected by bug 750480
@@ -275,19 +307,22 @@ public:
   nsXPIDLCString mFakeURL;
 
 private:
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsNPAPIPlugin> mPlugin;
 
   nsTArray<nsNPAPIPluginStreamListener*> mStreamListeners;
 
   nsTArray<nsPluginStreamListenerPeer*> mFileCachedStreamListeners;
-
+#endif
   nsTArray<PopupControlState> mPopupStates;
 
   char* mMIMEType;
 
   // Weak pointer to the owner. The owner nulls this out (by calling
   // InvalidateOwner()) when it's no longer our owner.
+#ifdef MOZ_ENABLE_NPAPI
   nsPluginInstanceOwner *mOwner;
+#endif
 
   nsTArray<nsNPAPITimer*> mTimers;
 

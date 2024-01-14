@@ -12,7 +12,9 @@ include protocol PDocAccessible;
 include protocol PFilePicker;
 include protocol PIndexedDBPermissionRequest;
 include protocol PRenderFrame;
+#ifdef MOZ_ENABLE_NPAPI
 include protocol PPluginWidget;
+#endif 
 include protocol PRemotePrintJob;
 include DOMTypes;
 include JavaScriptTypes;
@@ -118,7 +120,9 @@ nested(upto inside_cpow) sync protocol PBrowser
     manages PFilePicker;
     manages PIndexedDBPermissionRequest;
     manages PRenderFrame;
+#ifdef MOZ_ENABLE_NPAPI
     manages PPluginWidget;
+#endif
 
 both:
     async AsyncMessage(nsString aMessage, CpowEntry[] aCpows,
@@ -147,7 +151,9 @@ parent:
      * in e10s mode. This is always initiated from the child in response
      * to windowed plugin creation.
      */
+#ifdef MOZ_ENABLE_NPAPI
     sync PPluginWidget();
+#endif
 
     /**
      * Return native data of root widget

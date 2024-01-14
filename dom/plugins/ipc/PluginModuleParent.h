@@ -145,6 +145,7 @@ protected:
     virtual bool
     RecvPluginHideWindow(const uint32_t& aWindowId) override;
 
+#ifdef MOZ_ENABLE_NPAPI
     virtual bool
     RecvSetCursor(const NSCursorInfo& aCursorInfo) override;
 
@@ -156,6 +157,7 @@ protected:
 
     virtual bool
     RecvPopCursor() override;
+#endif
 
     virtual bool
     RecvNPN_SetException(const nsCString& aMessage) override;
@@ -169,10 +171,12 @@ protected:
     static BrowserStreamParent* StreamCast(NPP instance, NPStream* s,
                                            PluginAsyncSurrogate** aSurrogate = nullptr);
 
+#ifdef MOZ_ENABLE_NPAPI
     virtual bool
     AnswerNPN_SetValue_NPPVpluginRequiresAudioDeviceChanges(
                                         const bool& shouldRegister,
                                         NPError* result) override;
+#endif
 
 protected:
     void SetChildTimeout(const int32_t aChildTimeout);
@@ -506,10 +510,12 @@ private:
 
     static void CachedSettingChanged(const char* aPref, void* aModule);
 
+#ifdef MOZ_ENABLE_NPAPI
     virtual bool
     AnswerNPN_SetValue_NPPVpluginRequiresAudioDeviceChanges(
                                         const bool& shouldRegister,
                                         NPError* result) override;
+#endif
 
     PluginProcessParent* mSubprocess;
     uint32_t mPluginId;

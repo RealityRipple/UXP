@@ -52,7 +52,7 @@ if toolkit in ('cocoa', 'gtk2', 'gtk3'):
 if 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT']:
     DIRS += ['gtk']
 
-    if CONFIG['MOZ_X11']:
+    if CONFIG['MOZ_X11'] and CONFIG['MOZ_ENABLE_NPAPI']:
         DIRS += ['gtkxtbin']
 
 XPIDL_SOURCES += [
@@ -95,15 +95,23 @@ EXPORTS += [
     'nsBaseWidget.h',
     'nsIDeviceContextSpec.h',
     'nsIKeyEventInPluginCallback.h',
-    'nsIPluginWidget.h',
     'nsIRollupListener.h',
     'nsIWidget.h',
     'nsIWidgetListener.h',
     'nsWidgetInitData.h',
     'nsWidgetsCID.h',
-    'PluginWidgetProxy.h',
     'PuppetWidget.h',
 ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    EXPORTS += [
+        'nsIPluginWidget.h',
+        'PluginWidgetProxy.h',
+    ]
+
+    SOURCES += [
+        'PluginWidgetProxy.cpp',
+    ]
 
 EXPORTS.mozilla += [
     'BasicEvents.h',
@@ -196,7 +204,6 @@ if CONFIG['NS_PRINTING']:
 SOURCES += [
     'nsBaseDragService.cpp',
     'nsBaseWidget.cpp',
-    'PluginWidgetProxy.cpp',
 ]
 
 if CONFIG['MOZ_INSTRUMENT_EVENT_LOOP']:

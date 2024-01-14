@@ -38,6 +38,13 @@ SOURCES += [
     'XULTreeGridAccessibleWrap.cpp',
 ]
 
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    SOURCES += [
+        'HTMLWin32ObjectAccessible.cpp',
+    ]
+
+
+
 LOCAL_INCLUDES += [
     '/accessible/base',
     '/accessible/generic',

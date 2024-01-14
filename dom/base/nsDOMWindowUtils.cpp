@@ -3145,9 +3145,11 @@ nsDOMWindowUtils::GetPaintingSuppressed(bool *aPaintingSuppressed)
   return NS_OK;
 }
 
+
 NS_IMETHODIMP
 nsDOMWindowUtils::GetPlugins(JSContext* cx, JS::MutableHandle<JS::Value> aPlugins)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsCOMPtr<nsIDocument> doc = GetDocument();
   NS_ENSURE_STATE(doc);
 
@@ -3159,6 +3161,7 @@ nsDOMWindowUtils::GetPlugins(JSContext* cx, JS::MutableHandle<JS::Value> aPlugin
   NS_ENSURE_SUCCESS(rv, rv);
 
   aPlugins.setObject(*jsPlugins);
+#endif
   return NS_OK;
 }
 

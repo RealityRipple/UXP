@@ -3709,8 +3709,10 @@ nsCSSFrameConstructor::FindObjectData(Element* aElement,
   static const FrameConstructionDataByInt sObjectData[] = {
     SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_LOADING,
                       NS_NewEmptyFrame),
+#ifdef MOZ_ENABLE_NPAPI
     SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_PLUGIN,
                       NS_NewObjectFrame),
+#endif
     SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_IMAGE,
                       NS_NewImageFrame),
     SIMPLE_INT_CREATE(nsIObjectLoadingContent::TYPE_DOCUMENT,

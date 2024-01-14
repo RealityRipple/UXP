@@ -18,8 +18,10 @@
  **************************************************************/
 
 #include "mozilla/dom/ContentParent.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/plugins/PluginInstanceParent.h"
 using mozilla::plugins::PluginInstanceParent;
+#endif
 
 #include "nsWindowGfx.h"
 #include "nsAppRunner.h"
@@ -163,12 +165,14 @@ void nsWindow::ForcePresent()
 
 bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
 {
+#ifdef MOZ_ENABLE_NPAPI
   // We never have reentrant paint events, except when we're running our RPC
   // windows event spin loop. If we don't trap for this, we'll try to paint,
   // but view manager will refuse to paint the surface, resulting is black
   // flashes on the plugin rendering surface.
   if (mozilla::ipc::MessageChannel::IsSpinLoopActive() && mPainting)
     return false;
+#endif
 
   DeviceResetReason resetReason = DeviceResetReason::OK;
   if (gfxWindowsPlatform::GetPlatform()->DidRenderingDeviceReset(&resetReason)) {
@@ -185,6 +189,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     return false;
   }
 
+#ifdef MOZ_ENABLE_NPAPI
   // After we CallUpdateWindow to the child, occasionally a WM_PAINT message
   // is posted to the parent event loop with an empty update rect. Do a
   // dummy paint so that Windows stops dispatching WM_PAINT in an inifinite
@@ -221,6 +226,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     ValidateRect(mWnd, nullptr);
     return true;
   }
+#endif
 
   ClientLayerManager *clientLayerManager = GetLayerManager()->AsClientLayerManager();
 
@@ -247,8 +253,9 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     // We're guaranteed to have a widget proxy since we called GetLayerManager().
     aDC = mCompositorWidgetDelegate->GetTransparentDC();
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   mPainting = true;
+#endif
 
 #ifdef WIDGET_DEBUG_OUTPUT
   HRGN debugPaintFlashRegion = nullptr;
@@ -419,7 +426,9 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
   }
 #endif // WIDGET_DEBUG_OUTPUT
 
+#ifdef MOZ_ENABLE_NPAPI
   mPainting = false;
+#endif
 
   // Re-get the listener since painting may have killed it.
   listener = GetPaintListener();

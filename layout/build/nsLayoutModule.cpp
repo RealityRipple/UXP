@@ -439,7 +439,9 @@ MAKE_CTOR(CreateParentMessageManager,     nsIMessageBroadcaster,       NS_NewPar
 MAKE_CTOR(CreateChildMessageManager,      nsISyncMessageSender,        NS_NewChildProcessMessageManager)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsDataDocumentContentPolicy)
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsNoDataProtocolContentPolicy)
+#ifdef MOZ_ENABLE_NPAPI
 MAKE_CTOR(CreatePluginDocument,           nsIDocument,                 NS_NewPluginDocument)
+#endif
 MAKE_CTOR(CreateVideoDocument,            nsIDocument,                 NS_NewVideoDocument)
 MAKE_CTOR(CreateFocusManager,             nsIFocusManager,      NS_NewFocusManager)
 
@@ -834,7 +836,9 @@ static const mozilla::Module::CIDEntry kLayoutCIDs[] = {
   { &kNS_WINDOWCOMMANDTABLE_CID, false, nullptr, CreateWindowCommandTableConstructor },
   { &kNS_WINDOWCONTROLLER_CID, false, nullptr, CreateWindowControllerWithSingletonCommandTable },
   { &kNS_PLUGINDOCLOADERFACTORY_CID, false, nullptr, CreateContentDLF },
+#ifdef MOZ_ENABLE_NPAPI
   { &kNS_PLUGINDOCUMENT_CID, false, nullptr, CreatePluginDocument },
+#endif
   { &kNS_VIDEODOCUMENT_CID, false, nullptr, CreateVideoDocument },
   { &kNS_STYLESHEETSERVICE_CID, false, nullptr, nsStyleSheetServiceConstructor },
   { &kTRANSFORMIIX_XSLT_PROCESSOR_CID, false, nullptr, txMozillaXSLTProcessorConstructor },

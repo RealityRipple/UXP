@@ -51,8 +51,10 @@
 #include "mozilla/layout/RenderFrameChild.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/CaptivePortalService.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/plugins/PluginInstanceParent.h"
 #include "mozilla/plugins/PluginModuleParent.h"
+#endif
 #include "mozilla/widget/WidgetMessageUtils.h"
 #include "nsBaseDragService.h"
 #include "mozilla/media/MediaChild.h"
@@ -1104,13 +1106,14 @@ ContentChild::DeallocPCycleCollectWithLogsChild(PCycleCollectWithLogsChild* /* a
   // this point, so we shouldn't touch the actor in any case.
   return true;
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 mozilla::plugins::PPluginModuleParent*
 ContentChild::AllocPPluginModuleParent(mozilla::ipc::Transport* aTransport,
                                        base::ProcessId aOtherProcess)
 {
   return plugins::PluginModuleContentParent::Initialize(aTransport, aOtherProcess);
 }
+#endif
 
 PContentBridgeChild*
 ContentChild::AllocPContentBridgeChild(mozilla::ipc::Transport* aTransport,
@@ -2336,6 +2339,7 @@ ContentChild::DeallocPOfflineCacheUpdateChild(POfflineCacheUpdateChild* actor)
   return true;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 bool
 ContentChild::RecvLoadPluginResult(const uint32_t& aPluginId,
                                    const bool& aResult)
@@ -2355,6 +2359,7 @@ ContentChild::RecvAssociatePluginId(const uint32_t& aPluginId,
   plugins::PluginModuleContentParent::AssociatePluginId(aPluginId, aProcessId);
   return true;
 }
+#endif
 
 bool
 ContentChild::RecvDomainSetChanged(const uint32_t& aSetType,
@@ -2516,7 +2521,7 @@ ContentChild::GetBrowserOrId(TabChild* aTabChild)
 bool
 ContentChild::RecvUpdateWindow(const uintptr_t& aChildId)
 {
-#if defined(XP_WIN)
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
   NS_ASSERTION(aChildId, "Expected child hwnd value for remote plugin instance.");
   mozilla::plugins::PluginInstanceParent* parentInstance =
   mozilla::plugins::PluginInstanceParent::LookupPluginInstanceByID(aChildId);

@@ -2088,7 +2088,7 @@ TextInputHandler::DispatchKeyEventForFlagsChanged(NSEvent* aNativeEvent,
   // Fire a key event.
   WidgetKeyboardEvent keyEvent(true, message, mWidget);
   InitKeyEvent(aNativeEvent, keyEvent);
-
+#ifdef MOZ_ENABLE_NPAPI
   // Attach a plugin event, in case keyEvent gets dispatched to a plugin.  Only
   // one field is needed -- the type.  The other fields can be constructed as
   // the need arises.  But Gecko doesn't have anything equivalent to the
@@ -2098,6 +2098,7 @@ TextInputHandler::DispatchKeyEventForFlagsChanged(NSEvent* aNativeEvent,
   nsCocoaUtils::InitNPCocoaEvent(&cocoaEvent);
   cocoaEvent.type = NPCocoaEventFlagsChanged;
   keyEvent.mPluginEvent.Copy(cocoaEvent);
+#endif
 
   KeyEventState currentKeyEvent(aNativeEvent);
   nsEventStatus status = nsEventStatus_eIgnore;

@@ -627,6 +627,7 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     // plugin process (ones that don't work correctly in a background
     // process).  Don't break any other "dyld interposing" that has already
     // been set up by whatever may have launched the browser.
+#ifdef MOZ_ENABLE_NPAPI
     const char* prevInterpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
     nsCString interpose;
     if (prevInterpose && strlen(prevInterpose) > 0) {
@@ -636,6 +637,13 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
     interpose.Append(path.get());
     interpose.AppendLiteral("/libplugin_child_interpose.dylib");
     newEnvVars["DYLD_INSERT_LIBRARIES"] = interpose.get();
+#else
+    const char* interpose = PR_GetEnv("DYLD_INSERT_LIBRARIES");
+    if (interpose && strlen(interpose) > 0) {
+      newEnvVars["DYLD_INSERT_LIBRARIES"] = interpose;
+    }
+#endif // MOZ_ENABLE_NPAPI
+
 # endif  // OS_LINUX
   }
 #endif  // OS_LINUX || OS_MACOSX

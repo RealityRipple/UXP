@@ -8,7 +8,9 @@
 
 #include "Navigator.h"
 #include "nsIXULAppInfo.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginArray.h"
+#endif
 #include "nsMimeTypeArray.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/BodyExtractor.h"
@@ -179,7 +181,9 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Navigator)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMimeTypes)
+#ifdef MOZ_ENABLE_NPAPI
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlugins)
+#endif
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPermissions)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGeolocation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mNotification)
@@ -210,10 +214,12 @@ Navigator::Invalidate()
 
   mMimeTypes = nullptr;
 
+#ifdef MOZ_ENABLE_NPAPI
   if (mPlugins) {
     mPlugins->Invalidate();
     mPlugins = nullptr;
   }
+#endif
 
   mPermissions = nullptr;
 
@@ -489,6 +495,7 @@ Navigator::GetMimeTypes(ErrorResult& aRv)
   return mMimeTypes;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 nsPluginArray*
 Navigator::GetPlugins(ErrorResult& aRv)
 {
@@ -503,6 +510,7 @@ Navigator::GetPlugins(ErrorResult& aRv)
 
   return mPlugins;
 }
+#endif
 
 Permissions*
 Navigator::GetPermissions(ErrorResult& aRv)

@@ -23,7 +23,9 @@
 #include "Layers.h"
 #include "MediaDecoder.h"
 // nsNPAPIPluginInstance must be included before nsIDocument.h, which is included in mozAutoDocUpdate.h.
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsNPAPIPluginInstance.h"
+#endif
 #include "gfxDrawable.h"
 #include "gfxPrefs.h"
 #include "ImageOps.h"
@@ -6970,7 +6972,7 @@ nsContentUtils::HaveEqualPrincipals(nsIDocument* aDoc1, nsIDocument* aDoc2)
 bool
 nsContentUtils::HasPluginWithUncontrolledEventDispatch(nsIContent* aContent)
 {
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || !defined(MOZ_ENABLE_NPAPI)
   // We control dispatch to all mac plugins.
   return false;
 #else

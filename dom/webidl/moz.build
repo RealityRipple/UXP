@@ -9,6 +9,9 @@ GENERATED_WEBIDL_FILES = [
 
 PREPROCESSED_WEBIDL_FILES = [
     'HTMLMediaElement.webidl',
+    'HTMLObjectElement.webidl',
+    'LegacyQueryInterface.webidl',
+    'MimeType.webidl',
     'Navigator.webidl',
     'Node.webidl',
     'Performance.webidl',
@@ -212,7 +215,6 @@ WEBIDL_FILES = [
     'HTMLMetaElement.webidl',
     'HTMLMeterElement.webidl',
     'HTMLModElement.webidl',
-    'HTMLObjectElement.webidl',
     'HTMLOListElement.webidl',
     'HTMLOptGroupElement.webidl',
     'HTMLOptionElement.webidl',
@@ -274,7 +276,6 @@ WEBIDL_FILES = [
     'KeyframeAnimationOptions.webidl',
     'KeyframeEffect.webidl',
     'KeyIdsInitData.webidl',
-    'LegacyQueryInterface.webidl',
     'LinkStyle.webidl',
     'ListBoxObject.webidl',
     'LocalMediaStream.webidl',
@@ -299,7 +300,6 @@ WEBIDL_FILES = [
     'MessageChannel.webidl',
     'MessageEvent.webidl',
     'MessagePort.webidl',
-    'MimeType.webidl',
     'MimeTypeArray.webidl',
     'MouseEvent.webidl',
     'MouseScrollEvent.webidl',
@@ -343,8 +343,6 @@ WEBIDL_FILES = [
     'Permissions.webidl',
     'PermissionSettings.webidl',
     'PermissionStatus.webidl',
-    'Plugin.webidl',
-    'PluginArray.webidl',
     'PointerEvent.webidl',
     'PopupBoxObject.webidl',
     'Position.webidl',
@@ -645,6 +643,12 @@ if CONFIG['MOZ_SECUREELEMENT']:
     WEBIDL_FILES += [
          'SecureElement.webidl',
          'SecureElementManager.webidl',
+    ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    WEBIDL_FILES += [
+         'Plugin.webidl',
+         'PluginArray.webidl',
     ]
 
 WEBIDL_FILES += [

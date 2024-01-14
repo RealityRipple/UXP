@@ -7,15 +7,19 @@
 
 #include "prlink.h"
 #include "plstr.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsIPluginInstanceOwner.h"
 #include "nsPluginsDir.h"
+#endif
 #include "nsPluginHost.h"
 #include "nsIBlocklistService.h"
 #include "nsIUnicodeDecoder.h"
 #include "nsIPlatformCharset.h"
 #include "nsIURI.h"
 #include "nsPluginLogging.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsNPAPIPlugin.h"
+#endif
 #include "nsCharSeparatedTokenizer.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
@@ -30,6 +34,7 @@ using mozilla::dom::FakePluginTagInit;
 using mozilla::dom::FakePluginMimeEntry;
 using namespace mozilla;
 
+#ifdef MOZ_ENABLE_NPAPI
 // These legacy flags are used in the plugin registry. The states are now
 // stored in prefs, but we still need to be able to import them.
 #define NS_PLUGIN_FLAG_ENABLED      0x0001    // is this plugin enabled?
@@ -40,6 +45,7 @@ using namespace mozilla;
 
 static const char kPrefDefaultEnabledState[] = "plugin.default.state";
 static const char kPrefDefaultEnabledStateXpi[] = "plugin.defaultXpi.state";
+#endif // MOZ_ENABLE_NPAPI
 
 // check comma delimited extensions
 static bool ExtensionInList(const nsCString& aExtensionList,
@@ -225,7 +231,7 @@ nsIInternalPluginTag::HasMimeType(const nsACString& aMimeType) const
 /* nsPluginTag */
 
 uint32_t nsPluginTag::sNextId;
-
+#ifdef MOZ_ENABLE_NPAPI
 nsPluginTag::nsPluginTag(nsPluginInfo* aPluginInfo,
                          int64_t aLastModifiedTime,
                          bool fromExtension)
@@ -790,6 +796,8 @@ bool nsPluginTag::IsFromExtension() const
 {
   return mIsFromExtension;
 }
+
+#endif // MOZ_ENABLE_NPAPI
 
 /* nsFakePluginTag */
 

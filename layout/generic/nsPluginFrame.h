@@ -63,7 +63,9 @@ public:
 
   NS_DECL_FRAMEARENA_HELPERS
 
+#ifdef MOZ_ENABLE_NPAPI
   friend nsIFrame* NS_NewObjectFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+#endif
 
   NS_DECL_QUERYFRAME
   NS_DECL_QUERYFRAME_TARGET(nsPluginFrame)

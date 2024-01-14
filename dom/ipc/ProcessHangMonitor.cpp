@@ -17,7 +17,9 @@
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/Monitor.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/plugins/PluginBridge.h"
+#endif
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
 
@@ -647,8 +649,8 @@ public:
   {
     // chrome process, main thread
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
     nsString dumpId;
+#ifdef MOZ_ENABLE_NPAPI
     if ((mHangData.type() == HangData::TPluginHangData) && mTakeMinidump) {
       // We've been handed a partial minidump; complete it with plugin and
       // content process dumps.
@@ -657,9 +659,12 @@ public:
                                 mBrowserDumpId, dumpId);
       mParent->UpdateMinidump(phd.pluginId(), dumpId);
     } else {
+#endif
       // We already have a full minidump; go ahead and use it.
       dumpId = mBrowserDumpId;
+#ifdef MOZ_ENABLE_NPAPI
     }
+#endif
 
     mProcess->SetHangData(mHangData, dumpId);
 
@@ -903,7 +908,7 @@ HangMonitoredProcess::GetPluginName(nsACString& aPluginName)
   if (mHangData.type() != HangData::TPluginHangData) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   uint32_t id = mHangData.get_PluginHangData().pluginId();
 
   RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
@@ -914,6 +919,9 @@ HangMonitoredProcess::GetPluginName(nsACString& aPluginName)
 
   aPluginName = tag->Name();
   return NS_OK;
+#else
+  return NS_ERROR_UNEXPECTED;
+#endif
 }
 
 NS_IMETHODIMP
@@ -970,6 +978,7 @@ HangMonitoredProcess::EndStartingDebugger()
 NS_IMETHODIMP
 HangMonitoredProcess::TerminatePlugin()
 {
+#ifdef MOZ_ENABLE_NPAPI
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (mHangData.type() != HangData::TPluginHangData) {
     return NS_ERROR_UNEXPECTED;
@@ -985,6 +994,9 @@ HangMonitoredProcess::TerminatePlugin()
     mActor->CleanupPluginHang(id, false);
   }
   return NS_OK;
+#else
+  return NS_ERROR_UNEXPECTED;
+#endif
 }
 
 NS_IMETHODIMP

@@ -2123,6 +2123,24 @@ fi
 AC_SUBST(XULRUNNER_STUB_NAME)
 
 dnl ========================================================
+dnl = NPAPI support
+dnl ========================================================
+
+MOZ_ENABLE_NPAPI=1
+
+MOZ_ARG_DISABLE_BOOL(npapi,
+[  --disable-npapi          Disable NPAPI support ],
+    MOZ_ENABLE_NPAPI=,
+    MOZ_ENABLE_NPAPI=1)
+
+if test "$MOZ_ENABLE_NPAPI"
+then
+    AC_DEFINE(MOZ_ENABLE_NPAPI)
+fi
+
+AC_SUBST(MOZ_ENABLE_NPAPI)
+
+dnl ========================================================
 dnl =
 dnl = Toolkit Options
 dnl =
@@ -2189,9 +2207,15 @@ if test "$COMPILE_ENVIRONMENT"; then
     dnl are suppressed by widget/gtk/compat-gtk3/gdk/gdkversionmacros.h.
     AC_DEFINE_UNQUOTED(GDK_VERSION_MAX_ALLOWED,$GDK_VERSION_MAX_ALLOWED)
     GLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_32
+    dnl We want to check GTK2 packages if NPAPI is enabled, even if building with GTK3.
+    if test "$MOZ_ENABLE_NPAPI"; then
+      MOZ_CHECK_GTK2=1
+    fi
   fi
   if test "$MOZ_WIDGET_TOOLKIT" = gtk2; then
     GLIB_VERSION_MAX_ALLOWED=$GLIB_VERSION_MIN_REQUIRED
+    dnl Check GTK2 packages if we're building against GTK2, whether NPAPI is disabled or not.
+    MOZ_CHECK_GTK2=1
   fi
   if test "$MOZ_ENABLE_GTK"; then
     if test "$MOZ_X11"; then
@@ -2200,8 +2224,11 @@ if test "$COMPILE_ENVIRONMENT"; then
     AC_DEFINE_UNQUOTED(GLIB_VERSION_MIN_REQUIRED,$GLIB_VERSION_MIN_REQUIRED)
     AC_DEFINE_UNQUOTED(GLIB_VERSION_MAX_ALLOWED,$GLIB_VERSION_MAX_ALLOWED)
 
-    PKG_CHECK_MODULES(MOZ_GTK2, gtk+-2.0 >= $GTK2_VERSION gtk+-unix-print-2.0 glib-2.0 >= $GLIB_VERSION gobject-2.0 $GDK_PACKAGES)
+    if test "$MOZ_CHECK_GTK2"; then
+      PKG_CHECK_MODULES(MOZ_GTK2, gtk+-2.0 >= $GTK2_VERSION gtk+-unix-print-2.0 glib-2.0 >= $GLIB_VERSION gobject-2.0 $GDK_PACKAGES, ,
+                               [AC_MSG_ERROR([ * * * Could not find gtk+-2.0. Required for NPAPI plugins. To build without NPAPI, add --disable-npapi to your .mozconfig and clobber.])])
     MOZ_GTK2_CFLAGS="-I${_topsrcdir}/widget/gtk/compat $MOZ_GTK2_CFLAGS"
+    fi
   fi
   if test "$MOZ_WIDGET_TOOLKIT" = gtk2; then
     TK_CFLAGS=$MOZ_GTK2_CFLAGS
@@ -2704,6 +2731,9 @@ if test -n "$MOZ_WEBRTC"; then
     AC_DEFINE(MOZ_WEBRTC_ASSERT_ALWAYS)
     MOZ_RAW=1
     MOZ_VPX_ERROR_CONCEALMENT=1
+    if test -z "$MOZ_ENABLE_NPAPI"; then
+        AC_MSG_ERROR([--enable-webrtc requires NPAPI to be enabled. You must either build with --disable-webrtc, or remove --disable-npapi from your .mozconfig.])
+    fi
 
 dnl enable once Signaling lands
     MOZ_WEBRTC_SIGNALING=1
