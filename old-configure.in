@@ -2050,6 +2050,7 @@ MOZ_USERINFO=1
 NSS_DISABLE_DBM=
 MOZ_MAILNEWS=
 MOZ_MAILNEWS_OAUTH2=
+MOZ_CLASSIC_ACCOUNT_WIZARD=
 MOZ_LDAP_XPCOM=
 MOZ_MORK=
 MOZ_MAPI_SUPPORT=
@@ -2672,6 +2673,20 @@ if test -n "$MOZ_MAILNEWS_OAUTH2"; then
 fi
 
 AC_SUBST(MOZ_MAILNEWS_OAUTH2)
+
+dnl =========================================================
+dnl = Mailnews Classic Account Wizard
+dnl =========================================================
+MOZ_ARG_ENABLE_BOOL(classic-account-wizard,
+[  --enable-classic-account-wizard   Enable the classic account wizard in mailnews],
+    MOZ_CLASSIC_ACCOUNT_WIZARD=1,
+    MOZ_CLASSIC_ACCOUNT_WIZARD= )
+
+if test -n "$MOZ_CLASSIC_ACCOUNT_WIZARD"; then
+   AC_DEFINE(MOZ_CLASSIC_ACCOUNT_WIZARD)
+fi
+
+AC_SUBST(MOZ_CLASSIC_ACCOUNT_WIZARD)
 
 dnl =========================================================
 dnl = LDAP

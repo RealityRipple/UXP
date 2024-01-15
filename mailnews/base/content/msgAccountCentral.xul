@@ -153,19 +153,19 @@
       <spacer id="CreateAccount.spacer" flex="1" collapsed="true"/>
       <row id="CreateAccount" class="acctCentralRow" collapsed="true">
         <hbox>
-#if defined(MOZ_THUNDERBIRD) && defined(HYPE_ICEDOVE)
-          <label class="acctCentralText"
-                 value="&newAcct.label;"
-                 chromedir="&locale.dir;"/>
-#else
+#ifdef MOZ_CLASSIC_ACCOUNT_WIZARD
           <label class="acctCentralText acctCentralLinkText"
                  value="&newAcctLink.label;"
                  chromedir="&locale.dir;"
                  onclick="CreateNewAccount();"/>
-#endif
         </hbox>
       </row>
-#if defined(MOZ_THUNDERBIRD) && defined(HYPE_ICEDOVE)
+#else
+          <label class="acctCentralText"
+                 value="&newAcct.label;"
+                 chromedir="&locale.dir;"/>
+        </hbox>
+      </row>
       <row id="CreateAccounts" class="acctCentralRow" collapsed="true">
         <vbox id="CreateAccountsList">
           <label id="CreateAccountMail"

@@ -35,7 +35,17 @@
         <treechildren id="account-tree-children"/>
       </tree>
 
-#if defined(MOZ_THUNDERBIRD) && defined(HYPE_ICEDOVE)
+#ifdef MOZ_CLASSIC_ACCOUNT_WIZARD
+      <button label="&addAccountButton.label;" oncommand="onAddAccount(event);" id="addAccountButton"
+              prefstring="mail.disable_new_account_addition"
+              accesskey="&addAccountButton.accesskey;"/>
+      <button label="&setDefaultButton.label;" oncommand="onSetDefault(event);" disabled="true" id="setDefaultButton"
+              prefstring="mail.disable_button.set_default_account"
+              accesskey="&setDefaultButton.accesskey;"/>
+      <button disabled="true" label="&removeButton.label;" oncommand="onRemoveAccount(event);" id="removeButton"
+              prefstring="mail.disable_button.delete_account"
+              accesskey="&removeButton.accesskey;"/>
+#else
       <button id="accountActionsButton" type="menu"
               label="&accountActionsButton.label;"
               accesskey="&accountActionsButton.accesskey;">
@@ -69,16 +79,6 @@
                     oncommand="onRemoveAccount(event); event.stopPropagation();"/>
         </menupopup>
       </button>
-#else
-      <button label="&addAccountButton.label;" oncommand="onAddAccount(event);" id="addAccountButton"
-              prefstring="mail.disable_new_account_addition"
-              accesskey="&addAccountButton.accesskey;"/>
-      <button label="&setDefaultButton.label;" oncommand="onSetDefault(event);" disabled="true" id="setDefaultButton"
-              prefstring="mail.disable_button.set_default_account"
-              accesskey="&setDefaultButton.accesskey;"/>
-      <button disabled="true" label="&removeButton.label;" oncommand="onRemoveAccount(event);" id="removeButton"
-              prefstring="mail.disable_button.delete_account"
-              accesskey="&removeButton.accesskey;"/>
 #endif
     </vbox>
 
