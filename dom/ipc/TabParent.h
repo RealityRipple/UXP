@@ -535,6 +535,7 @@ public:
   LayoutDeviceIntPoint GetChildProcessOffset();
   LayoutDevicePoint AdjustTapToChildWidget(const LayoutDevicePoint& aPoint);
 
+#ifdef MOZ_ENABLE_NPAPI
   /**
    * Native widget remoting protocol for use with windowed plugins with e10s.
    */
@@ -542,6 +543,7 @@ public:
 
   virtual bool
   DeallocPPluginWidgetParent(PPluginWidgetParent* aActor) override;
+#endif
 
   void SetInitedByParent() { mInitedByParent = true; }
 

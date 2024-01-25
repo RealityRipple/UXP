@@ -1287,7 +1287,7 @@ nsStyleSVGPaint::Reset()
     case eStyleSVGPaintType_Server:
       mPaint.mPaintServer->Release();
       mPaint.mPaintServer = nullptr;
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case eStyleSVGPaintType_ContextFill:
     case eStyleSVGPaintType_ContextStroke:
       mFallbackColor = NS_RGB(0, 0, 0);

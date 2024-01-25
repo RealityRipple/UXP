@@ -3542,7 +3542,10 @@ nsGlobalWindow::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   EventMessage msg = aVisitor.mEvent->mMessage;
 
   aVisitor.mCanHandle = true;
-  aVisitor.mForceContentDispatch = true; //FIXME! Bug 329119
+  // Middle/right click shouldn't dispatch click event, use auxclick to instead.
+  if (mDoc->IsXULDocument()) {
+    aVisitor.mForceContentDispatch = true; //FIXME! Bug 329119
+  }
   if (msg == eResize && aVisitor.mEvent->IsTrusted()) {
     // QIing to window so that we can keep the old behavior also in case
     // a child window is handling resize.
@@ -6918,11 +6921,12 @@ nsGlobalWindow::SetFullscreenInternal(FullscreenReason aReason,
   // gone full screen, the state trap above works.
   mFullScreen = aFullScreen;
 
-  // Sometimes we don't want the top-level widget to actually go fullscreen,
-  // for example in the B2G desktop client, we don't want the emulated screen
-  // dimensions to appear to increase when entering fullscreen mode; we just
-  // want the content to fill the entire client area of the emulator window.
-  if (!Preferences::GetBool("full-screen-api.ignore-widgets", false)) {
+  // Sometimes, users don't want the DOM to actually go fullscreen, for
+  // example on large monitors where it would waste screen real estate.
+  // When restricted by the relevant preference, we just want the content
+  // to fill the area of the existing window, instead, which is done by
+  // skipping resizing of the top-level content widget to be screen-filling.
+  if (!Preferences::GetBool("full-screen-api.restrict-to-window", false)) {
     if (MakeWidgetFullscreen(this, aReason, aFullScreen)) {
       // The rest of code for switching fullscreen is in nsGlobalWindow::
       // FinishFullscreenChange() which will be called after sizemodechange
@@ -12988,12 +12992,6 @@ nsGlobalWindow::RunTimeoutHandler(Timeout* aTimeout,
   // propagate the error to anyone who cares about it from this
   // point anyway, and the script context should have already reported
   // the script error in the usual way - so we just drop it.
-
-  // Since we might be processing more timeouts, go ahead and flush the promise
-  // queue now before we do that.  We need to do that while we're still in our
-  // "running JS is safe" state (e.g. mRunningTimeout is set, timeout->mRunning
-  // is false).
-  Promise::PerformMicroTaskCheckpoint();
 
   if (trackNestingLevel) {
     sNestingLevel = nestingLevel;

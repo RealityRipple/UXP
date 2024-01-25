@@ -23,9 +23,9 @@
 #include "nsThreadUtils.h"
 #include "nss.h"
 #include "pk11pub.h"
-#include "pkix/Result.h"
-#include "pkix/pkix.h"
-#include "pkix/pkixnss.h"
+#include "mozpkix/Result.h"
+#include "mozpkix/pkix.h"
+#include "mozpkix/pkixnss.h"
 #include "prerror.h"
 #include "prmem.h"
 #include "prprf.h"
@@ -913,12 +913,19 @@ NSSCertDBTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
 }
 
 Result
-NSSCertDBTrustDomain::VerifyRSAPKCS1SignedDigest(
-  const SignedDigest& signedDigest,
-  Input subjectPublicKeyInfo)
-{
-  return VerifyRSAPKCS1SignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                       mPinArg);
+NSSCertDBTrustDomain::VerifyRSAPKCS1SignedData(
+    Input data, DigestAlgorithm digestAlgorithm, Input signature,
+    Input subjectPublicKeyInfo) {
+  return VerifyRSAPKCS1SignedDataNSS(data, digestAlgorithm, signature,
+                                     subjectPublicKeyInfo, mPinArg);
+}
+
+Result
+NSSCertDBTrustDomain::VerifyRSAPSSSignedData(
+    Input data, DigestAlgorithm digestAlgorithm, Input signature,
+    Input subjectPublicKeyInfo) {
+  return VerifyRSAPSSSignedDataNSS(data, digestAlgorithm, signature,
+                                   subjectPublicKeyInfo, mPinArg);
 }
 
 Result
@@ -936,11 +943,11 @@ NSSCertDBTrustDomain::CheckECDSACurveIsAcceptable(
 }
 
 Result
-NSSCertDBTrustDomain::VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                              Input subjectPublicKeyInfo)
-{
-  return VerifyECDSASignedDigestNSS(signedDigest, subjectPublicKeyInfo,
-                                    mPinArg);
+NSSCertDBTrustDomain::VerifyECDSASignedData(
+    Input data, DigestAlgorithm digestAlgorithm, Input signature,
+    Input subjectPublicKeyInfo) {
+  return VerifyECDSASignedDataNSS(data, digestAlgorithm, signature,
+                                  subjectPublicKeyInfo, mPinArg);
 }
 
 Result

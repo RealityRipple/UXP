@@ -27,7 +27,8 @@ bool IsRecursivelyWritable(const char* aPath)
     return false;
   }
 
-  for (NSString* currPath in paths) {
+  for (NSUInteger i=0; i < [paths count]; i++) {
+    NSString* currPath = (NSString*)[paths objectAtIndex:i];
     NSString* child = [rootPath stringByAppendingPathComponent:currPath];
 
     NSDictionary* attributes =

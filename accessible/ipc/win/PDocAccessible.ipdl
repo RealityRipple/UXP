@@ -61,8 +61,10 @@ parent:
    */
   async BindChildDoc(PDocAccessible aChildDoc, uint64_t aID);
 
+#ifdef MOZ_ENABLE_NPAPI
   sync GetWindowedPluginIAccessible(WindowsHandle aHwnd)
     returns (IAccessibleHolder aPluginCOMProxy);
+#endif
 
 child:
   async ParentCOMProxy(IAccessibleHolder aParentCOMProxy);

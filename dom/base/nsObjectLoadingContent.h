@@ -30,7 +30,9 @@ class nsIPrincipal;
 class nsFrameLoader;
 class nsPluginFrame;
 class nsXULElement;
+#ifdef MOZ_ENABLE_NPAPI
 class nsPluginInstanceOwner;
+#endif
 
 namespace mozilla {
 namespace dom {
@@ -161,10 +163,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent
      * that our plug-in, if any, is instantiated.
      */
     // Helper for WebIDL node wrapping
+#ifdef MOZ_ENABLE_NPAPI
     void SetupProtoChain(JSContext* aCx, JS::Handle<JSObject*> aObject);
 
     // Remove plugin from protochain
     void TeardownProtoChain();
+#endif
 
     // Helper for WebIDL NeedResolve
     bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
@@ -194,7 +198,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     }
     void PlayPlugin(mozilla::ErrorResult& aRv)
     {
+#ifdef MOZ_ENABLE_NPAPI
       aRv = PlayPlugin();
+#else
+      return;
+#endif
     }
     void Reload(bool aClearActivation, mozilla::ErrorResult& aRv)
     {
@@ -219,10 +227,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     {
       return mFallbackType;
     }
+#ifdef MOZ_ENABLE_NPAPI
     bool HasRunningPlugin() const
     {
       return !!mInstanceOwner;
     }
+#endif
     void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
                           mozilla::ErrorResult& aRv)
     {
@@ -330,8 +340,10 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     void CreateStaticClone(nsObjectLoadingContent* aDest) const;
 
+#ifdef MOZ_ENABLE_NPAPI
     void DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner, bool aDelayedStop,
                       bool aForcedReentry = false);
+#endif
 
     nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                         nsIContent* aBindingParent,
@@ -382,7 +394,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     void GetNestedParams(nsTArray<mozilla::dom::MozPluginParameter>& aParameters,
                          bool aIgnoreCodebase);
 
-    MOZ_MUST_USE nsresult BuildParametersArray();
+    [[nodiscard]] nsresult BuildParametersArray();
 
     /**
      * Loads fallback content with the specified FallbackType
@@ -434,8 +446,9 @@ class nsObjectLoadingContent : public nsImageLoadingContent
      * Queue a CheckPluginStopEvent and track it in mPendingCheckPluginStopEvent
      */
     void QueueCheckPluginStopEvent();
-
+#ifdef MOZ_ENABLE_NPAPI
     void NotifyContentObjectWrapper();
+#endif
 
     /**
      * Opens the channel pointed to by mURI into mChannel.
@@ -586,7 +599,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     void MaybeRewriteYoutubeEmbed(nsIURI* aURI,
                                   nsIURI* aBaseURI,
                                   nsIURI** aRewrittenURI);
-
+#ifdef MOZ_ENABLE_NPAPI
     // Helper class for SetupProtoChain
     class SetupProtoChainRunner final : public nsIRunnable
     {
@@ -614,7 +627,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
                                       nsNPAPIPluginInstance *plugin_inst,
                                       JS::MutableHandle<JSObject*> plugin_obj,
                                       JS::MutableHandle<JSObject*> plugin_proto);
-
+#endif
     // Utility for firing an error event, if we're an <object>.
     void MaybeFireErrorEvent();
 
@@ -711,8 +724,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     bool                        mPreferFallbackKnown : 1;
 
     nsWeakFrame                 mPrintFrame;
-
+#ifdef MOZ_ENABLE_NPAPI
     RefPtr<nsPluginInstanceOwner> mInstanceOwner;
+#else
+    bool mInstanceOwner = false;
+#endif
     nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;
     nsTArray<mozilla::dom::MozPluginParameter> mCachedParameters;
 };

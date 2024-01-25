@@ -76,7 +76,9 @@
 #include "nsDOMTokenList.h"
 #include "mozilla/RuleNodeCacheConditions.h"
 #include "nsCSSProps.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginFrame.h"
+#endif
 #include "DisplayItemScrollClip.h"
 #include "nsSVGMaskFrame.h"
 #include "nsTableCellFrame.h"
@@ -1648,6 +1650,7 @@ TreatAsOpaque(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder)
 {
   bool snap;
   nsRegion opaque = aItem->GetOpaqueRegion(aBuilder, &snap);
+#ifdef MOZ_ENABLE_NPAPI
   if (aBuilder->IsForPluginGeometry() &&
       aItem->GetType() != nsDisplayItem::TYPE_LAYER_EVENT_REGIONS)
   {
@@ -1666,6 +1669,7 @@ TreatAsOpaque(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder)
       opaque = aItem->GetBounds(aBuilder, &snap);
     }
   }
+#endif
   if (opaque.IsEmpty()) {
     return opaque;
   }
@@ -1961,14 +1965,15 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     if (aFlags & PAINT_NO_COMPOSITE) {
       flags = LayerManager::END_NO_COMPOSITE;
     }
-  } else {
+  }
+#ifdef MOZ_ENABLE_NPAPI
+  else {
     // Client layer managers never composite directly, so
     // we don't need to worry about END_NO_COMPOSITE.
     if (aBuilder->WillComputePluginGeometry()) {
       flags = LayerManager::END_NO_REMOTE_COMPOSITE;
     }
   }
-
   // If this is the content process, we ship plugin geometry updates over with layer
   // updates, so calculate that now before we call EndTransaction.
   if (rootPresContext && XRE_IsContentProcess()) {
@@ -1980,7 +1985,7 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
     // called even if there are no windowed plugins in the page.
     rootPresContext->CollectPluginGeometryUpdates(layerManager);
   }
-
+#endif
   MaybeSetupTransactionIdAllocator(layerManager, view);
 
   layerManager->EndTransaction(FrameLayerBuilder::DrawPaintedLayer,
@@ -3872,7 +3877,9 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
     // bug 1213324 for details.
     mDispatchToContentHitRegion.Or(mDispatchToContentHitRegion, borderBox);
     mDispatchToContentHitRegion.SimplifyOutward(8);
-  } else if (aFrame->GetType() == nsGkAtoms::objectFrame) {
+  }
+#ifdef MOZ_ENABLE_NPAPI
+  else if (aFrame->GetType() == nsGkAtoms::objectFrame) {
     // If the frame is a plugin frame and wants to handle wheel events as
     // default action, we should add the frame to dispatch-to-content region.
     nsPluginFrame* pluginFrame = do_QueryFrame(aFrame);
@@ -3881,6 +3888,7 @@ nsDisplayLayerEventRegions::AddFrame(nsDisplayListBuilder* aBuilder,
       mDispatchToContentHitRegion.SimplifyOutward(8);
     }
   }
+#endif
 
   // Touch action region
 

@@ -62,7 +62,9 @@ extern PRLogModuleInfo *gWidgetDrawLog;
 #endif /* MOZ_LOGGING */
 
 class gfxPattern;
+#ifdef MOZ_ENABLE_NPAPI
 class nsPluginNativeWindowGtk;
+#endif
 
 namespace mozilla {
 class TimeStamp;
@@ -94,10 +96,10 @@ public:
 
     // nsIWidget
     using nsBaseWidget::Create; // for Create signature not overridden here
-    virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
-                                         nsNativeWidget aNativeParent,
-                                         const LayoutDeviceIntRect& aRect,
-                                         nsWidgetInitData* aInitData) override;
+    [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
+                                          nsNativeWidget aNativeParent,
+                                          const LayoutDeviceIntRect& aRect,
+                                          nsWidgetInitData* aInitData) override;
     virtual void       Destroy() override;
     virtual nsIWidget *GetParent() override;
     virtual float      GetDPI() override;
@@ -140,7 +142,9 @@ public:
                                  uint32_t aHotspotX, uint32_t aHotspotY) override;
     NS_IMETHOD         Invalidate(const LayoutDeviceIntRect& aRect) override;
     virtual void*      GetNativeData(uint32_t aDataType) override;
+#ifdef MOZ_ENABLE_NPAPI
     void               SetNativeData(uint32_t aDataType, uintptr_t aVal) override;
+#endif
     NS_IMETHOD         SetTitle(const nsAString& aTitle) override;
     NS_IMETHOD         SetIcon(const nsAString& aIconSpec) override;
     virtual void       SetWindowClass(const nsAString& xulWinType) override;
@@ -520,8 +524,10 @@ private:
     // Updates the bounds of the socket widget we manage for remote plugins.
     void ResizePluginSocketWidget();
 
+#ifdef MOZ_ENABLE_NPAPI
     // e10s specific - for managing the socket widget this window hosts.
     nsPluginNativeWindowGtk* mPluginNativeWindow;
+#endif
 
     // The cursor cache
     static GdkCursor   *gsGtkCursorCache[eCursorCount];

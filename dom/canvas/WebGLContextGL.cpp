@@ -792,7 +792,7 @@ WebGLContext::GetRenderbufferParameter(GLenum target, GLenum pname)
     case LOCAL_GL_RENDERBUFFER_SAMPLES:
         if (!IsWebGL2())
             break;
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
     case LOCAL_GL_RENDERBUFFER_WIDTH:
     case LOCAL_GL_RENDERBUFFER_HEIGHT:

@@ -144,13 +144,13 @@ class MOZ_RAII OptionalEmitter
     Other
   };
 
-  MOZ_MUST_USE bool emitJumpShortCircuit();
-  MOZ_MUST_USE bool emitJumpShortCircuitForCall();
+  [[nodiscard]] bool emitJumpShortCircuit();
+  [[nodiscard]] bool emitJumpShortCircuitForCall();
 
   // JSOp is the op code to be emitted, Kind is if we are dealing with a
   // reference (in which case we need two elements on the stack) or other value
   // (which needs one element on the stack)
-  MOZ_MUST_USE bool emitOptionalJumpTarget(JSOp op, Kind kind = Kind::Other);
+  [[nodiscard]] bool emitOptionalJumpTarget(JSOp op, Kind kind = Kind::Other);
 };
 
 BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
@@ -708,7 +708,7 @@ class NonLocalExitControl
 
     NonLocalExitControl(const NonLocalExitControl&) = delete;
 
-    MOZ_MUST_USE bool leaveScope(EmitterScope* scope);
+    [[nodiscard]] bool leaveScope(EmitterScope* scope);
 
   public:
     NonLocalExitControl(BytecodeEmitter* bce, Kind kind)
@@ -725,9 +725,9 @@ class NonLocalExitControl
         bce_->stackDepth = savedDepth_;
     }
 
-    MOZ_MUST_USE bool prepareForNonLocalJump(NestableControl* target);
+    [[nodiscard]] bool prepareForNonLocalJump(NestableControl* target);
 
-    MOZ_MUST_USE bool prepareForNonLocalJumpToOutermost() {
+    [[nodiscard]] bool prepareForNonLocalJumpToOutermost() {
         return prepareForNonLocalJump(nullptr);
     }
 };
@@ -1271,7 +1271,7 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
       // Any subexpression of a comma expression could be effectful.
       case PNK_COMMA:
         MOZ_ASSERT(!pn->as<ListNode>().empty());
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       // Subcomponents of a literal may be effectful.
       case PNK_ARRAY:
       case PNK_OBJECT:

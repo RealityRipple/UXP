@@ -4320,7 +4320,7 @@ CompileFunction(JSContext* cx, const ReadOnlyCompileOptions& optionsArg,
     return true;
 }
 
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 BuildFunctionString(const char* name, size_t nameLen,
                     unsigned nargs, const char* const* argnames,
                     const SourceBufferHolder& srcBuf, StringBuffer* out,
@@ -4949,10 +4949,29 @@ JS::GetPromiseResult(JS::HandleObject promiseObj)
     return promise->state() == JS::PromiseState::Fulfilled ? promise->value() : promise->reason();
 }
 
+JS_PUBLIC_API(bool)
+JS::GetPromiseIsHandled(JS::HandleObject promise)
+{
+    PromiseObject* promiseObj = &promise->as<PromiseObject>();
+    return !promiseObj->isUnhandled();
+}
+
 JS_PUBLIC_API(JSObject*)
 JS::GetPromiseAllocationSite(JS::HandleObject promise)
 {
     return promise->as<PromiseObject>().allocationSite();
+}
+
+JS_PUBLIC_API(bool)
+JS::GetPromiseIsReported(JS::HandleObject promise)
+{
+    return promise->as<PromiseObject>().isReported();
+}
+
+JS_PUBLIC_API(void)
+JS::MarkPromiseRejectionReported(JS::HandleObject promise)
+{
+    return promise->as<PromiseObject>().markAsReported();
 }
 
 JS_PUBLIC_API(JSObject*)

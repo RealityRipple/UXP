@@ -135,7 +135,7 @@ TimingParams::ParseEasing(const nsAString& aEasing,
               NS_STYLE_TRANSITION_TIMING_FUNCTION_LINEAR) {
             return Nothing();
           }
-          MOZ_FALLTHROUGH;
+          [[fallthrough]];
         case eCSSUnit_Cubic_Bezier:
         case eCSSUnit_Steps: {
           nsTimingFunction timingFunction;

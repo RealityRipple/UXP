@@ -38,7 +38,7 @@ namespace wasm {
 // Ensure the given JSRuntime is set up to use signals. Failure to enable signal
 // handlers indicates some catastrophic failure and creation of the runtime must
 // fail.
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EnsureSignalHandlers(JSRuntime* rt);
 
 // Return whether signals can be used in this process for interrupts or
@@ -62,8 +62,13 @@ class MachExceptionHandler
     void uninstall();
 
   public:
+#ifdef __ppc__
+    MachExceptionHandler() {}
+    ~MachExceptionHandler() {}
+#else
     MachExceptionHandler();
     ~MachExceptionHandler() { uninstall(); }
+#endif
     mach_port_t port() const { return port_; }
     bool installed() const { return installed_; }
     bool install(JSRuntime* rt);

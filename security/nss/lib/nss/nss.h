@@ -9,11 +9,14 @@
 #define __nss_h_
 
 /* The private macro _NSS_CUSTOMIZED is for NSS internal use only. */
-#if defined(NSS_ALLOW_UNSUPPORTED_CRITICAL)
+//#if defined(NSS_ALLOW_UNSUPPORTED_CRITICAL)
+//#define _NSS_CUSTOMIZED " (Customized build)"
+//#else
+//#define _NSS_CUSTOMIZED
+//#endif
+
+// UXP: custom-patched
 #define _NSS_CUSTOMIZED " (Customized build)"
-#else
-#define _NSS_CUSTOMIZED
-#endif
 
 /*
  * NSS's major version, minor version, patch level, build number, and whether
@@ -22,11 +25,11 @@
  * The format of the version string should be
  *     "<major version>.<minor version>[.<patch level>[.<build number>]][ <ECC>][ <Beta>]"
  */
-#define NSS_VERSION "3.79.4" _NSS_CUSTOMIZED
+#define NSS_VERSION "3.79.4.1" _NSS_CUSTOMIZED
 #define NSS_VMAJOR 3
 #define NSS_VMINOR 79
 #define NSS_VPATCH 4
-#define NSS_VBUILD 0
+#define NSS_VBUILD 1
 #define NSS_BETA PR_FALSE
 
 #ifndef RC_INVOKED

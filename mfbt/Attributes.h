@@ -236,71 +236,8 @@
 #  define MOZ_ALLOCATOR
 #endif
 
-/**
- * MOZ_MUST_USE tells the compiler to emit a warning if a function's
- * return value is not used by the caller.
- *
- * Place this attribute at the very beginning of a function declaration. For
- * example, write
- *
- *   MOZ_MUST_USE int foo();
- *
- * or
- *
- *   MOZ_MUST_USE int foo() { return 42; }
- */
-#if defined(__GNUC__) || defined(__clang__)
-#  define MOZ_MUST_USE __attribute__ ((warn_unused_result))
-#else
-#  define MOZ_MUST_USE
-#endif
-
 #ifdef __cplusplus
 
-/**
- * MOZ_FALLTHROUGH is an annotation to suppress compiler warnings about switch
- * cases that fall through without a break or return statement. MOZ_FALLTHROUGH
- * is only needed on cases that have code.
- *
- * MOZ_FALLTHROUGH_ASSERT is an annotation to suppress compiler warnings about
- * switch cases that MOZ_ASSERT(false) (or its alias MOZ_ASSERT_UNREACHABLE) in
- * debug builds, but intentionally fall through in release builds. See comment
- * in Assertions.h for more details.
- *
- * switch (foo) {
- *   case 1: // These cases have no code. No fallthrough annotations are needed.
- *   case 2:
- *   case 3: // This case has code, so a fallthrough annotation is needed!
- *     foo++;
- *     MOZ_FALLTHROUGH;
- *   case 4:
- *     return foo;
- *
- *   default:
- *     // This case asserts in debug builds, falls through in release.
- *     MOZ_FALLTHROUGH_ASSERT("Unexpected foo value?!");
- *   case 5:
- *     return 5;
- * }
- */
-#ifndef __has_cpp_attribute
-#  define __has_cpp_attribute(x) 0
-#endif
-
-#if __has_cpp_attribute(clang::fallthrough)
-#  define MOZ_FALLTHROUGH [[clang::fallthrough]]
-#elif __has_cpp_attribute(gnu::fallthrough)
-#  define MOZ_FALLTHROUGH [[gnu::fallthrough]]
-#elif defined(_MSC_VER)
-   /*
-    * MSVC's __fallthrough annotations are checked by /analyze (Code Analysis):
-    * https://msdn.microsoft.com/en-us/library/ms235402%28VS.80%29.aspx
-    */
-#  include <sal.h>
-#  define MOZ_FALLTHROUGH __fallthrough
-#else
-#  define MOZ_FALLTHROUGH /* FALLTHROUGH */
-#endif
 /*
  * MOZ_ASAN_BLACKLIST is a macro to tell AddressSanitizer (a compile-time
  * instrumentation shipped with Clang and GCC) to not instrument the annotated

@@ -9,7 +9,9 @@
 #include "mozilla/dom/MimeTypeBinding.h"
 #include "nsIDOMNavigator.h"
 #include "nsPIDOMWindow.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginArray.h"
+#endif
 #include "nsIMIMEService.h"
 #include "nsIMIMEInfo.h"
 #include "Navigator.h"
@@ -118,6 +120,7 @@ FindMimeType(const nsTArray<RefPtr<nsMimeType>>& aMimeTypes,
 nsMimeType*
 nsMimeTypeArray::NamedGetter(const nsAString& aName, bool &aFound)
 {
+#ifdef MOZ_ENABLE_NPAPI
   aFound = false;
 
   if (ResistFingerprinting()) {
@@ -138,7 +141,7 @@ nsMimeTypeArray::NamedGetter(const nsAString& aName, bool &aFound)
   if (hiddenType) {
     nsPluginArray::NotifyHiddenPluginTouched(hiddenType->GetEnabledPlugin());
   }
-
+#endif
   return nullptr;
 }
 
@@ -167,6 +170,7 @@ nsMimeTypeArray::GetSupportedNames(nsTArray<nsString>& aRetval)
 void
 nsMimeTypeArray::EnsurePluginMimeTypes()
 {
+#ifdef MOZ_ENABLE_NPAPI
   if (!mMimeTypes.IsEmpty() || !mWindow) {
     return;
   }
@@ -186,15 +190,25 @@ nsMimeTypeArray::EnsurePluginMimeTypes()
 
   pluginArray->GetMimeTypes(mMimeTypes);
   pluginArray->GetCTPMimeTypes(mCTPMimeTypes);
+#else
+  return;
+#endif
 }
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsMimeType, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsMimeType, Release)
-
+#ifdef MOZ_ENABLE_NPAPI
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsMimeType, mWindow, mPluginElement)
+#else
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsMimeType, mWindow)
+#endif
 
 nsMimeType::nsMimeType(nsPIDOMWindowInner* aWindow,
+#ifdef MOZ_ENABLE_NPAPI
                        nsPluginElement* aPluginElement,
+#else
+                       void* aPluginElement,
+#endif
                        const nsAString& aType,
                        const nsAString& aDescription,
                        const nsAString& aExtension)
@@ -233,12 +247,16 @@ nsMimeType::GetDescription(nsString& aRetval) const
 nsPluginElement*
 nsMimeType::GetEnabledPlugin() const
 {
+#ifdef MOZ_ENABLE_NPAPI
   // mPluginElement might be null if we got unlinked but are still somehow being
   // called into.
   if (!mPluginElement || !mPluginElement->PluginTag()->IsEnabled()) {
     return nullptr;
   }
   return mPluginElement;
+#else
+  return nullptr;
+#endif
 }
 
 void

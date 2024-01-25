@@ -4,67 +4,83 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 XPIDL_SOURCES += [
-    'nsIHTTPHeaderListener.idl',
-    'nsIPluginDocument.idl',
-    'nsIPluginHost.idl',
-    'nsIPluginInputStream.idl',
-    'nsIPluginInstanceOwner.idl',
     'nsIPluginTag.idl',
-    'nspluginroot.idl',
 ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    XPIDL_SOURCES += [
+        'nsIHTTPHeaderListener.idl',
+        'nsIPluginDocument.idl',
+        'nsIPluginHost.idl',
+        'nsIPluginInputStream.idl',
+        'nsIPluginInstanceOwner.idl',
+        'nspluginroot.idl',
+    ]
+else:
+    XPIDL_SOURCES += ['no_npapi/nsIPluginHost.idl']
 
 XPIDL_MODULE = 'plugin'
 
 EXPORTS += [
     'npapi.h',
-    'npfunctions.h',
-    'npruntime.h',
     'nptypes.h',
-    'nsJSNPRuntime.h',
-    'nsNPAPIPluginInstance.h',
     'nsPluginDirServiceProvider.h',
     'nsPluginHost.h',
-    'nsPluginInstanceOwner.h',
     'nsPluginLogging.h',
-    'nsPluginNativeWindow.h',
     'nsPluginNativeWindowGtk.h',
-    'nsPluginsCID.h',
-    'nsPluginsDir.h',
     'nsPluginTags.h',
 ]
 
-EXPORTS.mozilla += [
-    'PluginPRLibrary.h',
-]
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    EXPORTS += [
+        'npfunctions.h',
+        'npruntime.h',
+        'nsJSNPRuntime.h',
+        'nsNPAPIPluginInstance.h',
+        'nsPluginInstanceOwner.h',
+        'nsPluginNativeWindow.h',
+        'nsPluginsCID.h',
+        'nsPluginsDir.h',
+    ]
+
+
+    EXPORTS.mozilla += [
+        'PluginPRLibrary.h',
+    ]
 
 UNIFIED_SOURCES += [
-    'nsJSNPRuntime.cpp',
-    'nsNPAPIPluginInstance.cpp',
-    'nsNPAPIPluginStreamListener.cpp',
-    'nsPluginInstanceOwner.cpp',
-    'nsPluginModule.cpp',
-    'nsPluginStreamListenerPeer.cpp',
     'nsPluginTags.cpp',
-    'PluginPRLibrary.cpp',
 ]
 
-SOURCES += [
-    'nsNPAPIPlugin.cpp', # Conflict with X11 headers
-    'nsPluginHost.cpp',  # Conflict with NS_NPAPIPLUGIN_CALLBACK
-]
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    UNIFIED_SOURCES += [
+        'nsJSNPRuntime.cpp',
+        'nsNPAPIPluginInstance.cpp',
+        'nsNPAPIPluginStreamListener.cpp',
+        'nsPluginInstanceOwner.cpp',
+        'nsPluginModule.cpp',
+        'nsPluginStreamListenerPeer.cpp',
+        'PluginPRLibrary.cpp',
+    ]
 
-if CONFIG['OS_ARCH'] == 'WINNT':
+    SOURCES += [
+        'nsNPAPIPlugin.cpp', # Conflict with X11 headers
+        'nsPluginHost.cpp', # Conflict with NS_NPAPIPLUGIN_CALLBACK
+    ]
+
+
+if CONFIG['OS_ARCH'] == 'WINNT' and CONFIG['MOZ_ENABLE_NPAPI']:
     UNIFIED_SOURCES += [
         'nsPluginDirServiceProvider.cpp',
         'nsPluginNativeWindowWin.cpp',
         'nsPluginsDirWin.cpp',
     ]
-elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
+elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa' and CONFIG['MOZ_ENABLE_NPAPI']:
     UNIFIED_SOURCES += [
         'nsPluginNativeWindow.cpp',
         'nsPluginsDirDarwin.cpp',
     ]
-else:
+elif CONFIG['MOZ_ENABLE_NPAPI']:
     UNIFIED_SOURCES += [
         'nsPluginsDirUnix.cpp',
     ]
@@ -92,6 +108,11 @@ LOCAL_INCLUDES += [
 if CONFIG['OS_ARCH'] == 'WINNT':
     LOCAL_INCLUDES += [
         '/xpcom/base',
+    ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    LOCAL_INCLUDES += [
+        '/dom/plugins/ipc',
     ]
 
 include('/ipc/chromium/chromium-config.mozbuild')

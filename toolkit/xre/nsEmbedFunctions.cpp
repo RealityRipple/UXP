@@ -58,7 +58,11 @@
 #include "mozilla/ipc/ProcessChild.h"
 #include "ScopedXREEmbed.h"
 
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/plugins/PluginProcessChild.h"
+#else
+#include "mozilla/ipc/CrossProcessMutex.h"
+#endif
 #include "mozilla/dom/ContentProcess.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
@@ -90,7 +94,9 @@ using mozilla::ipc::IOThreadChild;
 using mozilla::ipc::ProcessChild;
 using mozilla::ipc::ScopedXREEmbed;
 
+#ifdef MOZ_ENABLE_NPAPI
 using mozilla::plugins::PluginProcessChild;
+#endif
 using mozilla::dom::ContentProcess;
 using mozilla::dom::ContentParent;
 using mozilla::dom::ContentChild;
@@ -478,10 +484,11 @@ XRE_InitChildProcess(int aArgc,
       case GeckoProcessType_Default:
         NS_RUNTIMEABORT("This makes no sense");
         break;
-
+#ifdef MOZ_ENABLE_NPAPI
       case GeckoProcessType_Plugin:
         process = new PluginProcessChild(parentPID);
         break;
+#endif
 
       case GeckoProcessType_Content: {
           process = new ContentProcess(parentPID);

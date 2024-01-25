@@ -17,7 +17,7 @@
 #include "nspr.h"
 #include "nsString.h"
 #include "pk11func.h"
-#include "pkix/pkixtypes.h"
+#include "mozpkix/pkixtypes.h"
 
 #include "ocspt.h" // Must be included after pk11func.h.
 

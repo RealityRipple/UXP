@@ -2383,8 +2383,9 @@ public:
 
   virtual nsresult AddPlugin(nsIObjectLoadingContent* aPlugin) = 0;
   virtual void RemovePlugin(nsIObjectLoadingContent* aPlugin) = 0;
+#ifdef MOZ_ENABLE_NPAPI
   virtual void GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins) = 0;
-
+#endif
   virtual nsresult AddResponsiveContent(nsIContent* aContent) = 0;
   virtual void RemoveResponsiveContent(nsIContent* aContent) = 0;
   virtual void NotifyMediaFeatureValuesChanged() = 0;
@@ -2513,8 +2514,8 @@ public:
                 mozilla::ErrorResult& rv);
   virtual mozilla::dom::DOMImplementation*
     GetImplementation(mozilla::ErrorResult& rv) = 0;
-  MOZ_MUST_USE nsresult GetURL(nsString& retval) const;
-  MOZ_MUST_USE nsresult GetDocumentURI(nsString& retval) const;
+  [[nodiscard]] nsresult GetURL(nsString& retval) const;
+  [[nodiscard]] nsresult GetDocumentURI(nsString& retval) const;
   // Return the URI for the document.
   // The returned value may differ if the document is loaded via XHR, and
   // when accessed from chrome privileged script and

@@ -20,7 +20,6 @@ DIRS += ['/modules/libmar',
          '/other-licenses/bsdiff']
 
 DIRS += [
-    '/config/external/freetype2',
     '/xpcom',
     '/modules/libpref',
     '/intl',

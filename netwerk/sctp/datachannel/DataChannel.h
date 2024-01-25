@@ -140,15 +140,14 @@ public:
     PARTIAL_RELIABLE_TIMED = 2
   } Type;
 
-  MOZ_MUST_USE
-  already_AddRefed<DataChannel> Open(const nsACString& label,
-                                     const nsACString& protocol,
-                                     Type type, bool inOrder,
-                                     uint32_t prValue,
-                                     DataChannelListener *aListener,
-                                     nsISupports *aContext,
-                                     bool aExternalNegotiated,
-                                     uint16_t aStream);
+  [[nodiscard]] already_AddRefed<DataChannel> Open(const nsACString& label,
+                                                   const nsACString& protocol,
+                                                   Type type, bool inOrder,
+                                                   uint32_t prValue,
+                                                   DataChannelListener *aListener,
+                                                   nsISupports *aContext,
+                                                   bool aExternalNegotiated,
+                                                   uint16_t aStream);
 
   void Close(DataChannel *aChannel);
   // CloseInt() must be called with mLock held
@@ -545,7 +544,7 @@ public:
       case ON_DISCONNECTED:
         // If we've disconnected, make sure we close all the streams - from mainthread!
         mConnection->CloseAll();
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       case ON_CHANNEL_CREATED:
       case ON_CONNECTION:
         // WeakPtr - only used/modified/nulled from MainThread so we can use a WeakPtr here

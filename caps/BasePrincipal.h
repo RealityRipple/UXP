@@ -51,12 +51,12 @@ public:
   // Don't use this method for anything else than debugging!
   void CreateAnonymizedSuffix(nsACString& aStr) const;
 
-  MOZ_MUST_USE bool PopulateFromSuffix(const nsACString& aStr);
+  [[nodiscard]] bool PopulateFromSuffix(const nsACString& aStr);
 
   // Populates the attributes from a string like
   // |uri!key1=value1&key2=value2| and returns the uri without the suffix.
-  MOZ_MUST_USE bool PopulateFromOrigin(const nsACString& aOrigin,
-                                       nsACString& aOriginNoSuffix);
+  [[nodiscard]] bool PopulateFromOrigin(const nsACString& aOrigin,
+                                        nsACString& aOriginNoSuffix);
 
   // Helper function to match mIsPrivateBrowsing to existing private browsing
   // flags. Once all other flags are removed, this can be removed too.

@@ -1794,7 +1794,7 @@ void nsExternalAppHandler::SendStatusChange(ErrorType type, nsresult rv, nsIRequ
           msgId.AssignLiteral("helperAppNotFound");
           break;
         }
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
     default:
         // Generic read/write/launch error message.
@@ -2676,13 +2676,14 @@ nsExternalHelperAppService::GetTypeFromExtension(const nsACString& aFileExt,
   if (found) {
     return NS_OK;
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   // Try the plugins
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
   if (pluginHost &&
       pluginHost->HavePluginForExtension(aFileExt, aContentType)) {
     return NS_OK;
   }
+#endif
 
   // Let's see if an extension added something
   nsCOMPtr<nsICategoryManager> catMan(

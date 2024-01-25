@@ -134,7 +134,7 @@ class RegExpShared : public gc::TenuredCell
     GCPtr<JSAtom*>     source;
 
     RegExpFlag         flags;
-    bool               canStringMatch;
+    bool               canStringMatch : 1;
     size_t             parenCount;
 
     uint32_t            numNamedCaptures_;
@@ -460,7 +460,7 @@ class RegExpObject : public NativeObject
 
     static bool isOriginalFlagGetter(JSNative native, RegExpFlag* mask);
 
-    static MOZ_MUST_USE bool getShared(JSContext* cx, Handle<RegExpObject*> regexp,
+    [[nodiscard]] static bool getShared(JSContext* cx, Handle<RegExpObject*> regexp,
                                        MutableHandleRegExpShared shared);
 
     bool hasShared() {
@@ -483,7 +483,7 @@ class RegExpObject : public NativeObject
     void initAndZeroLastIndex(HandleAtom source, RegExpFlag flags, ExclusiveContext* cx);
 
 #ifdef DEBUG
-    static MOZ_MUST_USE bool dumpBytecode(JSContext* cx, Handle<RegExpObject*> regexp,
+    [[nodiscard]] static bool dumpBytecode(JSContext* cx, Handle<RegExpObject*> regexp,
                                           bool match_only, HandleLinearString input);
 #endif
 
@@ -492,7 +492,7 @@ class RegExpObject : public NativeObject
      * Precondition: the syntax for |source| has already been validated.
      * Side effect: sets the private field.
      */
-    static MOZ_MUST_USE bool createShared(JSContext* cx, Handle<RegExpObject*> regexp,
+    [[nodiscard]] static bool createShared(JSContext* cx, Handle<RegExpObject*> regexp,
                                           MutableHandleRegExpShared shared);
 
     PreBarriered<RegExpShared*>& sharedRef() {

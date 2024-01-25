@@ -377,7 +377,7 @@ str_trimEnd(JSContext* cx, unsigned argc, Value* vp);
  *
  * Usage: lowerCase = intl_toLocaleLowerCase(string, locale)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp);
 
 /**
@@ -386,7 +386,7 @@ intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp);
  *
  * Usage: upperCase = intl_toLocaleUpperCase(string, locale)
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp);
 
 

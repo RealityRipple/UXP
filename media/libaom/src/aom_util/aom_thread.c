@@ -40,7 +40,7 @@ static void execute(AVxWorker *const worker);  // Forward declaration.
 
 static THREADFN thread_loop(void *ptr) {
   AVxWorker *const worker = (AVxWorker *)ptr;
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(__ppc__)
   if (worker->thread_name != NULL) {
     // Apple's version of pthread_setname_np takes one argument and operates on
     // the current thread only. The maximum size of the thread_name buffer was

@@ -10,10 +10,10 @@
 <wizard id="AccountWizard" title="&windowTitle.label;"
         onwizardcancel="return onCancel();"
         onwizardfinish="return FinishAccount();"
-#if defined(MOZ_THUNDERBIRD) && defined(HYPE_ICEDOVE)
-        onload="onAccountWizardLoad(); initAccountWizardTB(window.arguments);"
-#else
+#ifdef MOZ_CLASSIC_ACCOUNT_WIZARD
         onload="onAccountWizardLoad();"
+#else
+        onload="onAccountWizardLoad(); initAccountWizardTB(window.arguments);"
 #endif
         style="&accountWizard.size;"
         xmlns:nc="http://home.netscape.com/NC-rdf#"
@@ -43,7 +43,7 @@
       <label control="acctyperadio">&accountTypeDirections.label;</label>
       <separator/>
       <radiogroup id="acctyperadio" >
-#if !defined(MOZ_THUNDERBIRD) || !defined(HYPE_ICEDOVE)
+#ifdef MOZ_CLASSIC_ACCOUNT_WIZARD
         <radio id="mailaccount" value="mailaccount"
                label="&accountTypeMail.label;" accesskey="&accountTypeMail.accesskey;"
                selected="true"/>

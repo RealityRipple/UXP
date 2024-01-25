@@ -29,10 +29,11 @@
 #include "DecoderTraits.h"
 
 
-// plugins
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsIPluginHost.h"
 #include "nsPluginHost.h"
 static NS_DEFINE_CID(kPluginDocumentCID, NS_PLUGINDOCUMENT_CID);
+#endif
 
 // Factory code for creating variations on html documents
 
@@ -227,7 +228,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
                           aContainer, kImageDocumentCID,
                           aDocListener, aDocViewer);
   }
-
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
   // Don't exclude disabled plugins, which will still trigger the "this plugin
   // is disabled" placeholder.
@@ -238,7 +239,7 @@ nsContentDLF::CreateInstance(const char* aCommand,
                           aContainer, kPluginDocumentCID,
                           aDocListener, aDocViewer);
   }
-
+#endif
   // If we get here, then we weren't able to create anything. Sorry!
   return NS_ERROR_FAILURE;
 }

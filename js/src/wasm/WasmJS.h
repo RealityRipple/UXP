@@ -74,7 +74,7 @@ HasSupport(ExclusiveContext* cx);
 // Compiles the given binary wasm module given the ArrayBufferObject
 // and links the module's imports with the given import object.
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 Eval(JSContext* cx, Handle<TypedArrayObject*> code, HandleObject importObj,
      MutableHandleWasmInstanceObject instanceObj);
 

@@ -133,7 +133,7 @@ class Nursery
     explicit Nursery(JSRuntime* rt);
     ~Nursery();
 
-    MOZ_MUST_USE bool init(uint32_t maxNurseryBytes, AutoLockGC& lock);
+    [[nodiscard]] bool init(uint32_t maxNurseryBytes, AutoLockGC& lock);
 
     unsigned maxChunks() const { return maxNurseryChunks_; }
     unsigned numChunks() const { return chunks_.length(); }
@@ -198,7 +198,7 @@ class Nursery
      * sets |*ref| to the new location of the object and returns true. Otherwise
      * returns false and leaves |*ref| unset.
      */
-    MOZ_ALWAYS_INLINE MOZ_MUST_USE bool getForwardedPointer(JSObject** ref) const;
+    [[nodiscard]] MOZ_ALWAYS_INLINE bool getForwardedPointer(JSObject** ref) const;
 
     /* Forward a slots/elements pointer stored in an Ion frame. */
     void forwardBufferPointer(HeapSlot** pSlotsElems);
@@ -215,7 +215,7 @@ class Nursery
 
     void waitBackgroundFreeEnd();
 
-    MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
+    [[nodiscard]] bool addedUniqueIdToCell(gc::Cell* cell) {
         if (!IsInsideNursery(cell) || !isEnabled())
             return true;
         MOZ_ASSERT(cellsWithUid_.initialized());
@@ -226,7 +226,7 @@ class Nursery
     using SweepThunk = void (*)(void *data);
     void queueSweepAction(SweepThunk thunk, void* data);
 
-    MOZ_MUST_USE bool queueDictionaryModeObjectToSweep(NativeObject* obj);
+    [[nodiscard]] bool queueDictionaryModeObjectToSweep(NativeObject* obj);
 
     size_t sizeOfHeapCommitted() const {
         return numChunks() * gc::ChunkSize;

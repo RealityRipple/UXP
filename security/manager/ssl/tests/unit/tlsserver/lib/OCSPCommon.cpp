@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "pkixtestutil.h"
+#include "mozpix/test/pkixtestutil.h"
 #include "TLSServer.h"
 #include "secder.h"
 #include "secerr.h"

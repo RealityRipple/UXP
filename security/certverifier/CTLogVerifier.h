@@ -6,8 +6,8 @@
 #ifndef CTLogVerifier_h
 #define CTLogVerifier_h
 
-#include "pkix/Input.h"
-#include "pkix/pkix.h"
+#include "mozpkix/Input.h"
+#include "mozpkix/pkix.h"
 #include "SignedCertificateTimestamp.h"
 #include "SignedTreeHead.h"
 

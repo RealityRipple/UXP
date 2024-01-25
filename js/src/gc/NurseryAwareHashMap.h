@@ -83,7 +83,7 @@ class NurseryAwareHashMap
 
     explicit NurseryAwareHashMap(AllocPolicy a = AllocPolicy()) : map(a) {}
 
-    MOZ_MUST_USE bool init(uint32_t len = 16) { return map.init(len); }
+    [[nodiscard]] bool init(uint32_t len = 16) { return map.init(len); }
 
     bool empty() const { return map.empty(); }
     Ptr lookup(const Lookup& l) const { return map.lookup(l); }
@@ -99,7 +99,7 @@ class NurseryAwareHashMap
         return map.sizeOfIncludingThis(mallocSizeOf);
     }
 
-    MOZ_MUST_USE bool put(const Key& k, const Value& v) {
+    [[nodiscard]] bool put(const Key& k, const Value& v) {
         auto p = map.lookupForAdd(k);
         if (p) {
             if (!JS::GCPolicy<Key>::isTenured(k) || !JS::GCPolicy<Value>::isTenured(v)) {

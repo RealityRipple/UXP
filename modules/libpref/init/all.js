@@ -1135,7 +1135,7 @@ pref("dom.require_user_interaction_for_beforeunload", true);
 
 pref("dom.disable_open_during_load",                false);
 pref("dom.popup_maximum",                           20);
-pref("dom.popup_allowed_events", "change click dblclick mouseup pointerup notificationclick reset submit touchend");
+pref("dom.popup_allowed_events", "change click dblclick auxclick mouseup pointerup notificationclick reset submit touchend");
 pref("dom.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
@@ -1569,7 +1569,7 @@ pref("network.http.spdy.coalesce-hostnames", true);
 pref("network.http.spdy.persistent-settings", false);
 pref("network.http.spdy.ping-threshold", 58);
 pref("network.http.spdy.ping-timeout", 8);
-pref("network.http.spdy.send-buffer-size", 131072);
+pref("network.http.spdy.send-buffer-size", 0); // 0 - Auto (managed by OS)
 pref("network.http.spdy.allow-push", true);
 pref("network.http.spdy.push-allowance", 131072);   // 128KB
 pref("network.http.spdy.pull-allowance", 12582912); // 12MB
@@ -2154,6 +2154,7 @@ pref("security.notification_enable_delay", 500);
 pref("security.csp.enable", true);
 pref("security.csp.experimentalEnabled", false);
 pref("security.csp.enableStrictDynamic", true);
+pref("security.csp.reporting.enabled", true);
 
 // Default Content Security Policy to apply to signed contents.
 pref("security.signed_content.CSP.default", "script-src 'self'; style-src 'self'");
@@ -2167,6 +2168,9 @@ pref("security.sri.enable", true);
 
 // Block scripts with wrong MIME type such as image/ or video/.
 pref("security.block_script_with_wrong_mime", true);
+
+// Block scripts with wrong MIME type when loading via importScripts() in workers.
+pref("security.block_importScripts_with_wrong_mime", false);
 
 // Block images of wrong MIME for XCTO: nosniff.
 pref("security.xcto_nosniff_block_images", false);
@@ -2718,8 +2722,11 @@ pref("editor.resizing.preserve_ratio",       true);
 pref("editor.positioning.offset",            0);
 
 pref("dom.use_watchdog", true);
-pref("dom.max_chrome_script_run_time", 90);
-pref("dom.max_script_run_time", 20);
+pref("dom.max_chrome_script_run_time", 30);
+pref("dom.max_script_run_time", 15);
+
+// Automatically terminate non-responsive scripts if script_run_time expires.
+pref("dom.always_stop_slow_scripts", false);
 
 // Stop all scripts in a compartment when the "stop script" dialog is used.
 pref("dom.global_stop_script", true);
@@ -4506,6 +4513,9 @@ pref("full-screen-api.enabled", false);
 pref("full-screen-api.unprefix.enabled", true);
 pref("full-screen-api.allow-trusted-requests-only", true);
 pref("full-screen-api.pointer-lock.enabled", true);
+// Whether to restrict the full-screen API to the existing window size
+// If true, this effectively make fullscreen "fill window" instead.
+pref("full-screen-api.restrict-to-window", false);
 
 // transition duration of fade-to-black and fade-from-black, unit: ms
 pref("full-screen-api.transition-duration.enter", "0 0");
@@ -5109,8 +5119,8 @@ pref("media.sourceErrorDetails.enabled", false);
 #endif
 
 // Whether Navigator.Clipboard methods are a thing.
-pref("dom.events.asyncClipboard", false);
+pref("dom.events.asyncClipboard", true);
 // Whether arbitrary data transfer methods (not plaintext) are allowed.
-pref("dom.events.asyncClipboard.dataTransfer", false);
+pref("dom.events.asyncClipboard.dataTransfer", true);
 // Whether to use ClipboardItem spec or not.
 pref("dom.events.asyncClipboard.clipboardItem", false);

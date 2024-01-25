@@ -56,7 +56,7 @@ messenger.jar:
     content/messenger/aw-outgoing.js                                           (base/prefs/content/aw-outgoing.js)
     content/messenger/aw-accname.js                                            (base/prefs/content/aw-accname.js)
     content/messenger/aw-done.js                                               (base/prefs/content/aw-done.js)
-    content/messenger/accountUtils.js                                          (base/prefs/content/accountUtils.js)
+*   content/messenger/accountUtils.js                                          (base/prefs/content/accountUtils.js)
     content/messenger/amUtils.js                                               (base/prefs/content/amUtils.js)
     content/messenger/ispUtils.js                                              (base/prefs/content/ispUtils.js)
     content/messenger/SmtpServerEdit.xul                                       (base/prefs/content/SmtpServerEdit.xul)
@@ -65,7 +65,7 @@ messenger.jar:
 *   content/messenger/smtpEditOverlay.js                                       (base/prefs/content/smtpEditOverlay.js)
     content/messenger/removeAccount.xul                                        (base/prefs/content/removeAccount.xul)
     content/messenger/removeAccount.js                                         (base/prefs/content/removeAccount.js)
-#if defined(MOZ_THUNDERBIRD) && defined(HYPE_ICEDOVE)
+#ifndef MOZ_CLASSIC_ACCOUNT_WIZARD
 *   content/messenger/accountcreation/accountConfig.js                         (base/prefs/content/accountcreation/accountConfig.js)
 *   content/messenger/accountcreation/createInBackend.js                       (base/prefs/content/accountcreation/createInBackend.js)
 *   content/messenger/accountcreation/emailWizard.js                           (base/prefs/content/accountcreation/emailWizard.js)

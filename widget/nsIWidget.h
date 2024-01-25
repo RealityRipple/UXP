@@ -45,9 +45,11 @@ namespace mozilla {
 namespace dom {
 class TabChild;
 } // namespace dom
+#ifdef MOZ_ENABLE_NPAPI
 namespace plugins {
 class PluginWidgetChild;
 } // namespace plugins
+#endif
 namespace layers {
 class AsyncDragMetrics;
 class Composer2D;
@@ -417,7 +419,7 @@ class nsIWidget : public nsISupports
      * @param     aInitData     data that is used for widget initialization
      *
      */
-    virtual MOZ_MUST_USE nsresult
+    [[nodiscard]] virtual nsresult
     Create(nsIWidget* aParent,
            nsNativeWidget aNativeParent,
            const LayoutDeviceIntRect& aRect,
@@ -431,7 +433,7 @@ class nsIWidget : public nsISupports
      * mapping is not straightforward or the native platform needs to use the
      * desktop pixel values directly.
      */
-    virtual MOZ_MUST_USE nsresult
+    [[nodiscard]] virtual nsresult
     Create(nsIWidget* aParent,
            nsNativeWidget aNativeParent,
            const DesktopIntRect& aRect,
@@ -890,7 +892,7 @@ class nsIWidget : public nsISupports
      * @param aRect   On return it holds the  x, y, width and height of
      *                this widget.
      */
-    virtual MOZ_MUST_USE nsresult
+    [[nodiscard]] virtual nsresult
     GetRestoredBounds(LayoutDeviceIntRect& aRect) = 0;
 
     /**
@@ -1867,9 +1869,11 @@ public:
      * this call creates the base object, it does not create the widget. Use
      * nsIWidget's Create to do this.
      */
+#ifdef MOZ_ENABLE_NPAPI
     static already_AddRefed<nsIWidget>
     CreatePluginProxyWidget(TabChild* aTabChild,
                             mozilla::plugins::PluginWidgetChild* aActor);
+#endif
 
     /**
      * Reparent this widget's native widget.

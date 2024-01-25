@@ -46,7 +46,7 @@ class nsXHTMLContentSerializer : public nsXMLContentSerializer {
                           nsAString& aStr,
                           nsresult& aResult) override;
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   virtual bool AfterElementStart(nsIContent* aContent,
                                  nsIContent* aOriginalElement,
                                  nsAString& aStr) override;
@@ -70,7 +70,7 @@ class nsXHTMLContentSerializer : public nsXMLContentSerializer {
   virtual void MaybeEnterInPreContent(nsIContent* aNode) override;
   virtual void MaybeLeaveFromPreContent(nsIContent* aNode) override;
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   virtual bool SerializeAttributes(nsIContent* aContent,
                            nsIContent *aOriginalElement,
                            nsAString& aTagPrefix,
@@ -82,13 +82,13 @@ class nsXHTMLContentSerializer : public nsXMLContentSerializer {
 
   bool IsFirstChildOfOL(nsIContent* aElement);
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool SerializeLIValueAttribute(nsIContent* aElement,
                                  nsAString& aStr);
   bool IsShorthandAttr(const nsIAtom* aAttrName,
                          const nsIAtom* aElementName);
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   virtual bool AppendAndTranslateEntities(const nsAString& aStr,
                                           nsAString& aOutputStr) override;
 

@@ -654,9 +654,9 @@ class Shape : public gc::TenuredCell
     static inline Shape* search(ExclusiveContext* cx, Shape* start, jsid id);
 
     template<MaybeAdding Adding = MaybeAdding::NotAdding>
-    static inline MOZ_MUST_USE bool search(ExclusiveContext* cx, Shape* start, jsid id,
-                                           const AutoKeepShapeTables&,
-                                           Shape** pshape, ShapeTable::Entry** pentry);
+    [[nodiscard]] static inline bool search(ExclusiveContext* cx, Shape* start, jsid id,
+                                            const AutoKeepShapeTables&,
+                                            Shape** pshape, ShapeTable::Entry** pentry);
 
     static inline Shape* searchNoHashify(Shape* start, jsid id);
 
@@ -694,7 +694,7 @@ class Shape : public gc::TenuredCell
 
     bool makeOwnBaseShape(ExclusiveContext* cx);
 
-    MOZ_ALWAYS_INLINE MOZ_MUST_USE bool maybeCreateTableForLookup(ExclusiveContext* cx);
+    [[nodiscard]] MOZ_ALWAYS_INLINE bool maybeCreateTableForLookup(ExclusiveContext* cx);
 
   public:
     bool hasTable() const { return base()->hasTable(); }
@@ -707,7 +707,7 @@ class Shape : public gc::TenuredCell
     }
 
     template <typename T>
-    MOZ_MUST_USE ShapeTable* ensureTableForDictionary(ExclusiveContext* cx, const T& nogc) {
+    [[nodiscard]] ShapeTable* ensureTableForDictionary(ExclusiveContext* cx, const T& nogc) {
         MOZ_ASSERT(inDictionary());
         if (ShapeTable* table = maybeTable(nogc))
             return table;

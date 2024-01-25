@@ -875,7 +875,7 @@ GetNextPc(jsbytecode* pc)
 /*
  * Disassemblers, for debugging only.
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 Disassemble(JSContext* cx, JS::Handle<JSScript*> script, bool lines, Sprinter* sp);
 
 unsigned
@@ -884,7 +884,7 @@ Disassemble1(JSContext* cx, JS::Handle<JSScript*> script, jsbytecode* pc, unsign
 
 #endif
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 DumpCompartmentPCCounts(JSContext* cx);
 
 } // namespace js

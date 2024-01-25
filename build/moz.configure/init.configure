@@ -499,6 +499,14 @@ set_config('INTEL_ARCHITECTURE', delayed_getattr(target_variables,
                                                  'INTEL_ARCHITECTURE'))
 set_config('TARGET_CPU', delayed_getattr(target, 'raw_cpu'))
 set_config('TARGET_OS', delayed_getattr(target, 'raw_os'))
+set_config('TARGET_ENDIANNESS', delayed_getattr(target, 'endianness'))
+
+@depends(target)
+def target_is_big_endian(target):
+    if target.endianness == 'big':
+        return True
+
+set_define('TARGET_ENDIAN_BIG', target_is_big_endian)
 
 
 @depends(host)
@@ -591,7 +599,9 @@ imply_option('--enable-project', application)
 
 @depends(check_build_environment, '--help')
 def default_project(build_env, help):
-    return 'js'
+    if build_env.topobjdir.endswith('/js/src'):
+        return 'js'
+    return 'xulrunner'
 
 option('--enable-project', nargs=1, default=default_project,
        help='Project to build')
@@ -638,7 +648,7 @@ def build_project(noncomm_build, project, external_source_dir, build_env, help):
 
     build_app = project[0]
 
-    if not external_source_dir and build_app not in ('js'):
+    if not external_source_dir and build_app not in ('xulrunner', 'js'):
         if noncomm_build:
             log.info("=====WARNING WARNING WARNING=====")
             log.info("UNSUPPORTED NONCOMM-BUILD: Application code SHOULD NOT be put inside the platform tree, and doing so may have unforseen consequences if/when platform code is changed.")

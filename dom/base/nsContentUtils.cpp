@@ -23,7 +23,9 @@
 #include "Layers.h"
 #include "MediaDecoder.h"
 // nsNPAPIPluginInstance must be included before nsIDocument.h, which is included in mozAutoDocUpdate.h.
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsNPAPIPluginInstance.h"
+#endif
 #include "gfxDrawable.h"
 #include "gfxPrefs.h"
 #include "ImageOps.h"
@@ -2395,34 +2397,35 @@ nsContentUtils::GetCommonAncestor(nsIDOMNode *aNode,
   return CallQueryInterface(common, aCommonAncestor);
 }
 
-// static
-nsINode*
-nsContentUtils::GetCommonAncestor(nsINode* aNode1,
-                                  nsINode* aNode2)
+template <typename Node, typename GetParentFunc>
+static Node*
+GetCommonAncestorInternal(Node* aNode1,
+                          Node* aNode2,
+                          GetParentFunc aGetParentFunc)
 {
   if (aNode1 == aNode2) {
     return aNode1;
   }
 
   // Build the chain of parents
-  AutoTArray<nsINode*, 30> parents1, parents2;
+  AutoTArray<Node*, 30> parents1, parents2;
   do {
     parents1.AppendElement(aNode1);
-    aNode1 = aNode1->GetParentNode();
+    aNode1 = aGetParentFunc(aNode1);
   } while (aNode1);
   do {
     parents2.AppendElement(aNode2);
-    aNode2 = aNode2->GetParentNode();
+    aNode2 = aGetParentFunc(aNode2);
   } while (aNode2);
 
   // Find where the parent chain differs
   uint32_t pos1 = parents1.Length();
   uint32_t pos2 = parents2.Length();
-  nsINode* parent = nullptr;
+  Node* parent = nullptr;
   uint32_t len;
   for (len = std::min(pos1, pos2); len > 0; --len) {
-    nsINode* child1 = parents1.ElementAt(--pos1);
-    nsINode* child2 = parents2.ElementAt(--pos2);
+    Node* child1 = parents1.ElementAt(--pos1);
+    Node* child2 = parents2.ElementAt(--pos2);
     if (child1 != child2) {
       break;
     }
@@ -2430,6 +2433,25 @@ nsContentUtils::GetCommonAncestor(nsINode* aNode1,
   }
 
   return parent;
+}
+
+/* static */
+nsINode*
+nsContentUtils::GetCommonAncestor(nsINode* aNode1, nsINode* aNode2)
+{
+  return GetCommonAncestorInternal(aNode1, aNode2, [](nsINode* aNode) {
+    return aNode->GetParentNode();
+  });
+}
+
+/* static */
+nsIContent*
+nsContentUtils::GetCommonFlattenedTreeAncestor(nsIContent* aContent1,
+                                               nsIContent* aContent2)
+{
+  return GetCommonAncestorInternal(aContent1, aContent2, [](nsIContent* aContent) {
+    return aContent->GetFlattenedTreeParent();
+  });
 }
 
 // static
@@ -5418,10 +5440,18 @@ nsContentUtils::RunInStableState(already_AddRefed<nsIRunnable> aRunnable)
 
 /* static */
 void
-nsContentUtils::RunInMetastableState(already_AddRefed<nsIRunnable> aRunnable)
+nsContentUtils::AddPendingIDBTransaction(already_AddRefed<nsIRunnable> aTransaction)
 {
   MOZ_ASSERT(CycleCollectedJSContext::Get(), "Must be on a script thread!");
-  CycleCollectedJSContext::Get()->RunInMetastableState(Move(aRunnable));
+  CycleCollectedJSContext::Get()->AddPendingIDBTransaction(Move(aTransaction));
+}
+
+/* static */
+bool
+nsContentUtils::IsInStableOrMetaStableState()
+{
+  MOZ_ASSERT(CycleCollectedJSContext::Get(), "Must be on a script thread!");
+  return CycleCollectedJSContext::Get()->IsInStableOrMetaStableState();
 }
 
 /*
@@ -6470,9 +6500,16 @@ nsContentUtils::IsSubDocumentTabbable(nsIContent* aContent)
   contentViewer->GetPreviousViewer(getter_AddRefs(zombieViewer));
 
   // If there are 2 viewers for the current docshell, that
-  // means the current document is a zombie document.
-  // Only navigate into the subdocument if it's not a zombie.
-  return !zombieViewer;
+  // means the current document may be a zombie document.
+  // While load and pageshow events are dispatched, zombie viewer is the old,
+  // to be hidden document.
+  if (zombieViewer) {
+    bool inOnLoad = false;
+    docShell->GetIsExecutingOnLoadHandler(&inOnLoad);
+    return inOnLoad;
+  }
+
+  return true;
 }
 
 bool
@@ -6943,7 +6980,7 @@ nsContentUtils::HaveEqualPrincipals(nsIDocument* aDoc1, nsIDocument* aDoc2)
 bool
 nsContentUtils::HasPluginWithUncontrolledEventDispatch(nsIContent* aContent)
 {
-#ifdef XP_MACOSX
+#if defined(XP_MACOSX) || !defined(MOZ_ENABLE_NPAPI)
   // We control dispatch to all mac plugins.
   return false;
 #else
@@ -8586,6 +8623,7 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType)
   case nsIContentPolicy::TYPE_INTERNAL_WORKER:
   case nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER:
   case nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER:
+  case nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS:
     return nsIContentPolicy::TYPE_SCRIPT;
 
   case nsIContentPolicy::TYPE_INTERNAL_EMBED:

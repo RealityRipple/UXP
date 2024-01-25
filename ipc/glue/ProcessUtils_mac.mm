@@ -5,15 +5,22 @@
 #include "ProcessUtils.h"
 
 #include "nsString.h"
-
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/plugins/PluginUtilsOSX.h"
+#else
+#include <pthread.h>
+#endif
 
 namespace mozilla {
 namespace ipc {
 
 void SetThisProcessName(const char *aName)
 {
+#ifdef MOZ_ENABLE_NPAPI
   mozilla::plugins::PluginUtilsOSX::SetProcessName(aName);
+#else
+  pthread_setname_np(aName);
+#endif
 }
 
 } // namespace ipc

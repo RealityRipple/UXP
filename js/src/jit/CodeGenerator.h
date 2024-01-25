@@ -56,7 +56,7 @@ class OutOfLineNaNToZero;
 class CodeGenerator final : public CodeGeneratorSpecific
 {
     void generateArgumentsChecks(bool bailout = true);
-    MOZ_MUST_USE bool generateBody();
+    [[nodiscard]] bool generateBody();
 
     ConstantOrRegister toConstantOrRegister(LInstruction* lir, size_t n, MIRType type);
 
@@ -65,11 +65,11 @@ class CodeGenerator final : public CodeGeneratorSpecific
     ~CodeGenerator();
 
   public:
-    MOZ_MUST_USE bool generate();
-    MOZ_MUST_USE bool generateWasm(wasm::SigIdDesc sigId, wasm::TrapOffset trapOffset,
+    [[nodiscard]] bool generate();
+    [[nodiscard]] bool generateWasm(wasm::SigIdDesc sigId, wasm::TrapOffset trapOffset,
                                    wasm::FuncOffsets *offsets);
-    MOZ_MUST_USE bool link(JSContext* cx, CompilerConstraintList* constraints);
-    MOZ_MUST_USE bool linkSharedStubs(JSContext* cx);
+    [[nodiscard]] bool link(JSContext* cx, CompilerConstraintList* constraints);
+    [[nodiscard]] bool linkSharedStubs(JSContext* cx);
 
     void visitOsiPoint(LOsiPoint* lir);
     void visitGoto(LGoto* lir);
@@ -466,7 +466,7 @@ class CodeGenerator final : public CodeGeneratorSpecific
                              bool strict, bool needsTypeBarrier, bool guardHoles,
                              jsbytecode* profilerLeavePc);
 
-    MOZ_MUST_USE bool generateBranchV(const ValueOperand& value, Label* ifTrue, Label* ifFalse,
+    [[nodiscard]] bool generateBranchV(const ValueOperand& value, Label* ifTrue, Label* ifFalse,
                                       FloatRegister fr);
 
     void emitLambdaInit(Register resultReg, Register envChainReg,

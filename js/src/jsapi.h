@@ -129,14 +129,14 @@ class MOZ_RAII AutoVectorRooterBase : protected AutoGCRooter
     size_t length() const { return vector.length(); }
     bool empty() const { return vector.empty(); }
 
-    MOZ_MUST_USE bool append(const T& v) { return vector.append(v); }
-    MOZ_MUST_USE bool appendN(const T& v, size_t len) { return vector.appendN(v, len); }
-    MOZ_MUST_USE bool append(const T* ptr, size_t len) { return vector.append(ptr, len); }
-    MOZ_MUST_USE bool appendAll(const AutoVectorRooterBase<T>& other) {
+    [[nodiscard]] bool append(const T& v) { return vector.append(v); }
+    [[nodiscard]] bool appendN(const T& v, size_t len) { return vector.appendN(v, len); }
+    [[nodiscard]] bool append(const T* ptr, size_t len) { return vector.append(ptr, len); }
+    [[nodiscard]] bool appendAll(const AutoVectorRooterBase<T>& other) {
         return vector.appendAll(other.vector);
     }
 
-    MOZ_MUST_USE bool insert(T* p, const T& val) { return vector.insert(p, val); }
+    [[nodiscard]] bool insert(T* p, const T& val) { return vector.insert(p, val); }
 
     /* For use when space has already been reserved. */
     void infallibleAppend(const T& v) { vector.infallibleAppend(v); }
@@ -144,7 +144,7 @@ class MOZ_RAII AutoVectorRooterBase : protected AutoGCRooter
     void popBack() { vector.popBack(); }
     T popCopy() { return vector.popCopy(); }
 
-    MOZ_MUST_USE bool growBy(size_t inc) {
+    [[nodiscard]] bool growBy(size_t inc) {
         size_t oldLength = vector.length();
         if (!vector.growByUninitialized(inc))
             return false;
@@ -152,7 +152,7 @@ class MOZ_RAII AutoVectorRooterBase : protected AutoGCRooter
         return true;
     }
 
-    MOZ_MUST_USE bool resize(size_t newLength) {
+    [[nodiscard]] bool resize(size_t newLength) {
         size_t oldLength = vector.length();
         if (newLength <= oldLength) {
             vector.shrinkBy(oldLength - newLength);
@@ -166,7 +166,7 @@ class MOZ_RAII AutoVectorRooterBase : protected AutoGCRooter
 
     void clear() { vector.clear(); }
 
-    MOZ_MUST_USE bool reserve(size_t newLength) {
+    [[nodiscard]] bool reserve(size_t newLength) {
         return vector.reserve(newLength);
     }
 
@@ -4612,6 +4612,27 @@ extern JS_PUBLIC_API(JS::Value)
 GetPromiseResult(JS::HandleObject promise);
 
 /**
+ * Returns whether the given promise's rejection is already handled or not.
+ *
+ * The caller must check the given promise is rejected before checking it's
+ * handled or not.
+ */
+extern JS_PUBLIC_API(bool)
+GetPromiseIsHandled(JS::HandleObject promise);
+
+/**
+ * Returns whether the given promise's rejection is reported or not.
+ */
+extern JS_PUBLIC_API(bool)
+GetPromiseIsReported(JS::HandleObject promise);
+
+/**
+ * Mark the given promise's rejection as already reported.
+ */
+extern JS_PUBLIC_API(void)
+MarkPromiseRejectionReported(JS::HandleObject promise);
+
+/**
  * Returns a js::SavedFrame linked list of the stack that lead to the given
  * Promise's allocation.
  */
@@ -5564,10 +5585,17 @@ class JS_PUBLIC_API(JSErrorNotes)
     // Create a deep copy of notes.
     js::UniquePtr<JSErrorNotes> copy(JSContext* cx);
 
-    class iterator : public std::iterator<std::input_iterator_tag, js::UniquePtr<Note>>
+    class iterator
     {
+      private:
         js::UniquePtr<Note>* note_;
       public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type = js::UniquePtr<Note>;
+        using difference_type = ptrdiff_t;
+        using pointer = value_type*;
+        using reference = value_type&;
+
         explicit iterator(js::UniquePtr<Note>* note = nullptr) : note_(note)
         {}
 
@@ -5937,7 +5965,7 @@ class JS_PUBLIC_API(AutoSaveExceptionState)
  * This is not the same stack as `e.stack` when `e` is an `Error` object. (That
  * would be JS::ExceptionStackOrNull).
  */
-MOZ_MUST_USE JS_PUBLIC_API(JSObject*)
+[[nodiscard]] JS_PUBLIC_API(JSObject*)
 GetPendingExceptionStack(JSContext* cx);
 
 } /* namespace JS */

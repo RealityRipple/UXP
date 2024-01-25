@@ -52,7 +52,7 @@ check_and_add_gcc_warning('-Wclass-varargs')
 check_and_add_gcc_warning('-Wloop-analysis')
 
 # catches C++ version forward-compat issues
-check_and_add_gcc_warning('-Wc++1z-compat', cxx_compiler)
+# check_and_add_gcc_warning('-Wc++2a-compat', cxx_compiler)
 
 # catches unintentional switch case fallthroughs
 check_and_add_gcc_warning('-Wimplicit-fallthrough', cxx_compiler)

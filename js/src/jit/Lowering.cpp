@@ -2022,7 +2022,7 @@ LIRGenerator::visitToDouble(MToDouble* convert)
 
       case MIRType::Boolean:
         MOZ_ASSERT(conversion != MToFPInstruction::NumbersOnly);
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case MIRType::Int32:
       {
@@ -2077,7 +2077,7 @@ LIRGenerator::visitToFloat32(MToFloat32* convert)
 
       case MIRType::Boolean:
         MOZ_ASSERT(conversion != MToFPInstruction::NumbersOnly);
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
 
       case MIRType::Int32:
       {

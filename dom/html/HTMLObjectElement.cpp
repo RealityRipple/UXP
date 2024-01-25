@@ -12,10 +12,14 @@
 #include "nsGkAtoms.h"
 #include "nsError.h"
 #include "nsIDocument.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsIPluginDocument.h"
+#endif
 #include "nsIDOMDocument.h"
 #include "nsIObjectFrame.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsNPAPIPluginInstance.h"
+#endif
 #include "nsIWidget.h"
 #include "nsContentUtils.h"
 #ifdef XP_MACOSX
@@ -164,6 +168,7 @@ HTMLObjectElement::OnFocusBlurPlugin(Element* aElement, bool aFocus)
   if (aFocus) {
     nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(aElement);
     bool hasRunningPlugin = false;
+#ifdef MOZ_ENABLE_NPAPI
     if (olc) {
       // nsIObjectLoadingContent::GetHasRunningPlugin() fails when
       // nsContentUtils::IsCallerChrome() returns false (which it can do even
@@ -172,6 +177,7 @@ HTMLObjectElement::OnFocusBlurPlugin(Element* aElement, bool aFocus)
       hasRunningPlugin =
         static_cast<nsObjectLoadingContent*>(olc.get())->HasRunningPlugin();
     }
+#endif
     if (!hasRunningPlugin) {
       aFocus = false;
     }
@@ -267,8 +273,11 @@ HTMLObjectElement::BindToTree(nsIDocument *aDocument,
   // Don't kick off load from being bound to a plugin document - the plugin
   // document will call nsObjectLoadingContent::InitializeFromChannel() for the
   // initial load.
+#ifdef MOZ_ENABLE_NPAPI
   nsCOMPtr<nsIPluginDocument> pluginDoc = do_QueryInterface(aDocument);
-
+#else
+  bool pluginDoc = false;
+#endif
   // If we already have all the children, start the load.
   if (mIsDoneAddingChildren && !pluginDoc) {
     void (HTMLObjectElement::*start)() = &HTMLObjectElement::StartObjectLoad;
@@ -424,6 +433,7 @@ HTMLObjectElement::Reset()
 NS_IMETHODIMP
 HTMLObjectElement::SubmitNamesValues(HTMLFormSubmission *aFormSubmission)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsAutoString name;
   if (!GetAttr(kNameSpaceID_None, nsGkAtoms::name, name)) {
     // No name, don't submit.
@@ -450,6 +460,9 @@ HTMLObjectElement::SubmitNamesValues(HTMLFormSubmission *aFormSubmission)
   NS_ENSURE_SUCCESS(rv, rv);
 
   return aFormSubmission->AddNameValuePair(name, value);
+#else
+  return NS_OK;
+#endif
 }
 
 NS_IMPL_STRING_ATTR(HTMLObjectElement, Align, align)
@@ -600,7 +613,9 @@ HTMLObjectElement::WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
   if (!obj) {
     return nullptr;
   }
+#ifdef MOZ_ENABLE_NPAPI
   SetupProtoChain(aCx, obj);
+#endif
   return obj;
 }
 

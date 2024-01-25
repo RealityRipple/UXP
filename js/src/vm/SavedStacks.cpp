@@ -600,7 +600,7 @@ GetFirstSubsumedSavedFrame(JSContext* cx, HandleObject savedFrame,
     return GetFirstSubsumedFrame(cx, frame, selfHosted, skippedAsync);
 }
 
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 SavedFrame_checkThis(JSContext* cx, CallArgs& args, const char* fnName,
                      MutableHandleObject frame)
 {

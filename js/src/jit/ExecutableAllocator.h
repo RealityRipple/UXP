@@ -190,13 +190,13 @@ class ExecutableAllocator
     static void reprotectPool(JSRuntime* rt, ExecutablePool* pool, ProtectionSetting protection);
 
   public:
-    MOZ_MUST_USE
+    [[nodiscard]]
     static bool makeWritable(void* start, size_t size)
     {
         return ReprotectRegion(start, size, ProtectionSetting::Writable);
     }
 
-    MOZ_MUST_USE
+    [[nodiscard]]
     static bool makeExecutable(void* start, size_t size)
     {
         return ReprotectRegion(start, size, ProtectionSetting::Executable);

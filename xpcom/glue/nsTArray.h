@@ -1274,7 +1274,7 @@ public:
   }
 
   template<class Allocator>
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool Assign(const nsTArray_Impl<E, Allocator>& aOther,
               const mozilla::fallible_t&)
   {
@@ -1343,7 +1343,7 @@ protected:
 public:
 
   template<class Item>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* ReplaceElementsAt(index_type aStart, size_type aCount,
                                const Item* aArray, size_type aArrayLen,
                                const mozilla::fallible_t&)
@@ -1374,7 +1374,7 @@ protected:
 public:
 
   template<class Item>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* ReplaceElementsAt(index_type aStart, size_type aCount,
                                const nsTArray<Item>& aArray,
                                const mozilla::fallible_t&)
@@ -1383,7 +1383,7 @@ public:
   }
 
   template<class Item>
-  MOZ_MUST_USE elem_type* ReplaceElementsAt(index_type aStart,
+  [[nodiscard]] elem_type* ReplaceElementsAt(index_type aStart,
                                             size_type aCount,
                                             mozilla::Span<const Item> aSpan,
                                             const mozilla::fallible_t&)
@@ -1402,7 +1402,7 @@ protected:
 public:
 
   template<class Item>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* ReplaceElementsAt(index_type aStart, size_type aCount,
                                const Item& aItem, const mozilla::fallible_t&)
   {
@@ -1427,7 +1427,7 @@ protected:
 public:
 
   template<class Item>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementsAt(index_type aIndex, const Item* aArray,
                               size_type aArrayLen, const mozilla::fallible_t&)
   {
@@ -1455,7 +1455,7 @@ protected:
 public:
 
   template<class Item, class Allocator>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementsAt(index_type aIndex,
                               const nsTArray_Impl<Item, Allocator>& aArray,
                               const mozilla::fallible_t&)
@@ -1472,14 +1472,14 @@ protected:
 
 public:
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementAt(index_type aIndex, const mozilla::fallible_t&)
   {
     return InsertElementAt<FallibleAlloc>(aIndex);
   }
 
   template<class Item>
-  MOZ_MUST_USE elem_type* InsertElementsAt(index_type aIndex,
+  [[nodiscard]] elem_type* InsertElementsAt(index_type aIndex,
                                            mozilla::Span<const Item> aSpan,
                                            const mozilla::fallible_t&)
   {
@@ -1494,7 +1494,7 @@ protected:
 public:
 
   template<class Item>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementAt(index_type aIndex, Item&& aItem,
                              const mozilla::fallible_t&)
   {
@@ -1569,7 +1569,7 @@ protected:
 public:
 
   template<class Item, class Comparator>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementSorted(Item&& aItem, const Comparator& aComp,
                                  const mozilla::fallible_t&)
   {
@@ -1589,7 +1589,7 @@ protected:
 public:
 
   template<class Item>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementSorted(Item&& aItem, const mozilla::fallible_t&)
   {
     return InsertElementSorted<Item, FallibleAlloc>(
@@ -1615,7 +1615,7 @@ protected:
 public:
 
   template<class Item>
-  /* MOZ_MUST_USE */
+  /* [[nodiscard]] */
   elem_type* AppendElements(const Item* aArray, size_type aArrayLen,
                             const mozilla::fallible_t&)
   {
@@ -1623,7 +1623,7 @@ public:
   }
 
   template<class Item>
-  /* MOZ_MUST_USE */
+  /* [[nodiscard]] */
   elem_type* AppendElements(mozilla::Span<const Item> aSpan,
                             const mozilla::fallible_t&)
   {
@@ -1641,7 +1641,7 @@ protected:
 public:
 
   template<class Item, class Allocator>
-  /* MOZ_MUST_USE */
+  /* [[nodiscard]] */
   elem_type* AppendElements(const nsTArray_Impl<Item, Allocator>& aArray,
                             const mozilla::fallible_t&)
   {
@@ -1657,7 +1657,7 @@ protected:
 public:
 
   template<class Item, class Allocator, typename ActualAlloc = Alloc>
-  /* MOZ_MUST_USE */
+  /* [[nodiscard]] */
   elem_type* AppendElements(nsTArray_Impl<Item, Allocator>&& aArray,
                             const mozilla::fallible_t&)
   {
@@ -1672,7 +1672,7 @@ protected:
 public:
 
   template<class Item>
-  /* MOZ_MUST_USE */
+  /* [[nodiscard]] */
   elem_type* AppendElement(Item&& aItem,
                            const mozilla::fallible_t&)
   {
@@ -1699,7 +1699,7 @@ protected:
   }
 public:
 
-  /* MOZ_MUST_USE */
+  /* [[nodiscard]] */
   elem_type* AppendElements(size_type aCount,
                             const mozilla::fallible_t&)
   {
@@ -1717,7 +1717,7 @@ protected:
   }
 public:
 
-  /* MOZ_MUST_USE */
+  /* [[nodiscard]] */
   elem_type* AppendElement(const mozilla::fallible_t&)
   {
     return AppendElement<FallibleAlloc>();
@@ -1819,7 +1819,7 @@ protected:
   }
 public:
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool SetCapacity(size_type aCapacity, const mozilla::fallible_t&)
   {
     return SetCapacity<FallibleAlloc>(aCapacity);
@@ -1848,7 +1848,7 @@ protected:
   }
 public:
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool SetLength(size_type aNewLen, const mozilla::fallible_t&)
   {
     return SetLength<FallibleAlloc>(aNewLen);
@@ -1887,7 +1887,7 @@ protected:
   }
 public:
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool EnsureLengthAtLeast(size_type aMinLen, const mozilla::fallible_t&)
   {
     return EnsureLengthAtLeast<FallibleAlloc>(aMinLen);
@@ -1918,7 +1918,7 @@ protected:
   }
 public:
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementsAt(index_type aIndex, size_type aCount,
                               const mozilla::fallible_t&)
   {
@@ -1940,7 +1940,7 @@ protected:
 public:
 
   template<class Item>
-  MOZ_MUST_USE
+  [[nodiscard]]
   elem_type* InsertElementsAt(index_type aIndex, size_type aCount,
                               const Item& aItem, const mozilla::fallible_t&)
   {
@@ -2465,6 +2465,12 @@ MakeSpan(const nsTArray_Impl<ElementType, TArrayAlloc>& aTArray)
 {
   return aTArray;
 }
+
+template <typename E, class Alloc>
+Span(nsTArray_Impl<E, Alloc>&) -> Span<E>;
+
+template <typename E, class Alloc>
+Span(const nsTArray_Impl<E, Alloc>&) -> Span<const E>;
 
 } // namespace mozilla
 

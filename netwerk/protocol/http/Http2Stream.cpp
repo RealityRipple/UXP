@@ -788,8 +788,9 @@ Http2Stream::UpdateTransportSendEvents(uint32_t count)
   // the session and cap the send buffers by default at 128KB.
   // (10Mbit/sec @ 100ms)
   //
+  // This feature is disabled by default.
   uint32_t bufferSize = gHttpHandler->SpdySendBufferSize();
-  if ((mTotalSent > bufferSize) && !mSetTCPSocketBuffer) {
+  if ((bufferSize > 0) && (mTotalSent > bufferSize) && !mSetTCPSocketBuffer) {
     mSetTCPSocketBuffer = 1;
     mSocketTransport->SetSendBufferSize(bufferSize);
   }
@@ -1357,7 +1358,7 @@ Http2Stream::OnReadSegment(const char *buf,
     mRequestBodyLenRemaining -= dataLength;
     GenerateDataFrameHeader(dataLength, !mRequestBodyLenRemaining);
     ChangeState(SENDING_BODY);
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case SENDING_BODY:
     MOZ_ASSERT(mTxInlineFrameUsed, "OnReadSegment Send Data Header 0b");

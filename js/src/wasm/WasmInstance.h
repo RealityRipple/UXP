@@ -1,6 +1,7 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
  *
  * Copyright 2016 Mozilla Foundation
+ * Copyright 2023 Moonchild Productions
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +100,7 @@ class Instance
     // Execute the given export given the JS call arguments, storing the return
     // value in args.rval.
 
-    MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t funcIndex, CallArgs args);
+    [[nodiscard]] bool callExport(JSContext* cx, uint32_t funcIndex, CallArgs args);
 
     // Initially, calls to imports in wasm code call out through the generic
     // callImport method. If the imported callee gets JIT compiled and the types
@@ -121,7 +122,7 @@ class Instance
 
     // See Code::ensureProfilingState comment.
 
-    MOZ_MUST_USE bool ensureProfilingState(JSContext* cx, bool enabled);
+    [[nodiscard]] bool ensureProfilingState(JSContext* cx, bool enabled);
 
     // about:memory reporting:
 

@@ -3525,7 +3525,7 @@ void* nsWindow::GetNativeData(uint32_t aDataType)
       if (pseudoIMEContext) {
         return pseudoIMEContext;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
     case NS_NATIVE_TSF_THREAD_MGR:
     case NS_NATIVE_TSF_CATEGORY_MGR:
@@ -4367,6 +4367,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
          ("Msg Time: %d Click Count: %d\n", curMsgTime, event.mClickCount));
 #endif
 
+#ifdef MOZ_ENABLE_NPAPI
   NPEvent pluginEvent;
 
   switch (aEventMessage) {
@@ -4430,6 +4431,7 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   pluginEvent.lParam = lParam;
 
   event.mPluginEvent.Copy(pluginEvent);
+#endif // MOZ_ENABLE_NPAPI
 
   // call the event callback
   if (mWidgetListener) {
@@ -7660,7 +7662,7 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
         // compatibility mouse events will do it instead.
         return false;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:
     case WM_MBUTTONDOWN:

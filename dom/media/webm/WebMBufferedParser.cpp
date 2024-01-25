@@ -141,7 +141,7 @@ bool WebMBufferedParser::Append(const unsigned char* aBuffer, uint32_t aLength,
       case EBML_ID:
         mLastInitStartOffset = mCurrentOffset + (p - aBuffer) -
                             (mElement.mID.mLength + mElement.mSize.mLength);
-        MOZ_FALLTHROUGH;
+        [[fallthrough]];
       default:
         mSkipBytes = mElement.mSize.mValue;
         mState = SKIP_DATA;

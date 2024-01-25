@@ -77,7 +77,7 @@ MergeArrayRuns(T* dst, const T* src, size_t run1, size_t run2, Comparator c)
  * arbitrary.
  */
 template<typename T, typename Comparator>
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 MergeSort(T* array, size_t nelems, T* scratch, Comparator c)
 {
     const size_t INS_SORT_LIMIT = 3;

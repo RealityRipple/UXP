@@ -65,9 +65,9 @@ class PerfSpewer
     BasicBlocksVector basicBlocks_;
 
   public:
-    virtual MOZ_MUST_USE bool startBasicBlock(MBasicBlock* blk, MacroAssembler& masm);
-    virtual MOZ_MUST_USE bool endBasicBlock(MacroAssembler& masm);
-    MOZ_MUST_USE bool noteEndInlineCode(MacroAssembler& masm);
+    [[nodiscard]] virtual bool startBasicBlock(MBasicBlock* blk, MacroAssembler& masm);
+    [[nodiscard]] virtual bool endBasicBlock(MacroAssembler& masm);
+    [[nodiscard]] bool noteEndInlineCode(MacroAssembler& masm);
 
     void writeProfile(JSScript* script, JitCode* code, MacroAssembler& masm);
 };
@@ -79,8 +79,8 @@ void writePerfSpewerJitCodeProfile(JitCode* code, const char* msg);
 class WasmPerfSpewer : public PerfSpewer
 {
   public:
-    MOZ_MUST_USE bool startBasicBlock(MBasicBlock* blk, MacroAssembler& masm) { return true; }
-    MOZ_MUST_USE bool endBasicBlock(MacroAssembler& masm) { return true; }
+    [[nodiscard]] bool startBasicBlock(MBasicBlock* blk, MacroAssembler& masm) { return true; }
+    [[nodiscard]] bool endBasicBlock(MacroAssembler& masm) { return true; }
 };
 
 void writePerfSpewerWasmFunctionMap(uintptr_t base, uintptr_t size, const char* filename,

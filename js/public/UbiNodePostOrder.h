@@ -90,7 +90,7 @@ struct PostOrder {
 #endif
 
   private:
-    MOZ_MUST_USE bool fillEdgesFromRange(EdgeVector& edges, js::UniquePtr<EdgeRange>& range) {
+    [[nodiscard]] bool fillEdgesFromRange(EdgeVector& edges, js::UniquePtr<EdgeRange>& range) {
         MOZ_ASSERT(range);
         for ( ; !range->empty(); range->popFront()) {
             if (!edges.append(mozilla::Move(range->front())))
@@ -99,7 +99,7 @@ struct PostOrder {
         return true;
     }
 
-    MOZ_MUST_USE bool pushForTraversing(const Node& node) {
+    [[nodiscard]] bool pushForTraversing(const Node& node) {
         EdgeVector edges;
         auto range = node.edges(cx, /* wantNames */ false);
         return range &&
@@ -124,11 +124,11 @@ struct PostOrder {
     { }
 
     // Initialize this traversal object. Return false on OOM.
-    MOZ_MUST_USE bool init() { return seen.init(); }
+    [[nodiscard]] bool init() { return seen.init(); }
 
     // Add `node` as a starting point for the traversal. You may add
     // as many starting points as you like. Returns false on OOM.
-    MOZ_MUST_USE bool addStart(const Node& node) {
+    [[nodiscard]] bool addStart(const Node& node) {
         if (!seen.put(node))
             return false;
         return pushForTraversing(node);
@@ -144,7 +144,7 @@ struct PostOrder {
     // Return false on OOM or error return from `onNode::operator()` or
     // `onEdge::operator()`.
     template<typename NodeVisitor, typename EdgeVisitor>
-    MOZ_MUST_USE bool traverse(NodeVisitor onNode, EdgeVisitor onEdge) {
+    [[nodiscard]] bool traverse(NodeVisitor onNode, EdgeVisitor onEdge) {
 #ifdef DEBUG
         MOZ_ASSERT(!traversed, "Can only traverse() once!");
         traversed = true;

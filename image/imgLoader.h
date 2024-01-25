@@ -287,22 +287,22 @@ public:
   imgLoader();
   nsresult Init();
 
-  MOZ_MUST_USE nsresult LoadImage(nsIURI* aURI,
-                                  nsIURI* aInitialDocumentURI,
-                                  nsIURI* aReferrerURI,
-                                  ReferrerPolicy aReferrerPolicy,
-                                  nsIPrincipal* aLoadingPrincipal,
-                                  nsILoadGroup* aLoadGroup,
-                                  imgINotificationObserver* aObserver,
-                                  nsINode* aContext,
-                                  nsIDocument* aLoadingDocument,
-                                  nsLoadFlags aLoadFlags,
-                                  nsISupports* aCacheKey,
-                                  nsContentPolicyType aContentPolicyType,
-                                  const nsAString& initiatorType,
-                                  imgRequestProxy** _retval);
+  [[nodiscard]] nsresult LoadImage(nsIURI* aURI,
+                                   nsIURI* aInitialDocumentURI,
+                                   nsIURI* aReferrerURI,
+                                   ReferrerPolicy aReferrerPolicy,
+                                   nsIPrincipal* aLoadingPrincipal,
+                                   nsILoadGroup* aLoadGroup,
+                                   imgINotificationObserver* aObserver,
+                                   nsINode* aContext,
+                                   nsIDocument* aLoadingDocument,
+                                   nsLoadFlags aLoadFlags,
+                                   nsISupports* aCacheKey,
+                                   nsContentPolicyType aContentPolicyType,
+                                   const nsAString& initiatorType,
+                                   imgRequestProxy** _retval);
 
-  MOZ_MUST_USE nsresult
+  [[nodiscard]] nsresult
   LoadImageWithChannel(nsIChannel* channel,
                        imgINotificationObserver* aObserver,
                        nsISupports* aCX,

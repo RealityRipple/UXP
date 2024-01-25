@@ -71,7 +71,7 @@ public:
    * @param aOutputSize is the output size, therefore the original size
    * @return true on success, false on failure
    */
-  static MFBT_API MOZ_MUST_USE bool
+  [[nodiscard]] static MFBT_API bool
   decompress(const char* aSource, char* aDest, size_t aOutputSize);
 
   /**
@@ -91,7 +91,7 @@ public:
    *   buffer (necessarily <= aMaxOutputSize)
    * @return true on success, false on failure
    */
-  static MFBT_API MOZ_MUST_USE bool
+  [[nodiscard]] static MFBT_API bool
   decompress(const char* aSource, size_t aInputSize, char* aDest,
              size_t aMaxOutputSize, size_t* aOutputSize);
 
@@ -114,7 +114,7 @@ public:
    *   buffer (necessarily <= aMaxOutputSize)
    * @return true on success, false on failure
    */
-  static MFBT_API MOZ_MUST_USE bool
+  [[nodiscard]] static MFBT_API bool
   decompressPartial(const char* aSource, size_t aInputSize, char* aDest,
                     size_t aMaxOutputSize, size_t* aOutputSize);
 

@@ -45,7 +45,7 @@ class LIRGenerator : public LIRGeneratorSpecific
         maxargslots_(0)
     { }
 
-    MOZ_MUST_USE bool generate();
+    [[nodiscard]] bool generate();
 
   private:
     LBoxAllocation useBoxFixedAtStart(MDefinition* mir, Register reg1, Register reg2) {
@@ -60,11 +60,11 @@ class LIRGenerator : public LIRGeneratorSpecific
     void lowerBinaryV(JSOp op, MBinaryInstruction* ins);
     void definePhis();
 
-    MOZ_MUST_USE bool lowerCallArguments(MCall* call);
+    [[nodiscard]] bool lowerCallArguments(MCall* call);
 
   public:
-    MOZ_MUST_USE bool visitInstruction(MInstruction* ins);
-    MOZ_MUST_USE bool visitBlock(MBasicBlock* block);
+    [[nodiscard]] bool visitInstruction(MInstruction* ins);
+    [[nodiscard]] bool visitBlock(MBasicBlock* block);
 
     // Visitor hooks are explicit, to give CPU-specific versions a chance to
     // intercept without a bunch of explicit gunk in the .cpp.

@@ -55,8 +55,8 @@ public:
     MOZ_COUNT_DTOR(nsObserverList);
   }
 
-  MOZ_MUST_USE nsresult AddObserver(nsIObserver* aObserver, bool aOwnsWeak);
-  MOZ_MUST_USE nsresult RemoveObserver(nsIObserver* aObserver);
+  [[nodiscard]] nsresult AddObserver(nsIObserver* aObserver, bool aOwnsWeak);
+  [[nodiscard]] nsresult RemoveObserver(nsIObserver* aObserver);
 
   void NotifyObservers(nsISupports* aSubject,
                        const char* aTopic,

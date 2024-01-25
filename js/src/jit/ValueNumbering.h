@@ -40,14 +40,14 @@ class ValueNumberer
 
       public:
         explicit VisibleValues(TempAllocator& alloc);
-        MOZ_MUST_USE bool init();
+        [[nodiscard]] bool init();
 
         typedef ValueSet::Ptr Ptr;
         typedef ValueSet::AddPtr AddPtr;
 
         Ptr findLeader(const MDefinition* def) const;
         AddPtr findLeaderForAdd(MDefinition* def);
-        MOZ_MUST_USE bool add(AddPtr p, MDefinition* def);
+        [[nodiscard]] bool add(AddPtr p, MDefinition* def);
         void overwrite(AddPtr p, MDefinition* def);
         void forget(const MDefinition* def);
         void clear();
@@ -77,37 +77,37 @@ class ValueNumberer
         SetUseRemoved
     };
 
-    MOZ_MUST_USE bool handleUseReleased(MDefinition* def, UseRemovedOption useRemovedOption);
-    MOZ_MUST_USE bool discardDefsRecursively(MDefinition* def);
-    MOZ_MUST_USE bool releaseResumePointOperands(MResumePoint* resume);
-    MOZ_MUST_USE bool releaseAndRemovePhiOperands(MPhi* phi);
-    MOZ_MUST_USE bool releaseOperands(MDefinition* def);
-    MOZ_MUST_USE bool discardDef(MDefinition* def);
-    MOZ_MUST_USE bool processDeadDefs();
+    [[nodiscard]] bool handleUseReleased(MDefinition* def, UseRemovedOption useRemovedOption);
+    [[nodiscard]] bool discardDefsRecursively(MDefinition* def);
+    [[nodiscard]] bool releaseResumePointOperands(MResumePoint* resume);
+    [[nodiscard]] bool releaseAndRemovePhiOperands(MPhi* phi);
+    [[nodiscard]] bool releaseOperands(MDefinition* def);
+    [[nodiscard]] bool discardDef(MDefinition* def);
+    [[nodiscard]] bool processDeadDefs();
 
-    MOZ_MUST_USE bool fixupOSROnlyLoop(MBasicBlock* block, MBasicBlock* backedge);
-    MOZ_MUST_USE bool removePredecessorAndDoDCE(MBasicBlock* block, MBasicBlock* pred,
+    [[nodiscard]] bool fixupOSROnlyLoop(MBasicBlock* block, MBasicBlock* backedge);
+    [[nodiscard]] bool removePredecessorAndDoDCE(MBasicBlock* block, MBasicBlock* pred,
                                                 size_t predIndex);
-    MOZ_MUST_USE bool removePredecessorAndCleanUp(MBasicBlock* block, MBasicBlock* pred);
+    [[nodiscard]] bool removePredecessorAndCleanUp(MBasicBlock* block, MBasicBlock* pred);
 
     MDefinition* simplified(MDefinition* def) const;
     MDefinition* leader(MDefinition* def);
     bool hasLeader(const MPhi* phi, const MBasicBlock* phiBlock) const;
     bool loopHasOptimizablePhi(MBasicBlock* header) const;
 
-    MOZ_MUST_USE bool visitDefinition(MDefinition* def);
-    MOZ_MUST_USE bool visitControlInstruction(MBasicBlock* block, const MBasicBlock* root);
-    MOZ_MUST_USE bool visitUnreachableBlock(MBasicBlock* block);
-    MOZ_MUST_USE bool visitBlock(MBasicBlock* block, const MBasicBlock* root);
-    MOZ_MUST_USE bool visitDominatorTree(MBasicBlock* root);
-    MOZ_MUST_USE bool visitGraph();
+    [[nodiscard]] bool visitDefinition(MDefinition* def);
+    [[nodiscard]] bool visitControlInstruction(MBasicBlock* block, const MBasicBlock* root);
+    [[nodiscard]] bool visitUnreachableBlock(MBasicBlock* block);
+    [[nodiscard]] bool visitBlock(MBasicBlock* block, const MBasicBlock* root);
+    [[nodiscard]] bool visitDominatorTree(MBasicBlock* root);
+    [[nodiscard]] bool visitGraph();
 
-    MOZ_MUST_USE bool insertOSRFixups();
-    MOZ_MUST_USE bool cleanupOSRFixups();
+    [[nodiscard]] bool insertOSRFixups();
+    [[nodiscard]] bool cleanupOSRFixups();
 
   public:
     ValueNumberer(MIRGenerator* mir, MIRGraph& graph);
-    MOZ_MUST_USE bool init();
+    [[nodiscard]] bool init();
 
     enum UpdateAliasAnalysisFlag {
         DontUpdateAliasAnalysis,
@@ -117,7 +117,7 @@ class ValueNumberer
     // Optimize the graph, performing expression simplification and
     // canonicalization, eliminating statically fully-redundant expressions,
     // deleting dead instructions, and removing unreachable blocks.
-    MOZ_MUST_USE bool run(UpdateAliasAnalysisFlag updateAliasAnalysis);
+    [[nodiscard]] bool run(UpdateAliasAnalysisFlag updateAliasAnalysis);
 };
 
 } // namespace jit

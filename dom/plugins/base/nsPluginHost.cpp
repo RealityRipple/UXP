@@ -12,12 +12,18 @@
 #include <stdio.h>
 #include "prio.h"
 #include "prmem.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsNPAPIPlugin.h"
 #include "nsNPAPIPluginStreamListener.h"
+#endif
 #include "nsNPAPIPluginInstance.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginInstanceOwner.h"
+#endif
 #include "nsObjectLoadingContent.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsIHTTPHeaderListener.h"
+#endif
 #include "nsIHttpHeaderVisitor.h"
 #include "nsIObserverService.h"
 #include "nsIHttpProtocolHandler.h"
@@ -50,13 +56,17 @@
 #include "nsIObjectLoadingContent.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsICategoryManager.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginStreamListenerPeer.h"
+#endif
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/FakePluginTagInitBinding.h"
 #include "mozilla/LoadInfo.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "mozilla/plugins/PluginAsyncSurrogate.h"
 #include "mozilla/plugins/PluginBridge.h"
 #include "mozilla/plugins/PluginTypes.h"
+#endif
 #include "mozilla/Preferences.h"
 
 #include "nsEnumeratorUtils.h"
@@ -107,8 +117,10 @@
 
 using namespace mozilla;
 using mozilla::TimeStamp;
+#ifdef MOZ_ENABLE_NPAPI
 using mozilla::plugins::PluginTag;
 using mozilla::plugins::PluginAsyncSurrogate;
+#endif
 using mozilla::dom::FakePluginTagInit;
 
 // Null out a strong ref to a linked list iteratively to avoid
@@ -259,6 +271,7 @@ nsPluginHost::nsPluginHost()
   // No need to initialize members to nullptr, false etc because this class
   // has a zeroing operator new.
 {
+#ifdef MOZ_ENABLE_NPAPI
   // Bump the pluginchanged epoch on startup. This insures content gets a
   // good plugin list the first time it requests it. Normally we'd just
   // init this to 1, but due to the unique nature of our ctor we need to do
@@ -272,6 +285,7 @@ nsPluginHost::nsPluginHost()
     nsCOMPtr<nsIProtocolProxyService> proxyService =
       do_GetService(NS_PROTOCOLPROXYSERVICE_CONTRACTID);
   }
+#endif
 
   // check to see if pref is set at startup to let plugins take over in
   // full page mode for certain image mime types that we handle internally
@@ -329,6 +343,7 @@ nsPluginHost::GetInst()
 
 bool nsPluginHost::IsRunningPlugin(nsPluginTag * aPluginTag)
 {
+#ifdef MOZ_ENABLE_NPAPI
   if (!aPluginTag || !aPluginTag->mPlugin) {
     return false;
   }
@@ -345,12 +360,14 @@ bool nsPluginHost::IsRunningPlugin(nsPluginTag * aPluginTag)
       return true;
     }
   }
+#endif
 
   return false;
 }
 
 nsresult nsPluginHost::ReloadPlugins()
 {
+#ifdef MOZ_ENABLE_NPAPI
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
   ("nsPluginHost::ReloadPlugins Begin\n"));
 
@@ -413,6 +430,9 @@ nsresult nsPluginHost::ReloadPlugins()
   ("nsPluginHost::ReloadPlugins End\n"));
 
   return rv;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 #define NS_RETURN_UASTRING_SIZE 128
@@ -455,7 +475,7 @@ nsresult nsPluginHost::UserAgent(const char **retstring)
 
   return res;
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 nsresult nsPluginHost::GetURL(nsISupports* pluginInst,
                               const char* url,
                               const char* target,
@@ -581,7 +601,7 @@ nsresult nsPluginHost::PostURL(nsISupports* pluginInst,
   }
   return rv;
 }
-
+#endif
 /* This method queries the prefs for proxy information.
  * It has been tested and is known to work in the following three cases
  * when no proxy host or port is specified
@@ -707,6 +727,7 @@ nsresult nsPluginHost::UnloadPlugins()
 
 void nsPluginHost::OnPluginInstanceDestroyed(nsPluginTag* aPluginTag)
 {
+#ifdef MOZ_ENABLE_NPAPI
   bool hasInstance = false;
   for (uint32_t i = 0; i < mInstances.Length(); i++) {
     if (TagForPlugin(mInstances[i]->GetPlugin()) == aPluginTag) {
@@ -747,6 +768,7 @@ void nsPluginHost::OnPluginInstanceDestroyed(nsPluginTag* aPluginTag)
                                                  nsITimer::TYPE_ONE_SHOT);
     }
   }
+#endif // MOZ_ENABLE_NPAPI
 }
 
 nsresult
@@ -770,6 +792,7 @@ nsPluginHost::GetPluginTempDir(nsIFile **aDir)
   return sPluginTempDir->Clone(aDir);
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 nsresult
 nsPluginHost::InstantiatePluginInstance(const nsACString& aMimeType, nsIURI* aURL,
                                         nsObjectLoadingContent *aContent,
@@ -854,6 +877,7 @@ nsPluginHost::InstantiatePluginInstance(const nsACString& aMimeType, nsIURI* aUR
 
   return NS_OK;
 }
+#endif // MOZ_ENABLE_NPAPI
 
 nsPluginTag*
 nsPluginHost::FindTagForLibrary(PRLibrary* aLibrary)
@@ -866,7 +890,7 @@ nsPluginHost::FindTagForLibrary(PRLibrary* aLibrary)
   }
   return nullptr;
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 nsPluginTag*
 nsPluginHost::TagForPlugin(nsNPAPIPlugin* aPlugin)
 {
@@ -986,6 +1010,7 @@ nsPluginHost::TrySetUpPluginInstance(const nsACString &aMimeType,
 
   return rv;
 }
+#endif // MOZ_ENABLE_NPAPI
 
 bool
 nsPluginHost::HavePluginForType(const nsACString & aMimeType,
@@ -1296,7 +1321,7 @@ nsPluginHost::FindNativePluginForExtension(const nsACString & aExtension,
   preferredPlugin->HasExtension(aExtension, aMimeType);
   return preferredPlugin;
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 static nsresult CreateNPAPIPlugin(nsPluginTag *aPluginTag,
                                   nsNPAPIPlugin **aOutNPAPIPlugin)
 {
@@ -1320,9 +1345,11 @@ static nsresult CreateNPAPIPlugin(nsPluginTag *aPluginTag,
 
   return rv;
 }
+#endif
 
 nsresult nsPluginHost::EnsurePluginLoaded(nsPluginTag* aPluginTag)
 {
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsNPAPIPlugin> plugin = aPluginTag->mPlugin;
   if (!plugin) {
     nsresult rv = CreateNPAPIPlugin(aPluginTag, getter_AddRefs(plugin));
@@ -1365,7 +1392,7 @@ nsPluginHost::GetPluginForContentProcess(uint32_t aPluginId, nsNPAPIPlugin** aPl
     NS_ADDREF(*aPlugin = pluginTag->mPlugin);
     return NS_OK;
   }
-
+#endif // MOZ_ENABLE_NPAPI
   return NS_ERROR_FAILURE;
 }
 
@@ -1411,7 +1438,7 @@ nsPluginHost::NotifyContentModuleDestroyed(uint32_t aPluginId)
     new nsPluginUnloadRunnable(aPluginId);
   NS_DispatchToMainThread(runnable);
 }
-
+#ifdef MOZ_ENABLE_NPAPI
 nsresult nsPluginHost::GetPlugin(const nsACString &aMimeType,
                                  nsNPAPIPlugin** aPlugin)
 {
@@ -1450,6 +1477,7 @@ nsresult nsPluginHost::GetPlugin(const nsACString &aMimeType,
 
   return rv;
 }
+#endif
 
 // Normalize 'host' to ACE.
 nsresult
@@ -1605,6 +1633,7 @@ nsPluginHost::GetFakePlugin(const nsACString & aMimeType,
   return NS_ERROR_NOT_AVAILABLE;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 #define ClearDataFromSitesClosure_CID {0x9fb21761, 0x2403, 0x41ad, {0x9e, 0xfd, 0x36, 0x7e, 0xc4, 0x4f, 0xa4, 0x5e}}
 
 
@@ -1670,12 +1699,14 @@ NS_INTERFACE_MAP_BEGIN(ClearDataFromSitesClosure)
   NS_INTERFACE_MAP_ENTRY(nsIGetSitesWithDataCallback)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIClearSiteDataCallback)
 NS_INTERFACE_MAP_END
+#endif // MOZ_ENABLE_NPAPI
 
 // FIXME-jsplugins what should this do for fake plugins?
 NS_IMETHODIMP
 nsPluginHost::ClearSiteData(nsIPluginTag* plugin, const nsACString& domain,
                             uint64_t flags, int64_t maxAge, nsIClearSiteDataCallback* callbackFunc)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsCOMPtr<nsIClearSiteDataCallback> callback(callbackFunc);
   // maxAge must be either a nonnegative integer or -1.
   NS_ENSURE_ARG(maxAge >= 0 || maxAge == -1);
@@ -1695,7 +1726,9 @@ nsPluginHost::ClearSiteData(nsIPluginTag* plugin, const nsACString& domain,
   // We will also attempt to clear data for any plugin that happens
   // to be loaded already.
   if (!tag->mIsFlashPlugin && !tag->mPlugin) {
+#endif
     return NS_ERROR_FAILURE;
+#ifdef MOZ_ENABLE_NPAPI
   }
 
   // Make sure the plugin is loaded.
@@ -1715,7 +1748,10 @@ nsPluginHost::ClearSiteData(nsIPluginTag* plugin, const nsACString& domain,
   rv = library->NPP_GetSitesWithData(closure);
   NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
+#endif
 }
+
+#ifdef MOZ_ENABLE_NPAPI
 
 #define GetSitesClosure_CID {0x4c9268ac, 0x2fd1, 0x4f2a, {0x9a, 0x10, 0x7a, 0x09, 0xf1, 0xb7, 0x60, 0x3a}}
 
@@ -1771,12 +1807,15 @@ NS_DEFINE_STATIC_IID_ACCESSOR(GetSitesClosure, GetSitesClosure_CID)
 
 NS_IMPL_ISUPPORTS(GetSitesClosure, GetSitesClosure, nsIGetSitesWithDataCallback)
 
+#endif
+
 // This will spin the event loop while waiting on an async
 // call to GetSitesWithData
 NS_IMETHODIMP
 nsPluginHost::SiteHasData(nsIPluginTag* plugin, const nsACString& domain,
                           bool* result)
 {
+#ifdef MOZ_ENABLE_NPAPI
   // Caller may give us a tag object that is no longer live.
   if (!IsLiveTag(plugin)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -1789,7 +1828,9 @@ nsPluginHost::SiteHasData(nsIPluginTag* plugin, const nsACString& domain,
   // We will also attempt to clear data for any plugin that happens
   // to be loaded already.
   if (!tag->mIsFlashPlugin && !tag->mPlugin) {
+#endif
     return NS_ERROR_FAILURE;
+#ifdef MOZ_ENABLE_NPAPI
   }
 
   // Make sure the plugin is loaded.
@@ -1810,6 +1851,7 @@ nsPluginHost::SiteHasData(nsIPluginTag* plugin, const nsACString& domain,
   }
   *result = closure->result;
   return closure->retVal;
+#endif
 }
 
 nsPluginHost::SpecialType
@@ -2022,12 +2064,15 @@ nsPluginHost::AddPluginTag(nsPluginTag* aPluginTag)
   }
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 typedef NS_NPAPIPLUGIN_CALLBACK(char *, NP_GETMIMEDESCRIPTION)(void);
+#endif
 
 nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
                                             bool aCreatePluginList,
                                             bool *aPluginsChanged)
 {
+#ifdef MOZ_ENABLE_NPAPI
   MOZ_ASSERT(XRE_IsParentProcess());
 
   NS_ENSURE_ARG_POINTER(aPluginsChanged);
@@ -2211,6 +2256,9 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile *pluginsDir,
   }
 
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 nsresult nsPluginHost::ScanPluginsDirectoryList(nsISimpleEnumerator *dirEnum,
@@ -2296,6 +2344,7 @@ WatchRegKey(uint32_t aRoot, nsCOMPtr<nsIWindowsRegKey>& aKey)
 
 nsresult nsPluginHost::LoadPlugins()
 {
+#ifdef MOZ_ENABLE_NPAPI
   // do not do anything if it is already done
   // use ReloadPlugins() to enforce loading
   if (mPluginsLoaded)
@@ -2327,8 +2376,12 @@ nsresult nsPluginHost::LoadPlugins()
   }
 
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 nsresult
 nsPluginHost::FindPluginsInContent(bool aCreatePluginList, bool* aPluginsChanged)
 {
@@ -2406,7 +2459,7 @@ nsresult nsPluginHost::FindPlugins(bool aCreatePluginList, bool * aPluginsChange
   if (ReadPluginInfo() == NS_ERROR_NOT_AVAILABLE)
     return NS_OK;
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
   // Failure here is not a show-stopper so just warn.
   rv = EnsurePrivateDirServiceProvider();
   NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to register dir service provider.");
@@ -2618,6 +2671,7 @@ nsPluginHost::FindPluginsForContent(uint32_t aPluginEpoch,
   }
   return NS_OK;
 }
+#endif
 
 void
 nsPluginHost::UpdateInMemoryPluginInfo(nsPluginTag* aPluginTag)
@@ -3143,7 +3197,7 @@ nsPluginHost::RemoveCachedPluginsInfo(const char *filePath, nsPluginTag **result
   }
 }
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && defined(MOZ_ENABLE_NPAPI)
 nsresult
 nsPluginHost::EnsurePrivateDirServiceProvider()
 {
@@ -3161,6 +3215,7 @@ nsPluginHost::EnsurePrivateDirServiceProvider()
 }
 #endif /* XP_WIN */
 
+#ifdef MOZ_ENABLE_NPAPI
 nsresult nsPluginHost::NewPluginURLStream(const nsString& aURL,
                                           nsNPAPIPluginInstance *aInstance,
                                           nsNPAPIPluginStreamListener* aListener,
@@ -3285,6 +3340,7 @@ nsresult nsPluginHost::NewPluginURLStream(const nsString& aURL,
     listenerPeer->TrackRequest(channel);
   return rv;
 }
+#endif // MOZ_ENABLE_NPAPI
 
 nsresult
 nsPluginHost::AddHeadersToChannel(const char *aHeadersData,
@@ -3342,6 +3398,7 @@ nsPluginHost::AddHeadersToChannel(const char *aHeadersData,
 nsresult
 nsPluginHost::StopPluginInstance(nsNPAPIPluginInstance* aInstance)
 {
+#ifdef MOZ_ENABLE_NPAPI
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
   if (PluginDestructionGuard::DelayDestroy(aInstance)) {
     return NS_OK;
@@ -3386,12 +3443,16 @@ nsPluginHost::StopPluginInstance(nsNPAPIPluginInstance* aInstance)
   }
 
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif 
 }
 
 nsresult nsPluginHost::NewPluginStreamListener(nsIURI* aURI,
                                                nsNPAPIPluginInstance* aInstance,
                                                nsIStreamListener **aStreamListener)
 {
+#ifdef MOZ_ENABLE_NPAPI
   NS_ENSURE_ARG_POINTER(aURI);
   NS_ENSURE_ARG_POINTER(aStreamListener);
 
@@ -3404,8 +3465,12 @@ nsresult nsPluginHost::NewPluginStreamListener(nsIURI* aURI,
   listener.forget(aStreamListener);
 
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 void nsPluginHost::CreateWidget(nsPluginInstanceOwner* aOwner)
 {
   aOwner->CreateWidget();
@@ -3413,11 +3478,13 @@ void nsPluginHost::CreateWidget(nsPluginInstanceOwner* aOwner)
   // If we've got a native window, the let the plugin know about it.
   aOwner->CallSetWindow();
 }
+#endif
 
 NS_IMETHODIMP nsPluginHost::Observe(nsISupports *aSubject,
                                     const char *aTopic,
                                     const char16_t *someData)
 {
+#ifdef MOZ_ENABLE_NPAPI
   if (!strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic)) {
     OnShutdown();
     UnloadPlugins();
@@ -3441,6 +3508,9 @@ NS_IMETHODIMP nsPluginHost::Observe(nsISupports *aSubject,
   }
 
   return NS_OK;
+#else
+  return NS_ERROR_FAILURE;
+#endif
 }
 
 nsresult
@@ -3696,20 +3766,24 @@ nsPluginHost::CreateTempFileToPost(const char *aPostDataURL, nsIFile **aTmpFile)
   return rv;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 nsresult
 nsPluginHost::NewPluginNativeWindow(nsPluginNativeWindow ** aPluginNativeWindow)
 {
   return PLUG_NewPluginNativeWindow(aPluginNativeWindow);
 }
+#endif
 
 nsresult
 nsPluginHost::GetPluginName(nsNPAPIPluginInstance *aPluginInstance,
                             const char** aPluginName)
 {
+#ifdef MOZ_ENABLE_NPAPI
   nsNPAPIPluginInstance *instance = static_cast<nsNPAPIPluginInstance*>(aPluginInstance);
   if (!instance)
+#endif
     return NS_ERROR_FAILURE;
-
+#ifdef MOZ_ENABLE_NPAPI
   nsNPAPIPlugin* plugin = instance->GetPlugin();
   if (!plugin)
     return NS_ERROR_FAILURE;
@@ -3717,23 +3791,28 @@ nsPluginHost::GetPluginName(nsNPAPIPluginInstance *aPluginInstance,
   *aPluginName = TagForPlugin(plugin)->Name().get();
 
   return NS_OK;
+#endif
 }
 
 nsresult
 nsPluginHost::GetPluginTagForInstance(nsNPAPIPluginInstance *aPluginInstance,
                                       nsIPluginTag **aPluginTag)
 {
+#ifdef MOZ_ENABLE_NPAPI
   NS_ENSURE_ARG_POINTER(aPluginInstance);
   NS_ENSURE_ARG_POINTER(aPluginTag);
 
   nsNPAPIPlugin *plugin = aPluginInstance->GetPlugin();
   if (!plugin)
+#endif
     return NS_ERROR_FAILURE;
+#ifdef MOZ_ENABLE_NPAPI
 
   *aPluginTag = TagForPlugin(plugin);
 
   NS_ADDREF(*aPluginTag);
   return NS_OK;
+#endif
 }
 
 NS_IMETHODIMP nsPluginHost::Notify(nsITimer* timer)
@@ -3800,6 +3879,7 @@ CheckForDisabledWindows()
 }
 #endif
 
+#ifdef MOZ_ENABLE_NPAPI
 void
 nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin,
                             const nsAString& pluginDumpID,
@@ -3872,6 +3952,7 @@ nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin,
   CheckForDisabledWindows();
 #endif
 }
+#endif // MOZ_ENABLE_NPAPI
 
 nsNPAPIPluginInstance*
 nsPluginHost::FindInstance(const char *mimetype)
@@ -3932,6 +4013,7 @@ nsPluginHost::InstanceArray()
 void
 nsPluginHost::DestroyRunningInstances(nsPluginTag* aPluginTag)
 {
+#ifdef MOZ_ENABLE_NPAPI
   for (int32_t i = mInstances.Length(); i > 0; i--) {
     nsNPAPIPluginInstance *instance = mInstances[i - 1];
     if (instance->IsRunning() && (!aPluginTag || aPluginTag == TagForPlugin(instance->GetPlugin()))) {
@@ -3958,6 +4040,7 @@ nsPluginHost::DestroyRunningInstances(nsPluginTag* aPluginTag)
       }
     }
   }
+#endif
 }
 
 // Runnable that does an async destroy of a plugin.
@@ -4029,12 +4112,13 @@ PRCList nsPluginDestroyRunnable::sRunnableListHead =
 
 PRCList PluginDestructionGuard::sListHead =
   PR_INIT_STATIC_CLIST(&PluginDestructionGuard::sListHead);
-
+#ifdef MOZ_ENABLE_NPAPI
 PluginDestructionGuard::PluginDestructionGuard(nsNPAPIPluginInstance *aInstance)
   : mInstance(aInstance)
 {
   Init();
 }
+
 
 PluginDestructionGuard::PluginDestructionGuard(PluginAsyncSurrogate *aSurrogate)
   : mInstance(static_cast<nsNPAPIPluginInstance*>(aSurrogate->GetNPP()->ndata))
@@ -4047,6 +4131,7 @@ PluginDestructionGuard::PluginDestructionGuard(NPP npp)
 {
   Init();
 }
+#endif
 
 PluginDestructionGuard::~PluginDestructionGuard()
 {

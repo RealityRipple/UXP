@@ -2117,8 +2117,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
   if (effects->mOpacity == 0.0 && aBuilder->IsForPainting() &&
       !(disp->mWillChangeBitField & NS_STYLE_WILL_CHANGE_OPACITY) &&
       !nsLayoutUtils::HasAnimationOfProperty(this, eCSSProperty_opacity)) {
-    if (needEventRegions ||
-        aBuilder->WillComputePluginGeometry()) {
+    if (needEventRegions
+#ifdef MOZ_ENABLE_NPAPI
+        || aBuilder->WillComputePluginGeometry()
+#endif
+	) {
       opacityItemForEventsAndPluginsOnly = true;
     } else {
       return;
@@ -7735,7 +7738,7 @@ nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos)
         aPos->mWordMovementType = eEndWord;
       }
       // Intentionally fall through the eSelectWord case.
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case eSelectWord:
     {
       // wordSelectEatSpace means "are we looking for a boundary between whitespace

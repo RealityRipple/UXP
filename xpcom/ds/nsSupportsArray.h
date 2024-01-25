@@ -31,7 +31,7 @@ class nsSupportsArray final : public nsISupportsArray,
 public:
   nsSupportsArray(void);
 
-  static MOZ_MUST_USE nsresult
+  [[nodiscard]]static nsresult
   Create(nsISupports* aOuter, REFNSIID aIID, void** aResult);
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -45,18 +45,18 @@ public:
     return NS_OK;
   }
   NS_IMETHOD GetElementAt(uint32_t aIndex, nsISupports** aResult) override;
-  MOZ_MUST_USE NS_IMETHOD
+  [[nodiscard]] NS_IMETHOD
   SetElementAt(uint32_t aIndex, nsISupports* aValue) override
   {
     return ReplaceElementAt(aValue, aIndex) ? NS_OK : NS_ERROR_FAILURE;
   }
-  MOZ_MUST_USE NS_IMETHOD AppendElement(nsISupports* aElement) override
+  [[nodiscard]] NS_IMETHOD AppendElement(nsISupports* aElement) override
   {
     // XXX Invalid cast of bool to nsresult (bug 778110)
     return (nsresult)InsertElementAt(aElement, mArray.Length())/* ? NS_OK : NS_ERROR_FAILURE*/;
   }
   // XXX this is badly named - should be RemoveFirstElement
-  MOZ_MUST_USE NS_IMETHOD RemoveElement(nsISupports* aElement) override;
+  [[nodiscard]] NS_IMETHOD RemoveElement(nsISupports* aElement) override;
   NS_IMETHOD DeprecatedEnumerate(nsIEnumerator** aResult) override;
   NS_IMETHOD Clear(void) override;
 
@@ -69,21 +69,21 @@ public:
     return NS_OK;
   }
 
-  MOZ_MUST_USE NS_IMETHOD_(bool)
+  [[nodiscard]] NS_IMETHOD_(bool)
   InsertElementAt(nsISupports* aElement, uint32_t aIndex) override;
 
-  MOZ_MUST_USE NS_IMETHOD_(bool)
+  [[nodiscard]] NS_IMETHOD_(bool)
   ReplaceElementAt(nsISupports* aElement, uint32_t aIndex) override;
 
-  MOZ_MUST_USE NS_IMETHOD_(bool)
+  [[nodiscard]] NS_IMETHOD_(bool)
   RemoveElementAt(uint32_t aIndex) override;
 
-  MOZ_MUST_USE NS_IMETHOD DeleteElementAt(uint32_t aIndex) override
+  [[nodiscard]] NS_IMETHOD DeleteElementAt(uint32_t aIndex) override
   {
     return (RemoveElementAt(aIndex) ? NS_OK : NS_ERROR_FAILURE);
   }
 
-  MOZ_MUST_USE NS_IMETHOD Clone(nsISupportsArray** aResult) override;
+  [[nodiscard]] NS_IMETHOD Clone(nsISupportsArray** aResult) override;
 
   /**
    * nsIArray adapters.

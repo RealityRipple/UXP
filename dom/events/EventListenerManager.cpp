@@ -786,28 +786,22 @@ EventListenerManager::SetEventHandler(nsIAtom* aName,
     rv = doc->NodePrincipal()->GetCsp(getter_AddRefs(csp));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (csp) {
-      // let's generate a script sample and pass it as aContent,
-      // it will not match the hash, but allows us to pass
-      // the script sample in aContent.
-      nsAutoString scriptSample, attr, tagName(NS_LITERAL_STRING("UNKNOWN"));
-      aName->ToString(attr);
-      nsCOMPtr<nsIDOMNode> domNode(do_QueryInterface(mTarget));
-      if (domNode) {
-        domNode->GetNodeName(tagName);
-      }
-      // build a "script sample" based on what we know about this element
-      scriptSample.Assign(attr);
-      scriptSample.AppendLiteral(" attribute on ");
-      scriptSample.Append(tagName);
-      scriptSample.AppendLiteral(" element");
+    unsigned lineNum = 0;
+    unsigned columnNum = 0;
 
+    JSContext* cx = nsContentUtils::GetCurrentJSContext();
+    if (cx && !JS::DescribeScriptedCaller(cx, nullptr, &lineNum, &columnNum)) {
+      JS_ClearPendingException(cx);
+    }
+
+    if (csp) {
       bool allowsInlineScript = true;
       rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
                                 EmptyString(), // aNonce
                                 true, // aParserCreated (true because attribute event handler)
-                                scriptSample,
-                                0,             // aLineNumber
+                                aBody,
+                                lineNum,             // aLineNumber
+                                columnNum,           // aColumnNumber
                                 &allowsInlineScript);
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1064,12 +1058,8 @@ EventListenerManager::HandleEventSubType(Listener* aListener,
   }
 
   if (NS_SUCCEEDED(result)) {
-    if (mIsMainThreadELM) {
-      CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-      if (ccjs) {
-        ccjs->EnterMicroTask();
-      }
-    }
+    nsAutoMicroTask mt;
+
     // nsIDOMEvent::currentTarget is set in EventDispatcher.
     if (listenerHolder.HasWebIDLCallback()) {
       ErrorResult rv;
@@ -1078,12 +1068,6 @@ EventListenerManager::HandleEventSubType(Listener* aListener,
       result = rv.StealNSResult();
     } else {
       result = listenerHolder.GetXPCOMCallback()->HandleEvent(aDOMEvent);
-    }
-    if (mIsMainThreadELM) {
-      CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
-      if (ccjs) {
-        ccjs->LeaveMicroTask();
-      }
     }
   }
 

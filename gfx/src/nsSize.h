@@ -30,7 +30,7 @@ struct nsSize : public mozilla::gfx::BaseSize<nscoord, nsSize> {
    * @param aFromAPP the APP to scale from
    * @param aToAPP the APP to scale to
    */
-  MOZ_MUST_USE inline nsSize
+  [[nodiscard]] inline nsSize
     ScaleToOtherAppUnits(int32_t aFromAPP, int32_t aToAPP) const;
 };
 

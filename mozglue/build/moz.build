@@ -15,6 +15,9 @@ SDK_LIBRARY = True
 if CONFIG['MOZ_ASAN']:
     SOURCES += ['AsanOptions.cpp']
 
+if not CONFIG['MOZ_ENABLE_NPAPI'] and CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
+    SOURCES += ['gtk.c']
+
 if CONFIG['OS_TARGET'] == 'WINNT':
     DEFFILE = 'mozglue.def'
     # We'll break the DLL blocklist if we immediately load user32.dll

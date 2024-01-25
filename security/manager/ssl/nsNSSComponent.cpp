@@ -45,7 +45,7 @@
 #include "nsXULAppAPI.h"
 #include "nss.h"
 #include "p12plcy.h"
-#include "pkix/pkixnss.h"
+#include "mozpkix/pkixnss.h"
 #include "secerr.h"
 #include "secmod.h"
 #include "ssl.h"
@@ -172,7 +172,7 @@ bool EnsureNSSInitialized(EnsureNSSOperator op)
   case nssInitFailed:
     NS_ASSERTION(loading, "Bad call to EnsureNSSInitialized(nssInitFailed)");
     loading = false;
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case nssShutdown:
     PR_AtomicSet(&haveLoaded, 0);

@@ -284,7 +284,7 @@ DOMStorageDBThread::InsertDBOp(DOMStorageDBThread::DBOperation* aOperation)
       aOperation->Finalize(NS_OK);
       return NS_OK;
     }
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case DBOperation::opGetUsage:
     if (aOperation->Type() == DBOperation::opPreloadUrgent) {

@@ -48,8 +48,7 @@ CreateRelativeTimeFormatPrototype(JSContext* cx, JS::Handle<JSObject*> Intl,
  *
  * Usage: formatted = intl_FormatRelativeTime(relativeTimeFormat, t, unit)
  */
-extern MOZ_MUST_USE bool
-intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp);
+[[nodiscard]] extern bool intl_FormatRelativeTime(JSContext* cx, unsigned argc, Value* vp);
 
 } // namespace js
 

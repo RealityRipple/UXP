@@ -49,7 +49,7 @@ CompileModule(ExclusiveContext* cx, const ReadOnlyCompileOptions& options,
               SourceBufferHolder& srcBuf, LifoAlloc& alloc,
               ScriptSourceObject** sourceObjectOut = nullptr);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const char16_t* chars, size_t length);
 
 //
@@ -64,32 +64,32 @@ CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const char16_t* cha
 //     Function("/*", "*/x) {")
 //     Function("x){ if (3", "return x;}")
 //
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CompileStandaloneFunction(JSContext* cx, MutableHandleFunction fun,
                           const ReadOnlyCompileOptions& options,
                           JS::SourceBufferHolder& srcBuf,
                           mozilla::Maybe<uint32_t> parameterListEnd,
                           HandleScope enclosingScope = nullptr);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CompileStandaloneGenerator(JSContext* cx, MutableHandleFunction fun,
                            const ReadOnlyCompileOptions& options,
                            JS::SourceBufferHolder& srcBuf,
                            mozilla::Maybe<uint32_t> parameterListEnd);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CompileStandaloneAsyncFunction(JSContext* cx, MutableHandleFunction fun,
                                const ReadOnlyCompileOptions& options,
                                JS::SourceBufferHolder& srcBuf,
                                mozilla::Maybe<uint32_t> parameterListEnd);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CompileStandaloneAsyncGenerator(JSContext* cx, MutableHandleFunction fun,
                                 const ReadOnlyCompileOptions& options,
                                 JS::SourceBufferHolder& srcBuf,
                                 mozilla::Maybe<uint32_t> parameterListEnd);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CompileAsyncFunctionBody(JSContext* cx, MutableHandleFunction fun,
                          const ReadOnlyCompileOptions& options,
                          Handle<PropertyNameVector> formals, JS::SourceBufferHolder& srcBuf);

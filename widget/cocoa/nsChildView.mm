@@ -99,6 +99,8 @@
 #include "UnitTransforms.h"
 #include "mozilla/UniquePtrExtensions.h"
 
+#include <functional>
+
 using namespace mozilla;
 using namespace mozilla::layers;
 using namespace mozilla::gl;
@@ -592,7 +594,9 @@ void* nsChildView::GetNativeData(uint32_t aDataType)
       if (retVal) {
         break;
       }
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
       retVal = [mView inputContext];
+#endif
       // If input context isn't available on this widget, we should set |this|
       // instead of nullptr since if this returns nullptr, IMEStateManager
       // cannot manage composition with TextComposition instance.  Although,
@@ -662,7 +666,7 @@ bool nsChildView::IsVisible() const
 // implementation of that method is augmented to let us ignore those calls
 // using -[BaseWindow disable/enableSetNeedsDisplay].
 static void
-ManipulateViewWithoutNeedingDisplay(NSView* aView, void (^aCallback)())
+ManipulateViewWithoutNeedingDisplay(NSView* aView, std::function<void()> aCallback)
 {
   BaseWindow* win = nil;
   if ([[aView window] isKindOfClass:[BaseWindow class]]) {
@@ -684,7 +688,7 @@ NS_IMETHODIMP nsChildView::Show(bool aState)
     // no pool in place.
     nsAutoreleasePool localPool;
 
-    ManipulateViewWithoutNeedingDisplay(mView, ^{
+    ManipulateViewWithoutNeedingDisplay(mView, [this, aState]{
       [mView setHidden:!aState];
     });
 
@@ -920,7 +924,7 @@ NS_IMETHODIMP nsChildView::Move(double aX, double aY)
   mBounds.x = x;
   mBounds.y = y;
 
-  ManipulateViewWithoutNeedingDisplay(mView, ^{
+  ManipulateViewWithoutNeedingDisplay(mView, [this]{
     [mView setFrame:DevPixelsToCocoaPoints(mBounds)];
   });
 
@@ -945,7 +949,7 @@ NS_IMETHODIMP nsChildView::Resize(double aWidth, double aHeight, bool aRepaint)
   mBounds.width  = width;
   mBounds.height = height;
 
-  ManipulateViewWithoutNeedingDisplay(mView, ^{
+  ManipulateViewWithoutNeedingDisplay(mView, [this]{
     [mView setFrame:DevPixelsToCocoaPoints(mBounds)];
   });
 
@@ -985,7 +989,7 @@ NS_IMETHODIMP nsChildView::Resize(double aX, double aY,
     mBounds.height = height;
   }
 
-  ManipulateViewWithoutNeedingDisplay(mView, ^{
+  ManipulateViewWithoutNeedingDisplay(mView, [this]{
     [mView setFrame:DevPixelsToCocoaPoints(mBounds)];
   });
 
@@ -1070,7 +1074,11 @@ nsresult nsChildView::SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
   NSEvent* event = [NSEvent mouseEventWithType:(NSEventType)aNativeMessage
                                       location:windowPoint
                                  modifierFlags:aModifierFlags
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
                                      timestamp:[[NSProcessInfo processInfo] systemUptime]
+#else
+                                     timestamp:[NSDate timeIntervalSinceReferenceDate]
+#endif
                                   windowNumber:[[mView window] windowNumber]
                                        context:nil
                                    eventNumber:0
@@ -1495,9 +1503,12 @@ nsChildView::PaintWindowInContext(CGContextRef aContext, const LayoutDeviceIntRe
 
   // Draw the backing surface onto the window.
   CGDataProviderRef provider = CGDataProviderCreateWithData(NULL, data, stride * size.height, NULL);
-  NSColorSpace* colorSpace = [[mView window] colorSpace];
-  CGImageRef image = CGImageCreate(size.width, size.height, 8, 32, stride,
-                                   [colorSpace CGColorSpace],
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
+  CGColorSpaceRef colorSpace = [[[mView window] colorSpace] CGColorSpace];
+#else
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+#endif
+  CGImageRef image = CGImageCreate(size.width, size.height, 8, 32, stride, colorSpace,
                                    kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst,
                                    provider, NULL, false, kCGRenderingIntentDefault);
   CGContextSaveGState(aContext);
@@ -1508,6 +1519,9 @@ nsChildView::PaintWindowInContext(CGContextRef aContext, const LayoutDeviceIntRe
   CGImageRelease(image);
   CGDataProviderRelease(provider);
   CGContextRestoreGState(aContext);
+#if !defined(MAC_OS_X_VERSION_10_6) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)
+  CGColorSpaceRelease(colorSpace);
+#endif
 
   mBackingSurface->ReleaseBits(data);
 
@@ -1723,7 +1737,7 @@ nsChildView::GetInputContext()
         break;
       }
       // If mTextInputHandler is null, set CLOSED instead...
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     default:
       mInputContext.mIMEState.mOpen = IMEState::CLOSED;
       break;
@@ -1899,6 +1913,7 @@ nsChildView::ConfigureAPZControllerThread()
 LayoutDeviceIntRect
 nsChildView::RectContainingTitlebarControls()
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   // Start with a thin strip at the top of the window for the highlight line.
   NSRect rect = NSMakeRect(0, 0, [mView bounds].size.width,
                            [(ChildView*)mView cornerRadius]);
@@ -1918,6 +1933,23 @@ nsChildView::RectContainingTitlebarControls()
     rect = NSUnionRect(rect, [mView convertRect:[view bounds] fromView:view]);
   }
   return CocoaPointsToDevPixels(rect);
+#else
+  // Actually, stuff all that. We've gotta get on with these.
+  // Gotta compete with a whiny Mozilla that broke 10.4 compatibilit-ee.
+  // Use the manual gradient patch in 880620 for perf and no NSGradient.
+  NSRect rect = NSMakeRect(0, 0, [mView bounds].size.width,
+                           [(ChildView*)mView cornerRadius]);
+
+  // Now we can add the rects of the titlebar controls. Oi! Where's the bar!
+  // XXX: NSEnumerator *e = [a objectEnumerator]; while(id = [e nextObject])
+  NSUInteger i;
+  NSArray *a = [(BaseWindow*)[mView window] titlebarControls];
+  for (i=0; i < [a count]; i++) {
+    id view = [a objectAtIndex:i];
+    rect = NSUnionRect(rect, [mView convertRect:[view bounds] fromView:view]);
+  }
+  return CocoaPointsToDevPixels(rect);
+#endif
 }
 
 void
@@ -2073,7 +2105,7 @@ nsChildView::MaybeDrawResizeIndicator(GLManager* aManager)
   }
 
   LayoutDeviceIntSize size = mResizeIndicatorRect.Size();
-  mResizerImage->UpdateIfNeeded(size, LayoutDeviceIntRegion(), ^(gfx::DrawTarget* drawTarget, const LayoutDeviceIntRegion& updateRegion) {
+  mResizerImage->UpdateIfNeeded(size, LayoutDeviceIntRegion(), [this](gfx::DrawTarget* drawTarget, const LayoutDeviceIntRegion& updateRegion) {
     ClearRegion(drawTarget, updateRegion);
     gfx::BorrowedCGContext borrow(drawTarget);
     DrawResizer(borrow.cg);
@@ -2175,11 +2207,18 @@ nsChildView::UpdateTitlebarCGContext()
 
   CGContextSaveGState(ctx);
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   double scale = BackingScaleFactor();
   CGContextScaleCTM(ctx, scale, scale);
 
   CGContextClipToRect(ctx, NSRectToCGRect(dirtyTitlebarRect));
   CGContextClearRect(ctx, NSRectToCGRect(dirtyTitlebarRect));
+#else
+  CGContextScaleCTM(ctx, 1.0, 1.0);
+
+  CGRect dgr = *(CGRect*)&dirtyTitlebarRect; CGContextClipToRect(ctx, dgr);
+  CGContextClearRect(ctx, dgr);
+#endif
 
   NSGraphicsContext* oldContext = [NSGraphicsContext currentContext];
 
@@ -2200,7 +2239,9 @@ nsChildView::UpdateTitlebarCGContext()
   }
 
   // Draw the titlebar controls into the titlebar image.
-  for (id view in [window titlebarControls]) {
+  NSArray *a = [window titlebarControls];
+  for(NSUInteger i=0; i<[a count]; i++) {
+    id view = [a objectAtIndex:i];
     NSRect viewFrame = [view frame];
     NSRect viewRect = [mView convertRect:viewFrame fromView:frameView];
     if (!NSIntersectsRect(dirtyTitlebarRect, viewRect)) {
@@ -2228,6 +2269,7 @@ nsChildView::UpdateTitlebarCGContext()
 
     [NSGraphicsContext setCurrentContext:[NSGraphicsContext graphicsContextWithGraphicsPort:ctx flipped:[view isFlipped]]];
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     if ([window useBrightTitlebarForeground] && !nsCocoaFeatures::OnYosemiteOrLater() &&
         view == [window standardWindowButton:NSWindowFullScreenButton]) {
       // Make the fullscreen button visible on dark titlebar backgrounds by
@@ -2249,6 +2291,9 @@ nsChildView::UpdateTitlebarCGContext()
     } else {
       [cell drawWithFrame:[button bounds] inView:button];
     }
+#else
+    [cell drawWithFrame:[button bounds] inView:button];
+#endif
 
     [NSGraphicsContext setCurrentContext:context];
     CGContextRestoreGState(ctx);
@@ -2317,7 +2362,7 @@ nsChildView::MaybeDrawRoundedCorners(GLManager* aManager,
   }
 
   LayoutDeviceIntSize size(mDevPixelCornerRadius, mDevPixelCornerRadius);
-  mCornerMaskImage->UpdateIfNeeded(size, LayoutDeviceIntRegion(), ^(gfx::DrawTarget* drawTarget, const LayoutDeviceIntRegion& updateRegion) {
+  mCornerMaskImage->UpdateIfNeeded(size, LayoutDeviceIntRegion(), [this](gfx::DrawTarget* drawTarget, const LayoutDeviceIntRegion& updateRegion) {
     ClearRegion(drawTarget, updateRegion);
     RefPtr<gfx::PathBuilder> builder = drawTarget->CreatePathBuilder();
     builder->Arc(gfx::Point(mDevPixelCornerRadius, mDevPixelCornerRadius), mDevPixelCornerRadius, 0, 2.0f * M_PI);
@@ -2730,12 +2775,12 @@ nsChildView::UpdateWindowDraggingRegion(const LayoutDeviceIntRegion& aRegion)
   LayoutDeviceIntRegion nonDraggable;
   nonDraggable.Sub(LayoutDeviceIntRect(0, 0, mBounds.width, mBounds.height), aRegion);
 
-  __block bool changed = false;
+  bool changed = false;
 
   // Suppress calls to setNeedsDisplay during NSView geometry changes.
-  ManipulateViewWithoutNeedingDisplay(mView, ^() {
+  ManipulateViewWithoutNeedingDisplay(mView, [this, nonDraggable, &changed]() {
     changed = mNonDraggableRegion.UpdateRegion(
-        nonDraggable, *this, [mView nonDraggableViewsContainer], ^() {
+        nonDraggable, *this, [mView nonDraggableViewsContainer], []() {
           return [[NonDraggableView alloc] initWithFrame:NSZeroRect];
         });
   });
@@ -2955,8 +3000,10 @@ nsChildView::LookUpDictionary(
     }
   }
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   AutoBackgroundSetter setter(mView);
   [mView showDefinitionForAttributedString:attrStr atPoint:pt];
+#endif
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -3238,7 +3285,11 @@ NSEvent* gLastDragMouseDownEvent = nil;
                                              object:nil];
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(scrollbarSystemMetricChanged)
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
                                                name:NSPreferredScrollerStyleDidChangeNotification
+#else
+                                               name:@"AppleAquaScrollBarVariantChanged"
+#endif
                                              object:nil];
   [[NSDistributedNotificationCenter defaultCenter] addObserver:self
                                                       selector:@selector(systemMetricsChanged)
@@ -3255,6 +3306,11 @@ NSEvent* gLastDragMouseDownEvent = nil;
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
+// NEVER define this in pre-10.6 builds. If you do, NSTextInput doesn't work
+// properly (see http://prod.lists.apple.com/archives/cocoa-dev/2013/Dec/msg00068.html ).
+// It seems to have something to do with the secret underlying NSInputContext
+// and NSTSMInputContext, which became NSTextInputContext in 10.6.
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
 // ComplexTextInputPanel's interpretKeyEvent hack won't work without this.
 // It makes calls to +[NSTextInputContext currentContext], deep in system
 // code, return the appropriate context.
@@ -3283,15 +3339,20 @@ NSEvent* gLastDragMouseDownEvent = nil;
     return [super inputContext];
   }
 }
+#endif
 
 - (void)installTextInputHandler:(TextInputHandler*)aHandler
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   mTextInputHandler = aHandler;
+#endif
 }
 
 - (void)uninstallTextInputHandler
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   mTextInputHandler = nullptr;
+#endif
 }
 
 - (bool)preRender:(NSOpenGLContext *)aGLContext
@@ -3478,6 +3539,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
 - (void)viewDidChangeBackingProperties
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   [super viewDidChangeBackingProperties];
   if (mGeckoChild) {
     // actually, it could be the color space that's changed,
@@ -3485,6 +3547,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
     // the backing scale factor and comparing to the old value
     mGeckoChild->BackingScaleFactorChanged();
   }
+#endif
 }
 
 - (BOOL)isCoveringTitlebar
@@ -4165,6 +4228,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
 - (bool)shouldConsiderStartingSwipeFromEvent:(NSEvent*)anEvent
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   // This method checks whether the AppleEnableSwipeNavigateWithScrolls global
   // preference is set.  If it isn't, fluid swipe tracking is disabled, and a
   // horizontal two-finger gesture is always a scroll (even in Safari).  This
@@ -4193,6 +4257,9 @@ NSEvent* gLastDragMouseDownEvent = nil;
   CGFloat deltaX = [anEvent scrollingDeltaX];
   CGFloat deltaY = [anEvent scrollingDeltaY];
   return std::abs(deltaX) > std::abs(deltaY) * 8;
+#else
+  return false;
+#endif
 }
 
 - (void)setUsingOMTCompositor:(BOOL)aUseOMTC
@@ -4324,9 +4391,12 @@ NSEvent* gLastDragMouseDownEvent = nil;
       [[self window] isKindOfClass:[ToolbarWindow class]] &&
       (locationInTitlebar < [(ToolbarWindow*)[self window] titlebarHeight] ||
        locationInTitlebar < [(ToolbarWindow*)[self window] unifiedToolbarHeight])) {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     if ([self shouldZoomOnDoubleClick]) {
       [[self window] performZoom:nil];
-    } else if ([self shouldMinimizeOnTitlebarDoubleClick]) {
+    } else if ([self shouldMinimizeOnTitlebarDoubleClick])
+#endif
+    {
       NSButton *minimizeButton = [[self window] standardWindowButton:NSWindowMiniaturizeButton];
       [minimizeButton performClick:self];
     }
@@ -4614,6 +4684,7 @@ AccumulateIntegerDelta(NSEvent* aEvent)
 static gfx::IntPoint
 GetIntegerDeltaForEvent(NSEvent* aEvent)
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   if (nsCocoaFeatures::OnSierraOrLater() && [aEvent hasPreciseScrollingDeltas]) {
     // Pixel scroll events (events with hasPreciseScrollingDeltas == YES)
     // carry pixel deltas in the scrollingDeltaX/Y fields and line scroll
@@ -4626,6 +4697,7 @@ GetIntegerDeltaForEvent(NSEvent* aEvent)
     // single event. So we need to do our own accumulation.
     return AccumulateIntegerDelta(aEvent);
   }
+#endif
 
   // For line scrolls, or pre-10.12, just use the rounded up value of deltaX / deltaY.
   return gfx::IntPoint(RoundUp([aEvent deltaX]), RoundUp([aEvent deltaY]));
@@ -4685,7 +4757,14 @@ GetIntegerDeltaForEvent(NSEvent* aEvent)
 
   Modifiers modifiers = nsCocoaUtils::ModifiersForEvent(theEvent);
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSTimeInterval beforeNow = [[NSProcessInfo processInfo] systemUptime] - [theEvent timestamp];
+#else
+  // NSProcessInfo in 10.4 doesn't have systemUptime, so we have to gyrate a bit in Carbon.
+  Nanoseconds nano = AbsoluteToNanoseconds(UpTime());
+  NSTimeInterval systemUptime = nano.hi * 4.294967296 + nano.lo * 1e-9;
+  NSTimeInterval beforeNow = systemUptime - [theEvent timestamp];
+#endif
   PRIntervalTime eventIntervalTime = PR_IntervalNow() - PR_MillisecondsToInterval(beforeNow * 1000);
   TimeStamp eventTimeStamp = TimeStamp::Now() - TimeDuration::FromSeconds(beforeNow);
 

@@ -11,8 +11,7 @@
 namespace js {
 namespace jit {
 
-MOZ_MUST_USE bool
-ReorderInstructions(MIRGenerator* mir, MIRGraph& graph);
+[[nodiscard]] bool ReorderInstructions(MIRGenerator* mir, MIRGraph& graph);
 
 } // namespace jit
 } // namespace js

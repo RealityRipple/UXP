@@ -920,7 +920,7 @@ void nsSmtpProtocol::InitPrefAuthMethods(int32_t authMethodPrefValue)
       MOZ_LOG(SMTPLogModule, mozilla::LogLevel::Error,
           ("SMTP: bad pref authMethod = %d\n", authMethodPrefValue));
       // fall to any
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     case nsMsgAuthMethod::anything:
       m_prefAuthMethods =
           SMTP_AUTH_LOGIN_ENABLED | SMTP_AUTH_PLAIN_ENABLED |

@@ -25,42 +25,42 @@ InitRegExpClass(JSContext* cx, HandleObject obj);
  * |input| may be nullptr if there is no JSString corresponding to
  * |chars| and |length|.
  */
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res, Handle<RegExpObject*> reobj,
                     HandleLinearString input, size_t* lastIndex, bool test,
                     MutableHandleValue rval);
 
 /* Translation from MatchPairs to a JS array in regexp_exec()'s output format. */
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 CreateRegExpMatchResult(JSContext* cx, RegExpShared& re,
                         HandleString input, const MatchPairs& matches,
                         MutableHandleValue rval);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpMatcher(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpMatcherRaw(JSContext* cx, HandleObject regexp, HandleString input,
                  int32_t lastIndex, MatchPairs* maybeMatches, MutableHandleValue output);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpSearcher(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpSearcherRaw(JSContext* cx, HandleObject regexp, HandleString input,
                   int32_t lastIndex, MatchPairs* maybeMatches, int32_t* result);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpTester(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpTesterRaw(JSContext* cx, HandleObject regexp, HandleString input,
                 int32_t lastIndex, int32_t* endIndex);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intrinsic_GetElemBaseForLambda(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 intrinsic_GetStringDataProperty(JSContext* cx, unsigned argc, Value* vp);
 
 /*
@@ -73,67 +73,67 @@ intrinsic_GetStringDataProperty(JSContext* cx, unsigned argc, Value* vp);
  * Must be called without |new|.
  * Dedicated function for RegExp.prototype[@@split] optimized path.
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_construct_raw_flags(JSContext* cx, unsigned argc, Value* vp);
 
 /*
  * Clone given RegExp object, inheriting pattern and flags, ignoring other
  * properties.
  */
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_clone(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 IsRegExp(JSContext* cx, HandleValue value, bool* result);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpCreate(JSContext* cx, HandleValue pattern, HandleValue flags, MutableHandleValue rval);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpPrototypeOptimizable(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpPrototypeOptimizableRaw(JSContext* cx, JSObject* proto);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpInstanceOptimizable(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpInstanceOptimizableRaw(JSContext* cx, JSObject* obj, JSObject* proto);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 RegExpGetSubstitution(JSContext* cx, HandleArrayObject matchResult, HandleLinearString string,
                       size_t position, HandleLinearString replacement, size_t firstDollarIndex,
                       HandleValue namedCaptures, MutableHandleValue rval);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 GetFirstDollarIndex(JSContext* cx, unsigned argc, Value* vp);
 
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 GetFirstDollarIndexRaw(JSContext* cx, HandleString str, int32_t* index);
 
 extern int32_t
 GetFirstDollarIndexRawFlat(JSLinearString* text);
 
 // RegExp ClassSpec members used in RegExpObject.cpp.
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_construct(JSContext* cx, unsigned argc, Value* vp);
 extern const JSPropertySpec regexp_static_props[];
 extern const JSPropertySpec regexp_properties[];
 extern const JSFunctionSpec regexp_methods[];
 
 // Used in RegExpObject::isOriginalFlagGetter.
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_global(JSContext* cx, unsigned argc, JS::Value* vp);
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_ignoreCase(JSContext* cx, unsigned argc, JS::Value* vp);
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_multiline(JSContext* cx, unsigned argc, JS::Value* vp);
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_sticky(JSContext* cx, unsigned argc, JS::Value* vp);
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_unicode(JSContext* cx, unsigned argc, JS::Value* vp);
-extern MOZ_MUST_USE bool
+[[nodiscard]] extern bool
 regexp_dotAll(JSContext* cx, unsigned argc, JS::Value* vp);
 
 } /* namespace js */

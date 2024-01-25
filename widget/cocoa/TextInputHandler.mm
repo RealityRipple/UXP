@@ -2088,7 +2088,7 @@ TextInputHandler::DispatchKeyEventForFlagsChanged(NSEvent* aNativeEvent,
   // Fire a key event.
   WidgetKeyboardEvent keyEvent(true, message, mWidget);
   InitKeyEvent(aNativeEvent, keyEvent);
-
+#ifdef MOZ_ENABLE_NPAPI
   // Attach a plugin event, in case keyEvent gets dispatched to a plugin.  Only
   // one field is needed -- the type.  The other fields can be constructed as
   // the need arises.  But Gecko doesn't have anything equivalent to the
@@ -2098,6 +2098,7 @@ TextInputHandler::DispatchKeyEventForFlagsChanged(NSEvent* aNativeEvent,
   nsCocoaUtils::InitNPCocoaEvent(&cocoaEvent);
   cocoaEvent.type = NPCocoaEventFlagsChanged;
   keyEvent.mPluginEvent.Copy(cocoaEvent);
+#endif
 
   KeyEventState currentKeyEvent(aNativeEvent);
   nsEventStatus status = nsEventStatus_eIgnore;
@@ -2418,6 +2419,7 @@ IMEInputHandler::OnCurrentTextInputSourceChange(CFNotificationCenterRef aCenter,
       tis.GetPrimaryLanguage(lang0);
       tis.GetBundleID(bundleID0);
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
       MOZ_LOG(gLog, LogLevel::Info,
         ("IMEInputHandler::OnCurrentTextInputSourceChange,\n"
          "  Current Input Source is changed to:\n"
@@ -2436,6 +2438,7 @@ IMEInputHandler::OnCurrentTextInputSourceChange(CFNotificationCenterRef aCenter,
          GetCharacters(is4), GetCharacters(is5),
          GetCharacters(lang0), GetCharacters(bundleID0),
          GetCharacters(is2), GetCharacters(is1), GetCharacters(is3)));
+#endif
     }
     sLastTIS = newTIS;
   }
@@ -2508,7 +2511,9 @@ IMEInputHandler::GetCurrentTSMDocumentID()
   // The result of ::TSMGetActiveDocument() isn't modified for new active text
   // input context until [NSTextInputContext currentInputContext] is called.
   // Therefore, we need to call it here.
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   [NSTextInputContext currentInputContext];
+#endif
   return ::TSMGetActiveDocument();
 }
 
@@ -2598,11 +2603,13 @@ IMEInputHandler::NotifyIMEOfFocusChangeInGecko()
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MOZ_LOG(gLog, LogLevel::Info,
     ("%p IMEInputHandler::NotifyIMEOfFocusChangeInGecko, "
      "Destroyed()=%s, IsFocused()=%s, inputContext=%p",
      this, TrueOrFalse(Destroyed()), TrueOrFalse(IsFocused()),
      mView ? [mView inputContext] : nullptr));
+#endif
 
   if (Destroyed()) {
     return;
@@ -2615,6 +2622,7 @@ IMEInputHandler::NotifyIMEOfFocusChangeInGecko()
   }
 
   MOZ_ASSERT(mView);
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSTextInputContext* inputContext = [mView inputContext];
   NS_ENSURE_TRUE_VOID(inputContext);
 
@@ -2628,6 +2636,7 @@ IMEInputHandler::NotifyIMEOfFocusChangeInGecko()
   // the stored window level.
   [inputContext deactivate];
   [inputContext activate];
+#endif
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -2637,11 +2646,13 @@ IMEInputHandler::DiscardIMEComposition()
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MOZ_LOG(gLog, LogLevel::Info,
     ("%p IMEInputHandler::DiscardIMEComposition, "
      "Destroyed()=%s, IsFocused()=%s, mView=%p, inputContext=%p",
      this, TrueOrFalse(Destroyed()), TrueOrFalse(IsFocused()),
      mView, mView ? [mView inputContext] : nullptr));
+#endif
 
   if (Destroyed()) {
     return;
@@ -2654,11 +2665,14 @@ IMEInputHandler::DiscardIMEComposition()
   }
 
   NS_ENSURE_TRUE_VOID(mView);
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSTextInputContext* inputContext = [mView inputContext];
   NS_ENSURE_TRUE_VOID(inputContext);
+
   mIgnoreIMECommit = true;
   [inputContext discardMarkedText];
   mIgnoreIMECommit = false;
+#endif
 
   NS_OBJC_END_TRY_ABORT_BLOCK
 }
@@ -2900,6 +2914,7 @@ IMEInputHandler::CreateTextRangeArray(NSAttributedString *aAttrString,
 bool
 IMEInputHandler::DispatchCompositionStartEvent()
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MOZ_LOG(gLog, LogLevel::Info,
     ("%p IMEInputHandler::DispatchCompositionStartEvent, "
      "mSelectedRange={ location=%llu, length=%llu }, Destroyed()=%s, "
@@ -2907,6 +2922,7 @@ IMEInputHandler::DispatchCompositionStartEvent()
      this,  SelectedRange().location, mSelectedRange.length,
      TrueOrFalse(Destroyed()), mView, mWidget,
      mView ? [mView inputContext] : nullptr, TrueOrFalse(mIsIMEComposing)));
+#endif
 
   RefPtr<IMEInputHandler> kungFuDeathGrip(this);
 
@@ -2955,6 +2971,7 @@ IMEInputHandler::DispatchCompositionChangeEvent(const nsString& aText,
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MOZ_LOG(gLog, LogLevel::Info,
     ("%p IMEInputHandler::DispatchCompositionChangeEvent, "
      "aText=\"%s\", aAttrString=\"%s\", "
@@ -2965,6 +2982,7 @@ IMEInputHandler::DispatchCompositionChangeEvent(const nsString& aText,
      aSelectedRange.location, aSelectedRange.length,
      TrueOrFalse(Destroyed()), mView, mWidget,
      mView ? [mView inputContext] : nullptr, TrueOrFalse(mIsIMEComposing)));
+#endif
 
   NS_ENSURE_TRUE(!Destroyed(), false);
 
@@ -3026,6 +3044,7 @@ IMEInputHandler::DispatchCompositionCommitEvent(const nsAString* aCommitString)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MOZ_LOG(gLog, LogLevel::Info,
     ("%p IMEInputHandler::DispatchCompositionCommitEvent, "
      "aCommitString=0x%p (\"%s\"), Destroyed()=%s, mView=%p, mWidget=%p, "
@@ -3034,6 +3053,7 @@ IMEInputHandler::DispatchCompositionCommitEvent(const nsAString* aCommitString)
      aCommitString ? NS_ConvertUTF16toUTF8(*aCommitString).get() : "",
      TrueOrFalse(Destroyed()), mView, mWidget,
      mView ? [mView inputContext] : nullptr, TrueOrFalse(mIsIMEComposing)));
+#endif
 
   NS_ASSERTION(mIsIMEComposing, "We're not in composition");
 
@@ -3754,11 +3774,13 @@ IMEInputHandler::SendCommittedText(NSString *aString)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MOZ_LOG(gLog, LogLevel::Info,
     ("%p IMEInputHandler::SendCommittedText, mView=%p, mWidget=%p, "
      "inputContext=%p, mIsIMEComposing=%s",
      this, mView, mWidget, mView ? [mView inputContext] : nullptr,
      TrueOrFalse(mIsIMEComposing), mWidget));
+#endif
 
   NS_ENSURE_TRUE(mWidget, );
   // XXX We should send the string without mView.
@@ -3796,6 +3818,7 @@ IMEInputHandler::KillIMEComposition()
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   MOZ_LOG(gLog, LogLevel::Info,
     ("%p IMEInputHandler::KillIMEComposition, mView=%p, mWidget=%p, "
      "inputContext=%p, mIsIMEComposing=%s, "
@@ -3803,6 +3826,7 @@ IMEInputHandler::KillIMEComposition()
      this, mView, mWidget, mView ? [mView inputContext] : nullptr,
      TrueOrFalse(mIsIMEComposing), TrueOrFalse(Destroyed()),
      TrueOrFalse(IsFocused())));
+#endif
 
   if (Destroyed()) {
     return;
@@ -3810,9 +3834,11 @@ IMEInputHandler::KillIMEComposition()
 
   if (IsFocused()) {
     NS_ENSURE_TRUE_VOID(mView);
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     NSTextInputContext* inputContext = [mView inputContext];
     NS_ENSURE_TRUE_VOID(inputContext);
     [inputContext discardMarkedText];
+#endif
     return;
   }
 
@@ -4037,8 +4063,12 @@ IMEInputHandler::OnHandleEvent(NSEvent* aEvent)
   if (!IsFocused()) {
     return false;
   }
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSTextInputContext* inputContext = [mView inputContext];
   return [inputContext handleEvent:aEvent];
+#else
+  return true;
+#endif
 }
 
 #pragma mark -

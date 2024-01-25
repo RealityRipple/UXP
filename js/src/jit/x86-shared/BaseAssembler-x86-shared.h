@@ -80,7 +80,7 @@ public:
         spew("; %s", msg);
     }
 
-    MOZ_MUST_USE JmpSrc
+    [[nodiscard]] JmpSrc
     twoByteNop()
     {
         spew("nop (2 byte)");
@@ -1782,7 +1782,7 @@ public:
         }
     }
 
-    MOZ_MUST_USE JmpSrc
+    [[nodiscard]] JmpSrc
     cmpl_im_disp32(int32_t rhs, int32_t offset, RegisterID base)
     {
         spew("cmpl       $0x%x, " MEM_o32b, rhs, ADDR_o32b(offset, base));
@@ -1799,7 +1799,7 @@ public:
         return r;
     }
 
-    MOZ_MUST_USE JmpSrc
+    [[nodiscard]] JmpSrc
     cmpl_im_disp32(int32_t rhs, const void* addr)
     {
         spew("cmpl       $0x%x, %p", rhs, addr);
@@ -2514,7 +2514,7 @@ public:
 
     // Flow control:
 
-    MOZ_MUST_USE JmpSrc
+    [[nodiscard]] JmpSrc
     call()
     {
         m_formatter.oneByteOp(OP_CALL_rel32);
@@ -2538,7 +2538,7 @@ public:
     // Comparison of EAX against a 32-bit immediate. The immediate is patched
     // in as if it were a jump target. The intention is to toggle the first
     // byte of the instruction between a CMP and a JMP to produce a pseudo-NOP.
-    MOZ_MUST_USE JmpSrc
+    [[nodiscard]] JmpSrc
     cmp_eax()
     {
         m_formatter.oneByteOp(OP_CMP_EAXIv);
@@ -2563,7 +2563,7 @@ public:
             m_formatter.immediate32(diff - 5);
         }
     }
-    MOZ_MUST_USE JmpSrc
+    [[nodiscard]] JmpSrc
     jmp()
     {
         m_formatter.oneByteOp(OP_JMP_rel32);
@@ -2606,7 +2606,7 @@ public:
         }
     }
 
-    MOZ_MUST_USE JmpSrc
+    [[nodiscard]] JmpSrc
     jCC(Condition cond)
     {
         m_formatter.twoByteOp(jccRel32(cond));
@@ -3829,7 +3829,7 @@ threeByteOpImmSimd("vblendps", VEX_PD, OP3_BLENDPS_VpsWpsIb, ESCAPE_3A, imm, off
     {
         memcpy(buffer, m_formatter.buffer(), size());
     }
-    MOZ_MUST_USE bool appendBuffer(const BaseAssembler& other)
+    [[nodiscard]] bool appendBuffer(const BaseAssembler& other)
     {
         return m_formatter.append(other.m_formatter.buffer(), other.size());
     }
@@ -5048,7 +5048,7 @@ threeByteOpImmSimd("vblendps", VEX_PD, OP3_BLENDPS_VpsWpsIb, ESCAPE_3A, imm, off
             m_buffer.putInt64Unchecked(imm);
         }
 
-        MOZ_ALWAYS_INLINE MOZ_MUST_USE JmpSrc
+        [[nodiscard]] MOZ_ALWAYS_INLINE JmpSrc
         immediateRel32()
         {
             m_buffer.putIntUnchecked(0);
@@ -5107,7 +5107,7 @@ threeByteOpImmSimd("vblendps", VEX_PD, OP3_BLENDPS_VpsWpsIb, ESCAPE_3A, imm, off
         bool isAligned(int alignment) const { return m_buffer.isAligned(alignment); }
         unsigned char* data() { return m_buffer.data(); }
 
-        MOZ_MUST_USE bool append(const unsigned char* values, size_t size)
+        [[nodiscard]] bool append(const unsigned char* values, size_t size)
         {
             return m_buffer.append(values, size);
         }

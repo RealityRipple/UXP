@@ -19,7 +19,9 @@
 #include "nsTArray.h"
 #include "nsWeakPtr.h"
 
+#ifdef MOZ_ENABLE_NPAPI
 class nsPluginArray;
+#endif
 class nsMimeTypeArray;
 class nsPIDOMWindowInner;
 class nsIDOMNavigatorSystemMessages;
@@ -37,6 +39,7 @@ class WakeLock;
 class ArrayBufferOrArrayBufferViewOrBlobOrFormDataOrUSVStringOrURLSearchParams;
 class ServiceWorkerContainer;
 class DOMRequest;
+class Clipboard;
 } // namespace dom
 } // namespace mozilla
 
@@ -126,7 +129,9 @@ public:
   void RegisterContentHandler(const nsAString& aMIMEType, const nsAString& aURL,
                               const nsAString& aTitle, ErrorResult& aRv);
   nsMimeTypeArray* GetMimeTypes(ErrorResult& aRv);
+#ifdef MOZ_ENABLE_NPAPI
   nsPluginArray* GetPlugins(ErrorResult& aRv);
+#endif
   Permissions* GetPermissions(ErrorResult& aRv);
   bool GlobalPrivacyControl();
   Geolocation* GetGeolocation(ErrorResult& aRv);
@@ -210,6 +215,8 @@ public:
                               ErrorResult& aRv);
 
   already_AddRefed<ServiceWorkerContainer> ServiceWorker();
+  
+  dom::Clipboard* Clipboard();
 
   void GetLanguages(nsTArray<nsString>& aLanguages);
 
@@ -257,12 +264,15 @@ private:
                           ErrorResult& aRv);
 
   RefPtr<nsMimeTypeArray> mMimeTypes;
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsPluginArray> mPlugins;
+#endif
   RefPtr<Permissions> mPermissions;
   RefPtr<Geolocation> mGeolocation;
   RefPtr<DesktopNotificationCenter> mNotification;
   RefPtr<PowerManager> mPowerManager;
   RefPtr<network::Connection> mConnection;
+  RefPtr<dom::Clipboard> mClipboard;
 #ifdef MOZ_AUDIO_CHANNEL_MANAGER
   RefPtr<system::AudioChannelManager> mAudioChannelManager;
 #endif

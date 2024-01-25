@@ -36,7 +36,7 @@ public:
     base_type::SetLength(newLen + sExtra);
   }
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool SetLength(size_type newLen, const mozilla::fallible_t&)
   {
     return base_type::SetLength(newLen + sExtra, mozilla::fallible);
@@ -89,7 +89,7 @@ public:
     base_type::SetLength(newLen + sExtra);
   }
 
-  MOZ_MUST_USE
+  [[nodiscard]]
   bool SetLength(size_type newLen, const mozilla::fallible_t&)
   {
     return base_type::SetLength(newLen + sExtra, mozilla::fallible);

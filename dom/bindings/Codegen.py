@@ -80,7 +80,7 @@ def idlTypeNeedsCycleCollection(type):
         type.isObject() or
         type.isSpiderMonkeyInterface()):
         return False
-    elif type.isCallback() or type.isGeckoInterface():
+    elif type.isCallback() or type.isPromise() or type.isGeckoInterface():
         return True
     elif type.isUnion():
         return any(idlTypeNeedsCycleCollection(t) for t in type.flatMemberTypes)
@@ -7918,7 +7918,7 @@ class CGCase(CGList):
         self.append(CGGeneric("case " + expression + ": {\n"))
         bodyList = CGList([body])
         if fallThrough:
-            bodyList.append(CGGeneric("MOZ_FALLTHROUGH;\n"))
+            bodyList.append(CGGeneric("[[fallthrough]];\n"))
         else:
             bodyList.append(CGGeneric("break;\n"))
         self.append(CGIndenter(bodyList))

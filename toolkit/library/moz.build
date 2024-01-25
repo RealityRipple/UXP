@@ -116,16 +116,13 @@ if CONFIG['USE_ICU']:
         'icu',
     ]
 
-if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3':
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3' and CONFIG['MOZ_ENABLE_NPAPI']:
     USE_LIBS += [
         'mozgtk_stub',
     ]
 
-if 'gtk' in CONFIG['MOZ_WIDGET_TOOLKIT'] or \
-        CONFIG['MOZ_TREE_FREETYPE']:
-    USE_LIBS += [
-        'freetype',
-    ]
+if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'gtk3' and not CONFIG['MOZ_ENABLE_NPAPI']:
+    OS_LIBS += CONFIG['MOZ_GTK3_LIBS']
 
 if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
     CXXFLAGS += CONFIG['TK_CFLAGS']
@@ -147,14 +144,17 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':
     OS_LIBS += [
         '-framework OpenGL',
         '-framework SystemConfiguration',
-        '-framework AVFoundation',
-        '-framework CoreMedia',
         '-framework IOKit',
         '-F%s' % CONFIG['MACOS_PRIVATE_FRAMEWORKS_DIR'],
         '-framework CoreUI',
-        '-framework CoreSymbolication',
         'cups',
     ]
+    if CONFIG['CPU_ARCH'] != 'ppc':
+        OS_LIBS += [
+            '-framework AVFoundation',
+            '-framework CoreMedia',
+            '-framework CoreSymbolication',
+        ]
 
 if CONFIG['MOZ_WMF']:
     OS_LIBS += [

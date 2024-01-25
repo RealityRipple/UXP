@@ -547,14 +547,21 @@ class LogViolationDetailsRunnable final : public WorkerMainThreadRunnable
 {
   nsString mFileName;
   uint32_t mLineNum;
+  uint32_t mColumnNum;
+  nsString mScriptSample;
 
 public:
   LogViolationDetailsRunnable(WorkerPrivate* aWorker,
                               const nsString& aFileName,
-                              uint32_t aLineNum)
+                              uint32_t aLineNum,
+                              uint32_t aColumnNum,
+                              const nsAString& aScriptSample)
     : WorkerMainThreadRunnable(aWorker,
                                NS_LITERAL_CSTRING("RuntimeService :: LogViolationDetails"))
-    , mFileName(aFileName), mLineNum(aLineNum)
+    , mFileName(aFileName)
+    , mLineNum(aLineNum)
+    , mColumnNum(aColumnNum)
+    , mScriptSample(aScriptSample)
   {
     MOZ_ASSERT(aWorker);
   }
@@ -566,24 +573,38 @@ private:
 };
 
 bool
-ContentSecurityPolicyAllows(JSContext* aCx)
+ContentSecurityPolicyAllows(JSContext* aCx, JS::HandleValue aValue)
 {
   WorkerPrivate* worker = GetWorkerPrivateFromContext(aCx);
   worker->AssertIsOnWorkerThread();
 
   if (worker->GetReportCSPViolations()) {
+    JS::Rooted<JSString*> jsString(aCx, JS::ToString(aCx, aValue));
+    if (NS_WARN_IF(!jsString)) {
+      JS_ClearPendingException(aCx);
+      return false;
+    }
+
+    nsAutoJSString scriptSample;
+    if (NS_WARN_IF(!scriptSample.init(aCx, jsString))) {
+      JS_ClearPendingException(aCx);
+      return false;
+    }
+
     nsString fileName;
     uint32_t lineNum = 0;
+    uint32_t columnNum = 0;
 
     JS::AutoFilename file;
-    if (JS::DescribeScriptedCaller(aCx, &file, &lineNum) && file.get()) {
+    if (JS::DescribeScriptedCaller(aCx, &file, &lineNum, &columnNum) && file.get()) {
       fileName = NS_ConvertUTF8toUTF16(file.get());
     } else {
       MOZ_ASSERT(!JS_IsExceptionPending(aCx));
     }
 
     RefPtr<LogViolationDetailsRunnable> runnable =
-        new LogViolationDetailsRunnable(worker, fileName, lineNum);
+        new LogViolationDetailsRunnable(worker, fileName, lineNum, columnNum,
+                                        scriptSample);
 
     ErrorResult rv;
     runnable->Dispatch(Killing, rv);
@@ -1007,6 +1028,10 @@ public:
     : mWorkerPrivate(aWorkerPrivate)
   {
     MOZ_ASSERT(aWorkerPrivate);
+    // Magical number 2. Workers have the base recursion depth 1, and normal
+    // runnables run at level 2, and we don't want to process microtasks
+    // at any other level.
+    SetTargetedMicroTaskRecursionDepth(2);
   }
 
   ~WorkerJSContext()
@@ -1092,26 +1117,14 @@ public:
     }
   }
 
-  virtual void AfterProcessTask(uint32_t aRecursionDepth) override
+  virtual void DispatchToMicroTask(already_AddRefed<MicroTaskRunnable> aRunnable) override
   {
-    // Only perform the Promise microtask checkpoint on the outermost event
-    // loop.  Don't run it, for example, during sync XHR or importScripts.
-    if (aRecursionDepth == 2) {
-      CycleCollectedJSContext::AfterProcessTask(aRecursionDepth);
-    } else if (aRecursionDepth > 2) {
-      AutoDisableMicroTaskCheckpoint disableMicroTaskCheckpoint;
-      CycleCollectedJSContext::AfterProcessTask(aRecursionDepth);
-    }
-  }
-
-  virtual void DispatchToMicroTask(already_AddRefed<nsIRunnable> aRunnable) override
-  {
-    RefPtr<nsIRunnable> runnable(aRunnable);
+    RefPtr<MicroTaskRunnable> runnable(aRunnable);
 
     MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(runnable);
 
-    std::queue<nsCOMPtr<nsIRunnable>>* microTaskQueue = nullptr;
+    std::queue<RefPtr<MicroTaskRunnable>>* microTaskQueue = nullptr;
 
     JSContext* cx = GetCurrentThreadJSContext();
     NS_ASSERTION(cx, "This should never be null!");
@@ -1120,15 +1133,15 @@ public:
     NS_ASSERTION(global, "This should never be null!");
 
     // On worker threads, if the current global is the worker global, we use the
-    // main promise micro task queue. Otherwise, the current global must be
+    // main micro task queue. Otherwise, the current global must be
     // either the debugger global or a debugger sandbox, and we use the debugger
-    // promise micro task queue instead.
+    // micro task queue instead.
     if (IsWorkerGlobal(global)) {
-      microTaskQueue = &mPromiseMicroTaskQueue;
+      microTaskQueue = &GetMicroTaskQueue();
     } else {
       MOZ_ASSERT(IsDebuggerGlobal(global) || IsDebuggerSandbox(global));
 
-      microTaskQueue = &mDebuggerPromiseMicroTaskQueue;
+      microTaskQueue = &GetDebuggerMicroTaskQueue();
     }
 
     microTaskQueue->push(runnable.forget());
@@ -2706,11 +2719,9 @@ LogViolationDetailsRunnable::MainThreadRun()
 
   nsIContentSecurityPolicy* csp = mWorkerPrivate->GetCSP();
   if (csp) {
-    NS_NAMED_LITERAL_STRING(scriptSample,
-        "Call to eval() or related function blocked by CSP.");
     if (mWorkerPrivate->GetReportCSPViolations()) {
       csp->LogViolationDetails(nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL,
-                               mFileName, scriptSample, mLineNum,
+                               mFileName, mScriptSample, mLineNum, mColumnNum,
                                EmptyString(), EmptyString());
     }
   }

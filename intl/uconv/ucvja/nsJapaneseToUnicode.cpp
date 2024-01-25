@@ -336,7 +336,7 @@ NS_IMETHODIMP nsEUCJPToUnicodeV2::Convert(
               break;
             }
             // else fall through to error handler
-            MOZ_FALLTHROUGH;
+            [[fallthrough]];
           }
           case 5: // two bytes undefined
           {

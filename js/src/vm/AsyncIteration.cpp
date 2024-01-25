@@ -128,7 +128,7 @@ js::GetUnwrappedAsyncGenerator(JSFunction* wrapped)
 }
 
 // Async Iteration proposal 4.1.1 Await Fulfilled Functions.
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 js::AsyncGeneratorAwaitedFulfilled(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                                    HandleValue value)
 {
@@ -136,7 +136,7 @@ js::AsyncGeneratorAwaitedFulfilled(JSContext* cx, Handle<AsyncGeneratorObject*> 
 }
 
 // Async Iteration proposal 4.1.2 Await Rejected Functions.
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 js::AsyncGeneratorAwaitedRejected(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                                   HandleValue reason)
 {
@@ -144,7 +144,7 @@ js::AsyncGeneratorAwaitedRejected(JSContext* cx, Handle<AsyncGeneratorObject*> a
 }
 
 // Async Iteration proposal 11.4.3.7 step 8.d-e.
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 js::AsyncGeneratorYieldReturnAwaitedFulfilled(JSContext* cx,
                                               Handle<AsyncGeneratorObject*> asyncGenObj,
                                               HandleValue value)
@@ -153,7 +153,7 @@ js::AsyncGeneratorYieldReturnAwaitedFulfilled(JSContext* cx,
 }
 
 // Async Iteration proposal 11.4.3.7 step 8.d-e.
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 js::AsyncGeneratorYieldReturnAwaitedRejected(JSContext* cx,
                                              Handle<AsyncGeneratorObject*> asyncGenObj,
                                              HandleValue reason)
@@ -329,7 +329,7 @@ AsyncGeneratorObject::createRequest(JSContext* cx, Handle<AsyncGeneratorObject*>
     return request;
 }
 
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 InternalEnqueue(JSContext* cx, HandleArrayObject queue, HandleValue val)
 {
     uint32_t length;
@@ -346,7 +346,7 @@ InternalEnqueue(JSContext* cx, HandleArrayObject queue, HandleValue val)
     return SetLengthProperty(cx, queue, length + 1);
 }
 
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 InternalDequeue(JSContext* cx, HandleArrayObject queue, MutableHandleValue val)
 {
     uint32_t length;
@@ -376,7 +376,7 @@ InternalDequeue(JSContext* cx, HandleArrayObject queue, MutableHandleValue val)
     return SetLengthProperty(cx, queue, newlength);
 }
 
-/* static */ MOZ_MUST_USE bool
+[[nodiscard]] /* static */ bool
 AsyncGeneratorObject::enqueueRequest(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                                      Handle<AsyncGeneratorRequest*> request)
 {
@@ -456,7 +456,7 @@ AsyncGeneratorRequest::create(JSContext* cx, CompletionKind completionKind,
 }
 
 // Async Iteration proposal 11.4.3.2 AsyncGeneratorStart steps 5.d-g.
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 AsyncGeneratorReturned(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                        HandleValue value)
 {
@@ -471,7 +471,7 @@ AsyncGeneratorReturned(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
 }
 
 // Async Iteration proposal 11.4.3.2 AsyncGeneratorStart steps 5.d, f.
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 AsyncGeneratorThrown(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj)
 {
     // Step 5.d.
@@ -492,7 +492,7 @@ AsyncGeneratorThrown(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj)
 
 // Async Iteration proposal 11.4.3.7 (partially).
 // Most steps are done in generator.
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 AsyncGeneratorYield(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue value)
 {
     // Step 5 is done in bytecode.
@@ -510,7 +510,7 @@ AsyncGeneratorYield(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, Ha
 // Async Iteration proposal 11.4.3.5 AsyncGeneratorResumeNext
 //   steps 12-14, 16-20.
 // Execution context switching is handled in generator.
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 js::AsyncGeneratorResume(JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
                          CompletionKind completionKind, HandleValue argument)
 {
@@ -578,7 +578,7 @@ static const JSFunctionSpec async_generator_methods[] = {
     JS_FS_END
 };
 
-/* static */ MOZ_MUST_USE bool
+[[nodiscard]] /* static */ bool
 GlobalObject::initAsyncGenerators(JSContext* cx, Handle<GlobalObject*> global)
 {
     if (global->getReservedSlot(ASYNC_ITERATOR_PROTO).isObject())

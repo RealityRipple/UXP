@@ -9,7 +9,9 @@ include protocol PPluginScriptableObject;
 include protocol PBrowserStream;
 include protocol PPluginStream;
 include protocol PStreamNotify;
+#ifdef MOZ_ENABLE_NPAPI
 include protocol PPluginSurface;
+#endif
 
 include "mozilla/GfxMessageUtils.h";
 
@@ -45,7 +47,9 @@ struct IOSurfaceDescriptor {
 union SurfaceDescriptor {
   Shmem;
   SurfaceDescriptorX11;
+#ifdef MOZ_ENABLE_NPAPI
   PPluginSurface; // used on Windows
+#endif
   IOSurfaceDescriptor; // used on OSX 10.5+
   // Descriptor can be null here in case
   // 1) of first Show call (prevSurface is null)
@@ -69,7 +73,9 @@ intr protocol PPluginInstance
   manages PBrowserStream;
   manages PPluginStream;
   manages PStreamNotify;
+#ifdef MOZ_ENABLE_NPAPI
   manages PPluginSurface;
+#endif
 
 child:
   intr __delete__();
@@ -164,12 +170,14 @@ parent:
     returns (nsCString value, NPError result);
   intr NPN_GetValue_DrawingModelSupport(NPNVariable model)
     returns (bool value);
+#ifdef MOZ_ENABLE_NPAPI
   intr NPN_GetValue_SupportsAsyncBitmapSurface()
     returns (bool value);
   intr NPN_GetValue_SupportsAsyncDXGISurface()
     returns (bool value);
   intr NPN_GetValue_PreferredDXGIAdapter()
     returns (DxgiAdapterDesc desc);
+#endif
 
   intr NPN_SetValue_NPPVpluginWindow(bool windowed)
     returns (NPError result);
@@ -206,11 +214,13 @@ parent:
   // Create a new DXGI shared surface with the given format and size. The
   // returned handle, on success, can be opened as an ID3D10Texture2D or
   // ID3D11Texture2D on a corresponding device.
+#ifdef MOZ_ENABLE_NPAPI
   sync InitDXGISurface(SurfaceFormat format, IntSize size)
     returns (WindowsHandle handle, NPError result);
 
   // Destroy a surface previously allocated with InitDXGISurface().
   sync FinalizeDXGISurface(WindowsHandle handle);
+#endif
 
   // Set the current plugin image to the bitmap in the given shmem buffer. The
   // format must be B8G8R8A8 or B8G8R8X8.
@@ -219,11 +229,11 @@ parent:
                         uint32_t stride,
                         IntSize size,
                         IntRect dirty);
-
+#ifdef MOZ_ENABLE_NPAPI
   // Set the current plugin image to the DXGI surface in |handle|.
   sync ShowDirectDXGISurface(WindowsHandle handle,
                               IntRect dirty);
-
+#endif
   // Give |newSurface|, containing this instance's updated pixels, to
   // the browser for compositing.  When this method returns, any surface
   // previously passed to Show may be destroyed.
@@ -235,10 +245,11 @@ parent:
   //                      the shmem for reuse
   sync Show(NPRect updatedRect, SurfaceDescriptor newSurface)
     returns (SurfaceDescriptor prevSurface);
-
+#ifdef MOZ_ENABLE_NPAPI
   async PPluginSurface(WindowsSharedMemoryHandle handle,
                        IntSize size,
                        bool transparent);
+#endif
 
   intr NPN_PushPopupsEnabledState(bool aState);
 

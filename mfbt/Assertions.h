@@ -554,7 +554,7 @@ struct AssertionConditionType
  *   default:
  *     // This case wants to assert in debug builds, fall through in release.
  *     MOZ_ASSERT(false); // -Wimplicit-fallthrough warning in release builds!
- *     MOZ_FALLTHROUGH;   // but -Wunreachable-code warning in debug builds!
+ *     [[fallthrough]];   // but -Wunreachable-code warning in debug builds!
  *   case 5:
  *     return 5;
  * }
@@ -571,7 +571,7 @@ struct AssertionConditionType
 #ifdef DEBUG
 #  define MOZ_FALLTHROUGH_ASSERT(reason) MOZ_CRASH("MOZ_FALLTHROUGH_ASSERT: " reason)
 #else
-#  define MOZ_FALLTHROUGH_ASSERT(...) MOZ_FALLTHROUGH
+#  define MOZ_FALLTHROUGH_ASSERT(...) [[fallthrough]]
 #endif
 
 /*
@@ -603,25 +603,25 @@ struct AssertionConditionType
 #  define MOZ_ALWAYS_TRUE(expr) \
      do { \
        if ((expr)) { \
-          /* Silence MOZ_MUST_USE. */ \
+          /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #  define MOZ_ALWAYS_FALSE(expr) \
      do { \
        if ((expr)) { \
-         /* Silence MOZ_MUST_USE. */ \
+         /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #  define MOZ_ALWAYS_OK(expr) \
      do { \
        if ((expr).isOk()) { \
-         /* Silence MOZ_MUST_USE. */ \
+         /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #  define MOZ_ALWAYS_ERR(expr) \
      do { \
        if ((expr).isErr()) { \
-         /* Silence MOZ_MUST_USE. */ \
+         /* Silence [[nodiscard]]. */ \
        } \
      } while (0)
 #endif

@@ -50,7 +50,7 @@ using namespace mozilla;
 #include <string.h>
 #include <stdlib.h>
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 GetProcSelfStatmField(int aField, int64_t* aN)
 {
   // There are more than two fields, but we're only interested in the first
@@ -70,7 +70,7 @@ GetProcSelfStatmField(int aField, int64_t* aN)
   return NS_ERROR_FAILURE;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 GetProcSelfSmapsPrivate(int64_t* aN)
 {
   // You might be tempted to calculate USS by subtracting the "shared" value
@@ -125,26 +125,26 @@ GetProcSelfSmapsPrivate(int64_t* aN)
 }
 
 #define HAVE_VSIZE_AND_RESIDENT_REPORTERS 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 VsizeDistinguishedAmount(int64_t* aN)
 {
   return GetProcSelfStatmField(0, aN);
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentDistinguishedAmount(int64_t* aN)
 {
   return GetProcSelfStatmField(1, aN);
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentFastDistinguishedAmount(int64_t* aN)
 {
   return ResidentDistinguishedAmount(aN);
 }
 
 #define HAVE_RESIDENT_UNIQUE_REPORTER 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentUniqueDistinguishedAmount(int64_t* aN)
 {
   return GetProcSelfSmapsPrivate(aN);
@@ -152,7 +152,7 @@ ResidentUniqueDistinguishedAmount(int64_t* aN)
 
 #ifdef HAVE_MALLINFO
 #define HAVE_SYSTEM_HEAP_REPORTER 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 SystemHeapSize(int64_t* aSizeOut)
 {
     struct mallinfo info = mallinfo();
@@ -207,7 +207,7 @@ SystemHeapSize(int64_t* aSizeOut)
 #define KP_RSS(kp) (kp.p_vm_rssize * getpagesize())
 #endif
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 GetKinfoProcSelf(KINFO_PROC* aProc)
 {
   int mib[] = {
@@ -229,7 +229,7 @@ GetKinfoProcSelf(KINFO_PROC* aProc)
 }
 
 #define HAVE_VSIZE_AND_RESIDENT_REPORTERS 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 VsizeDistinguishedAmount(int64_t* aN)
 {
   KINFO_PROC proc;
@@ -240,7 +240,7 @@ VsizeDistinguishedAmount(int64_t* aN)
   return rv;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentDistinguishedAmount(int64_t* aN)
 {
   KINFO_PROC proc;
@@ -251,7 +251,7 @@ ResidentDistinguishedAmount(int64_t* aN)
   return rv;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentFastDistinguishedAmount(int64_t* aN)
 {
   return ResidentDistinguishedAmount(aN);
@@ -261,7 +261,7 @@ ResidentFastDistinguishedAmount(int64_t* aN)
 #include <libutil.h>
 #include <algorithm>
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 GetKinfoVmentrySelf(int64_t* aPrss, uint64_t* aMaxreg)
 {
   int cnt;
@@ -292,7 +292,7 @@ GetKinfoVmentrySelf(int64_t* aPrss, uint64_t* aMaxreg)
 }
 
 #define HAVE_PRIVATE_REPORTER 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 PrivateDistinguishedAmount(int64_t* aN)
 {
   int64_t priv;
@@ -303,7 +303,7 @@ PrivateDistinguishedAmount(int64_t* aN)
 }
 
 #define HAVE_VSIZE_MAX_CONTIGUOUS_REPORTER 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 VsizeMaxContiguousDistinguishedAmount(int64_t* aN)
 {
   uint64_t biggestRegion;
@@ -364,7 +364,7 @@ XMappingIter(int64_t& aVsize, int64_t& aResident)
 }
 
 #define HAVE_VSIZE_AND_RESIDENT_REPORTERS 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 VsizeDistinguishedAmount(int64_t* aN)
 {
   int64_t vsize, resident;
@@ -376,7 +376,7 @@ VsizeDistinguishedAmount(int64_t* aN)
   return NS_OK;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentDistinguishedAmount(int64_t* aN)
 {
   int64_t vsize, resident;
@@ -388,7 +388,7 @@ ResidentDistinguishedAmount(int64_t* aN)
   return NS_OK;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentFastDistinguishedAmount(int64_t* aN)
 {
   return ResidentDistinguishedAmount(aN);
@@ -402,7 +402,7 @@ ResidentFastDistinguishedAmount(int64_t* aN)
 #include <mach/task.h>
 #include <sys/sysctl.h>
 
-static MOZ_MUST_USE bool
+[[nodiscard]] static bool
 GetTaskBasicInfo(struct task_basic_info* aTi)
 {
   mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
@@ -415,7 +415,7 @@ GetTaskBasicInfo(struct task_basic_info* aTi)
 // absurdly high, eg. 2GB+ even at start-up.  But both 'top' and 'ps' report
 // it, so we might as well too.
 #define HAVE_VSIZE_AND_RESIDENT_REPORTERS 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 VsizeDistinguishedAmount(int64_t* aN)
 {
   task_basic_info ti;
@@ -433,7 +433,7 @@ VsizeDistinguishedAmount(int64_t* aN)
 //
 // Purging these pages can take a long time for some users (see bug 789975),
 // so we provide the option to get the RSS without purging first.
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentDistinguishedAmountHelper(int64_t* aN, bool aDoPurge)
 {
 #ifdef HAVE_JEMALLOC_STATS
@@ -450,13 +450,13 @@ ResidentDistinguishedAmountHelper(int64_t* aN, bool aDoPurge)
   return NS_OK;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentFastDistinguishedAmount(int64_t* aN)
 {
   return ResidentDistinguishedAmountHelper(aN, /* doPurge = */ false);
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentDistinguishedAmount(int64_t* aN)
 {
   return ResidentDistinguishedAmountHelper(aN, /* doPurge = */ true);
@@ -483,6 +483,10 @@ InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType)
       base = SHARED_REGION_BASE_X86_64;
       size = SHARED_REGION_SIZE_X86_64;
       break;
+    case CPU_TYPE_POWERPC:
+      base = SHARED_REGION_BASE_PPC;
+      size = SHARED_REGION_SIZE_PPC;
+      break;
     default:
       return false;
   }
@@ -490,7 +494,7 @@ InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType)
   return base <= aAddr && aAddr < (base + size);
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentUniqueDistinguishedAmount(int64_t* aN)
 {
   if (!aN) {
@@ -528,8 +532,10 @@ ResidentUniqueDistinguishedAmount(int64_t* aN)
     }
 
     switch (info.share_mode) {
+#ifdef SM_LARGE_PAGE
       case SM_LARGE_PAGE:
         // NB: Large pages are not shareable and always resident.
+#endif
       case SM_PRIVATE:
         privatePages += info.private_pages_resident;
         privatePages += info.shared_pages_resident;
@@ -563,7 +569,7 @@ ResidentUniqueDistinguishedAmount(int64_t* aN)
 #include <algorithm>
 
 #define HAVE_VSIZE_AND_RESIDENT_REPORTERS 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 VsizeDistinguishedAmount(int64_t* aN)
 {
   MEMORYSTATUSEX s;
@@ -577,7 +583,7 @@ VsizeDistinguishedAmount(int64_t* aN)
   return NS_OK;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentDistinguishedAmount(int64_t* aN)
 {
   PROCESS_MEMORY_COUNTERS pmc;
@@ -591,7 +597,7 @@ ResidentDistinguishedAmount(int64_t* aN)
   return NS_OK;
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentFastDistinguishedAmount(int64_t* aN)
 {
   return ResidentDistinguishedAmount(aN);
@@ -599,7 +605,7 @@ ResidentFastDistinguishedAmount(int64_t* aN)
 
 #define HAVE_RESIDENT_UNIQUE_REPORTER 1
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentUniqueDistinguishedAmount(int64_t* aN)
 {
   // Determine how many entries we need.
@@ -647,7 +653,7 @@ ResidentUniqueDistinguishedAmount(int64_t* aN)
 }
 
 #define HAVE_VSIZE_MAX_CONTIGUOUS_REPORTER 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 VsizeMaxContiguousDistinguishedAmount(int64_t* aN)
 {
   SIZE_T biggestRegion = 0;
@@ -676,7 +682,7 @@ VsizeMaxContiguousDistinguishedAmount(int64_t* aN)
 }
 
 #define HAVE_PRIVATE_REPORTER 1
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 PrivateDistinguishedAmount(int64_t* aN)
 {
   PROCESS_MEMORY_COUNTERS_EX pmcex;
@@ -695,7 +701,7 @@ PrivateDistinguishedAmount(int64_t* aN)
 // Windows can have multiple separate heaps. During testing there were multiple
 // heaps present but the non-default ones had sizes no more than a few 10s of
 // KiBs. So we combine their sizes into a single measurement.
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 SystemHeapSize(int64_t* aSizeOut)
 {
   // Get the number of heaps.
@@ -1136,7 +1142,7 @@ NS_IMPL_ISUPPORTS(SystemHeapReporter, nsIMemoryReporter)
 
 #define HAVE_RESIDENT_PEAK_REPORTER 1
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 ResidentPeakDistinguishedAmount(int64_t* aN)
 {
   struct rusage usage;
@@ -1214,7 +1220,7 @@ public:
 };
 NS_IMPL_ISUPPORTS(PageFaultsSoftReporter, nsIMemoryReporter)
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 PageFaultsHardDistinguishedAmount(int64_t* aAmount)
 {
   struct rusage usage;
@@ -2253,7 +2259,7 @@ nsMemoryReporterManager::GetHeapOverheadFraction(int64_t* aAmount)
 #endif
 }
 
-static MOZ_MUST_USE nsresult
+[[nodiscard]] static nsresult
 GetInfallibleAmount(InfallibleAmountFn aAmountFn, int64_t* aAmount)
 {
   if (aAmountFn) {

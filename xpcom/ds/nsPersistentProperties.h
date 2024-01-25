@@ -24,7 +24,7 @@ public:
   NS_DECL_NSIPROPERTIES
   NS_DECL_NSIPERSISTENTPROPERTIES
 
-  static MOZ_MUST_USE nsresult
+  [[nodiscard]] static nsresult
   Create(nsISupports* aOuter, REFNSIID aIID, void** aResult);
 
 private:

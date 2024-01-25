@@ -31,7 +31,7 @@ class FixedList
     { }
 
     // Dynamic memory allocation requires the ability to report failure.
-    MOZ_MUST_USE bool init(TempAllocator& alloc, size_t length) {
+    [[nodiscard]] bool init(TempAllocator& alloc, size_t length) {
         if (length == 0)
             return true;
 
@@ -59,7 +59,7 @@ class FixedList
         length_ -= num;
     }
 
-    MOZ_MUST_USE bool growBy(TempAllocator& alloc, size_t num) {
+    [[nodiscard]] bool growBy(TempAllocator& alloc, size_t num) {
         size_t newlength = length_ + num;
         if (newlength < length_)
             return false;

@@ -394,9 +394,10 @@ SOURCES += [
     'nsImageLoadingContent.cpp',
     # Because of OS X headers.
     'nsObjectLoadingContent.cpp',
-    # nsPluginArray.cpp includes npapi.h indirectly, and that includes a lot of system headers
-    'nsPluginArray.cpp',
 ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    SOURCES += ['nsPluginArray.cpp']
 
 # Are we targeting x86-32 or x86-64?  If so, we want to include SSE2 code for
 # nsTextFragment.cpp
@@ -464,7 +465,7 @@ include('/ipc/chromium/chromium-config.mozbuild')
 
 FINAL_LIBRARY = 'xul'
 
-if CONFIG['MOZ_PHOENIX']:
+if CONFIG['MOZ_PHOENIX'] or CONFIG['MOZ_XULRUNNER']:
     DEFINES['HAVE_SIDEBAR'] = True
 
 if CONFIG['MOZ_X11']:

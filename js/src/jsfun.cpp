@@ -1625,13 +1625,6 @@ static bool
 FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generatorKind,
                     FunctionAsyncKind asyncKind)
 {
-    // Block this call if security callbacks forbid it.
-    Rooted<GlobalObject*> global(cx, &args.callee().global());
-    if (!GlobalObject::isRuntimeCodeGenEnabled(cx, global)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CSP_BLOCKED_FUNCTION);
-        return false;
-    }
-
     bool isStarGenerator = generatorKind == StarGenerator;
     bool isAsync = asyncKind == AsyncFunction;
     MOZ_ASSERT(generatorKind != LegacyGenerator);
@@ -1732,6 +1725,14 @@ FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generator
     RootedString functionText(cx, sb.finishString());
     if (!functionText)
         return false;
+
+    // Block this call if security callbacks forbid it.
+    Rooted<GlobalObject*> global(cx, &args.callee().global());
+    RootedValue v(cx, StringValue(functionText));
+    if (!GlobalObject::isRuntimeCodeGenEnabled(cx, v, global)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CSP_BLOCKED_FUNCTION);
+        return false;
+    }
 
     /*
      * NB: (new Function) is not lexically closed by its caller, it's just an
@@ -2424,11 +2425,7 @@ namespace detail {
 JS_PUBLIC_API(void)
 CheckIsValidConstructible(const Value& calleev)
 {
-    JSObject* callee = &calleev.toObject();
-    if (callee->is<JSFunction>())
-        MOZ_ASSERT(callee->as<JSFunction>().isConstructor());
-    else
-        MOZ_ASSERT(callee->constructHook() != nullptr);
+    MOZ_ASSERT(calleev.toObject().isConstructor());
 }
 
 } // namespace detail

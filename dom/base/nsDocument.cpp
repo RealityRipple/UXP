@@ -5787,7 +5787,7 @@ nsIDocument::ImportNode(nsINode& aNode, bool aDeep, ErrorResult& rv) const
       if (ShadowRoot::FromNode(imported)) {
         break;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
     case nsIDOMNode::ATTRIBUTE_NODE:
     case nsIDOMNode::ELEMENT_NODE:
@@ -6893,7 +6893,7 @@ nsIDocument::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv)
         rv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
         return nullptr;
       }
-      MOZ_FALLTHROUGH;
+      [[fallthrough]];
     }
     case nsIDOMNode::ELEMENT_NODE:
     case nsIDOMNode::PROCESSING_INSTRUCTION_NODE:
@@ -7184,7 +7184,7 @@ nsDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     mValidMaxScale = !maxScaleStr.IsEmpty() && NS_SUCCEEDED(scaleMaxErrorCode);
 
     mViewportType = Specified;
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   }
   case Specified:
   default:
@@ -7287,9 +7287,13 @@ nsresult
 nsDocument::GetEventTargetParent(EventChainPreVisitor& aVisitor)
 {
   aVisitor.mCanHandle = true;
-   // FIXME! This is a hack to make middle mouse paste working also in Editor.
-   // Bug 329119
-  aVisitor.mForceContentDispatch = true;
+  // Middle/right click shouldn't dispatch click event, use auxclick to instead.
+  Element* docElement = GetRootElement();
+  if (docElement && docElement->IsXULElement()) {
+    // FIXME! This is a hack to make middle mouse paste working also in Editor.
+    // Bug 329119
+    aVisitor.mForceContentDispatch = true;
+  }
 
   // Load events must not propagate to |window| object, see bug 335251.
   if (aVisitor.mEvent->mMessage != eLoad) {
@@ -9683,6 +9687,7 @@ nsDocument::RemovePlugin(nsIObjectLoadingContent* aPlugin)
   mPlugins.RemoveEntry(aPlugin);
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 static bool
 AllSubDocumentPluginEnum(nsIDocument* aDocument, void* userArg)
 {
@@ -9702,6 +9707,7 @@ nsDocument::GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins)
   }
   EnumerateSubDocuments(AllSubDocumentPluginEnum, &aPlugins);
 }
+#endif
 
 nsresult
 nsDocument::AddResponsiveContent(nsIContent* aContent)
@@ -11867,6 +11873,7 @@ nsIDocument::InlineScriptAllowedByCSP()
                                        true,          // aParserCreated
                                        EmptyString(), // FIXME get script sample (bug 1314567)
                                        0,             // aLineNumber
+                                       0,             // aColumnNumber
                                        &allowsInlineScript);
     NS_ENSURE_SUCCESS(rv, true);
   }

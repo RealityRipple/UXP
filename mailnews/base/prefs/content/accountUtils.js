@@ -200,6 +200,7 @@ function msgOpenAccountWizard(wizardCallback, type)
     selectServer(null, null);
 }
 
+#ifndef MOZ_CLASSIC_ACCOUNT_WIZARD
 function initAccountWizardTB(args) {
   let type = args[0] && args[0].acctType;
   let selType = type == "newsgroups" ? "newsaccount" :
@@ -216,6 +217,7 @@ function initAccountWizardTB(args) {
   else
     acctyperadio.selectedItem = acctyperadio.getItemAtIndex(0);
 }
+#endif
 
 function AddFeedAccount() {
   window.openDialog("chrome://messenger-newsblog/content/feedAccountWizard.xul",

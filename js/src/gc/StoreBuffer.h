@@ -79,7 +79,7 @@ class StoreBuffer
         explicit MonoTypeBuffer() : last_(T()) {}
         ~MonoTypeBuffer() { stores_.finish(); }
 
-        MOZ_MUST_USE bool init() {
+        [[nodiscard]] bool init() {
             if (!stores_.initialized() && !stores_.init())
                 return false;
             clear();
@@ -146,7 +146,7 @@ class StoreBuffer
         explicit GenericBuffer() : storage_(nullptr) {}
         ~GenericBuffer() { js_delete(storage_); }
 
-        MOZ_MUST_USE bool init() {
+        [[nodiscard]] bool init() {
             if (!storage_)
                 storage_ = js_new<LifoAlloc>(LifoAllocBlockSize);
             clear();
@@ -387,7 +387,7 @@ class StoreBuffer
     {
     }
 
-    MOZ_MUST_USE bool enable();
+    [[nodiscard]] bool enable();
     void disable();
     bool isEnabled() const { return enabled_; }
 

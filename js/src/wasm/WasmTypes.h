@@ -316,7 +316,7 @@ class Sig
     Sig() : args_(), ret_(ExprType::Void) {}
     Sig(ValTypeVector&& args, ExprType ret) : args_(Move(args)), ret_(ret) {}
 
-    MOZ_MUST_USE bool clone(const Sig& rhs) {
+    [[nodiscard]] bool clone(const Sig& rhs) {
         ret_ = rhs.ret_;
         MOZ_ASSERT(args_.empty());
         return args_.appendAll(rhs.args_);

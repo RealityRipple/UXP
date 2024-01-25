@@ -333,7 +333,7 @@ void NotifyScreenConfigurationChange(const hal::ScreenConfiguration& aScreenConf
  * Lock the screen orientation to the specific orientation.
  * @return Whether the lock has been accepted.
  */
-MOZ_MUST_USE bool LockScreenOrientation(const dom::ScreenOrientationInternal& aOrientation);
+[[nodiscard]] bool LockScreenOrientation(const dom::ScreenOrientationInternal& aOrientation);
 
 /**
  * Unlock the screen orientation.
@@ -346,7 +346,7 @@ void UnlockScreenOrientation();
  *
  * Currently, there can only be 0 or 1 alarm observers.
  */
-MOZ_MUST_USE bool RegisterTheOneAlarmObserver(hal::AlarmObserver* aObserver);
+[[nodiscard]] bool RegisterTheOneAlarmObserver(hal::AlarmObserver* aObserver);
 
 /**
  * Unregister the alarm observer.  Doing so will implicitly cancel any
@@ -373,7 +373,7 @@ void NotifyAlarmFired();
  * This API is currently only allowed to be used from non-sandboxed
  * contexts.
  */
-MOZ_MUST_USE bool SetAlarm(int32_t aSeconds, int32_t aNanoseconds);
+[[nodiscard]] bool SetAlarm(int32_t aSeconds, int32_t aNanoseconds);
 
 /**
  * Set the priority of the given process.

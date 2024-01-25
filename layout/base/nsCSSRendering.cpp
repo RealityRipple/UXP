@@ -1625,7 +1625,6 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     // transparent in the shadow, so drawing them changes nothing.
     gfxContext* renderContext = aRenderingContext.ThebesContext();
     DrawTarget* drawTarget = renderContext->GetDrawTarget();
-    nsContextBoxBlur blurringArea;
 
     // Clip the context to the area of the frame's padding rect, so no part of the
     // shadow is painted outside. Also cut out anything beyond where the inset shadow
@@ -4405,7 +4404,7 @@ nsCSSRendering::DrawTableBorderSegment(DrawTarget&              aDrawTarget,
     break;
   case NS_STYLE_BORDER_STYLE_GROOVE:
     ridgeGroove = NS_STYLE_BORDER_STYLE_GROOVE; // and fall through to ridge
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case NS_STYLE_BORDER_STYLE_RIDGE:
     if ((horizontal && (twipsPerPixel >= aBorder.height)) ||
         (!horizontal && (twipsPerPixel >= aBorder.width))) {
@@ -4572,7 +4571,7 @@ nsCSSRendering::DrawTableBorderSegment(DrawTarget&              aDrawTarget,
       break;
     }
     // else fall through to solid
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
   case NS_STYLE_BORDER_STYLE_SOLID:
     DrawSolidBorderSegment(aDrawTarget, aBorder, aBorderColor,
                            aAppUnitsPerDevPixel, twipsPerPixel, aStartBevelSide,
@@ -6024,10 +6023,10 @@ nsContextBoxBlur::Init(const nsRect& aRect, nscoord aSpreadRadius,
   dirtyRect = transform.TransformBounds(dirtyRect);
   if (aSkipRect) {
     gfxRect skipRect = transform.TransformBounds(*aSkipRect);
-    mContext = mAlphaBoxBlur.Init(rect, spreadRadius,
+    mContext = mAlphaBoxBlur.Init(aDestinationCtx, rect, spreadRadius,
                                   blurRadius, &dirtyRect, &skipRect);
   } else {
-    mContext = mAlphaBoxBlur.Init(rect, spreadRadius,
+    mContext = mAlphaBoxBlur.Init(aDestinationCtx, rect, spreadRadius,
                                   blurRadius, &dirtyRect, nullptr);
   }
 
@@ -6237,9 +6236,8 @@ nsContextBoxBlur::InsetBoxBlur(gfxContext* aDestinationCtx,
 
   mAlphaBoxBlur.BlurInsetBox(aDestinationCtx, transformedDestRect,
                              transformedShadowClipRect,
-                             blurRadius, spreadRadius,
-                             aShadowColor, aHasBorderRadius,
-                             aInnerClipRectRadii, transformedSkipRect,
-                             aShadowOffset);
+                             blurRadius, aShadowColor,
+                             aHasBorderRadius ? &aInnerClipRectRadii : nullptr,
+                             transformedSkipRect, aShadowOffset);
   return true;
 }

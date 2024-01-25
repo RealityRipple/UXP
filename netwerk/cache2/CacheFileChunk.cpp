@@ -76,7 +76,7 @@ CacheFileChunkBuffer::FillInvalidRanges(CacheFileChunkBuffer *aOther,
   return NS_OK;
 }
 
-MOZ_MUST_USE nsresult
+[[nodiscard]] nsresult
 CacheFileChunkBuffer::EnsureBufSize(uint32_t aBufSize)
 {
   AssertOwnsLock();

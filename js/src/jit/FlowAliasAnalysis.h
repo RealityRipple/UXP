@@ -32,34 +32,34 @@ class FlowAliasAnalysis : public AliasAnalysisShared
 
   public:
     FlowAliasAnalysis(MIRGenerator* mir, MIRGraph& graph);
-    MOZ_MUST_USE bool analyze() override;
+    [[nodiscard]] bool analyze() override;
 
   protected:
     /* Process instructions. */
-    MOZ_MUST_USE bool processStore(BlockStoreInfo& stores, MDefinition* store);
-    MOZ_MUST_USE bool processLoad(BlockStoreInfo& stores, MDefinition* load);
-    MOZ_MUST_USE bool processDeferredLoads(LoopInfo* info);
+    [[nodiscard]] bool processStore(BlockStoreInfo& stores, MDefinition* store);
+    [[nodiscard]] bool processLoad(BlockStoreInfo& stores, MDefinition* load);
+    [[nodiscard]] bool processDeferredLoads(LoopInfo* info);
 
     /* Improve dependency and helpers. */
-    MOZ_MUST_USE bool improveDependency(MDefinition* load, MDefinitionVector& inputStores,
-                                        MDefinitionVector& outputStores);
-    MOZ_MUST_USE bool improveNonAliasedStores(MDefinition* load, MDefinitionVector& inputStores,
-                                              MDefinitionVector& outputStores, bool* improved,
-                                              bool onlyControlInstructions = false);
-    MOZ_MUST_USE bool improveStoresInFinishedLoops(MDefinition* load, MDefinitionVector& stores,
-                                                   bool* improved);
+    [[nodiscard]] bool improveDependency(MDefinition* load, MDefinitionVector& inputStores,
+                                         MDefinitionVector& outputStores);
+    [[nodiscard]] bool improveNonAliasedStores(MDefinition* load, MDefinitionVector& inputStores,
+                                               MDefinitionVector& outputStores, bool* improved,
+                                               bool onlyControlInstructions = false);
+    [[nodiscard]] bool improveStoresInFinishedLoops(MDefinition* load, MDefinitionVector& stores,
+                                                    bool* improved);
 
-    MOZ_MUST_USE bool improveLoopDependency(MDefinition* load, MDefinitionVector& inputStores,
-                                            MDefinitionVector& outputStores);
-    MOZ_MUST_USE bool deferImproveDependency(MDefinitionVector& stores);
+    [[nodiscard]] bool improveLoopDependency(MDefinition* load, MDefinitionVector& inputStores,
+                                             MDefinitionVector& outputStores);
+    [[nodiscard]] bool deferImproveDependency(MDefinitionVector& stores);
 
     /* Save dependency info. */
     void saveLoadDependency(MDefinition* load, MDefinitionVector& dependencies);
-    MOZ_MUST_USE bool saveStoreDependency(MDefinition* store, BlockStoreInfo& prevStores);
+    [[nodiscard]] bool saveStoreDependency(MDefinition* store, BlockStoreInfo& prevStores);
 
     /* Helper functions. */
-    MOZ_MUST_USE bool computeBlockStores(MBasicBlock* block);
-    MOZ_MUST_USE bool isLoopInvariant(MDefinition* load, MDefinition* store, bool* loopinvariant);
+    [[nodiscard]] bool computeBlockStores(MBasicBlock* block);
+    [[nodiscard]] bool isLoopInvariant(MDefinition* load, MDefinition* store, bool* loopinvariant);
     bool loopIsFinished(MBasicBlock* loopheader);
 
 };

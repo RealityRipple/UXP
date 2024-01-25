@@ -207,6 +207,7 @@ def old_configure_options(*options):
     '--enable-necko-wifi',
     '--enable-negotiateauth',
     '--enable-nfc',
+    '--enable-npapi',
     '--enable-nspr-build',
     '--enable-official-branding',
     '--enable-official-vendor',
@@ -235,7 +236,6 @@ def old_configure_options(*options):
     '--enable-small-chunk-size',
     '--enable-startup-notification',
     '--enable-startupcache',
-    '--enable-stdcxx-compat',
     '--enable-strip',
     '--enable-synth-pico',
     '--enable-system-cairo',
@@ -299,6 +299,7 @@ def old_configure_options(*options):
     '--with-thumb-interwork',
     '--with-unify-dist',
     '--with-user-appdir',
+    '--with-xulrunner-stub-name',
     '--x-includes',
     '--x-libraries',
 
@@ -311,6 +312,7 @@ def old_configure_options(*options):
     '--enable-incomplete-external-linkage',
     '--enable-mailnews',
     '--enable-mailnews-oauth2',
+    '--enable-classic-account-wizard',
     
     # Below are configure flags used by Pale Moon
     '--disable-browser-statusbar',

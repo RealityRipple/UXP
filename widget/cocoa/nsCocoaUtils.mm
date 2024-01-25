@@ -245,7 +245,7 @@ BOOL nsCocoaUtils::EventHasPhaseInformation(NSEvent* aEvent)
          EventMomentumPhase(aEvent) != NSEventPhaseNone;
 }
 
-void nsCocoaUtils::HideOSChromeOnScreen(bool aShouldHide)
+void nsCocoaUtils::HideOSChromeOnScreen(bool aShouldHide, NSScreen* aScreen)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -256,10 +256,32 @@ void nsCocoaUtils::HideOSChromeOnScreen(bool aShouldHide)
   sHiddenCount += aShouldHide ? 1 : -1;
   NS_ASSERTION(sHiddenCount >= 0, "Unbalanced HideMenuAndDockForWindow calls");
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   NSApplicationPresentationOptions options =
     sHiddenCount <= 0 ? NSApplicationPresentationDefault :
     NSApplicationPresentationHideDock | NSApplicationPresentationHideMenuBar;
   [NSApp setPresentationOptions:options];
+#else
+  // Not on 10.4.
+  // Restore the 38 code, since we don't have NSApplicationPresentationOptions
+  // (and the NSScreen* pointer so that we know which screen the window's on).
+  static int sMenuBarHiddenCount = 0;
+
+  // Although we always hide the Dock, since it may or may not be on the
+  // primary screen, we should only hide the menu bar if it's on the
+  // same screen as the window. (XXX: Perhaps this is wrong? See issue 97.)
+  // The menu bar is always on the first screen in the screen list.
+  if (aScreen == [[NSScreen screens] objectAtIndex:0]) {
+    sMenuBarHiddenCount += aShouldHide ? 1 : -1;
+  }
+  if (sMenuBarHiddenCount > 0) {
+    ::SetSystemUIMode(kUIModeAllHidden, 0);
+  } else if (sHiddenCount > 0) {
+    ::SetSystemUIMode(kUIModeContentHidden, 0);
+  } else {
+    ::SetSystemUIMode(kUIModeNormal, 0);
+  }
+#endif
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -597,12 +619,14 @@ nsCocoaUtils::MakeNewCocoaEventWithType(NSEventType aEventType, NSEvent *aEvent)
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
+#ifdef MOZ_ENABLE_NPAPI
 // static
 void
 nsCocoaUtils::InitNPCocoaEvent(NPCocoaEvent* aNPCocoaEvent)
 {
   memset(aNPCocoaEvent, 0, sizeof(NPCocoaEvent));
 }
+#endif
 
 // static
 void
@@ -709,6 +733,7 @@ static bool sHiDPIPrefInitialized = false;
 bool
 nsCocoaUtils::HiDPIEnabled()
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
   if (!sHiDPIPrefInitialized) {
     sHiDPIPrefInitialized = true;
 
@@ -749,6 +774,9 @@ nsCocoaUtils::HiDPIEnabled()
   }
 
   return sHiDPIEnabled;
+#else
+  return false;
+#endif
 }
 
 void
@@ -1003,18 +1031,21 @@ nsCocoaUtils::GetNSMutableAttributedString(
       font = [NSFont systemFontOfSize:fontSize];
     }
 
-    NSDictionary* attrs = @{ NSFontAttributeName: font };
+    NSDictionary* attrs = [NSDictionary dictionaryWithObject:font
+                                        forKey:NSFontAttributeName];
     NSRange range = NSMakeRange(fontRange.mStartOffset,
                                 lastOffset - fontRange.mStartOffset);
     [attrStr setAttributes:attrs range:range];
     lastOffset = fontRange.mStartOffset;
   }
 
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   if (aIsVertical) {
     [attrStr addAttribute:NSVerticalGlyphFormAttributeName
                     value:[NSNumber numberWithInt: 1]
                     range:NSMakeRange(0, [attrStr length])];
   }
+#endif
 
   return attrStr;
 

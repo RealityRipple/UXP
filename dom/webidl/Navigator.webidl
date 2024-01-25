@@ -108,8 +108,10 @@ partial interface Navigator {
 partial interface Navigator {
   [Throws]
   readonly attribute MimeTypeArray mimeTypes;
+#ifdef MOZ_ENABLE_NPAPI
   [Throws]
   readonly attribute PluginArray plugins;
+#endif
 };
 
 // https://globalprivacycontrol.github.io/gpc-spec/
@@ -307,4 +309,10 @@ partial interface Navigator {
 [NoInterfaceObject, Exposed=(Window,Worker)]
 interface NavigatorConcurrentHardware {
   readonly attribute unsigned long long hardwareConcurrency;
+};
+
+// https://www.w3.org/TR/clipboard-apis/#navigator-interface
+partial interface Navigator {
+  [Pref="dom.events.asyncClipboard", SecureContext, SameObject]
+  readonly attribute Clipboard clipboard;
 };

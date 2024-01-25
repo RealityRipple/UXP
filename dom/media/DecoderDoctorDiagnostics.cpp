@@ -383,6 +383,7 @@ enum SilverlightPresence {
 static SilverlightPresence
 CheckSilverlight()
 {
+#ifdef MOZ_ENABLE_NPAPI
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
   if (!pluginHost) {
@@ -398,7 +399,7 @@ CheckSilverlight()
       }
     }
   }
-
+#endif
   return eNoSilverlight;
 }
 

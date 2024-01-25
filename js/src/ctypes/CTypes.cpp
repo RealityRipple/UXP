@@ -4519,7 +4519,7 @@ CType::Finalize(JSFreeOp* fop, JSObject* obj)
     }
   }
 
-    MOZ_FALLTHROUGH;
+    [[fallthrough]];
 
   case TYPE_array: {
     // Free the ffi_type info.

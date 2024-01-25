@@ -8,6 +8,11 @@
 #include "Logging.h"
 #include "PathHelpers.h"
 
+#if !defined(MAC_OS_X_VERSION_10_6) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)
+// CGContextCopyPath has existed since 10.2, but was not public until 10.6.
+extern "C" CGPathRef CGContextCopyPath(CGContextRef cg);
+#endif
+
 namespace mozilla {
 namespace gfx {
 

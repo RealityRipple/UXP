@@ -11,9 +11,13 @@ include ProfilerTypes;
 using NPError from "npapi.h";
 using NPNVariable from "npapi.h";
 using mozilla::dom::NativeThreadId from "mozilla/dom/TabMessageUtils.h";
+#ifdef MOZ_ENABLE_NPAPI
 using class mac_plugin_interposing::NSCursorInfo from "mozilla/plugins/PluginMessageUtils.h";
+#endif
 using struct nsID from "nsID.h";
+#ifdef MOZ_ENABLE_NPAPI
 using struct mozilla::plugins::NPAudioDeviceChangeDetailsIPC from "mozilla/plugins/PluginMessageUtils.h";
+#endif
 
 namespace mozilla {
 namespace plugins {
@@ -93,8 +97,9 @@ child:
   async SetParentHangTimeout(uint32_t seconds);
 
   async SettingChanged(PluginSettings settings);
-
+#ifdef MOZ_ENABLE_NPAPI
   async NPP_SetValue_NPNVaudioDeviceChangeDetails(NPAudioDeviceChangeDetailsIPC changeDetails);
+#endif
 
 parent:
   async NP_InitializeResult(NPError aError);
@@ -124,12 +129,13 @@ parent:
                          int32_t aX, int32_t aY,
                          size_t aWidth, size_t aHeight);
   async PluginHideWindow(uint32_t aWindowId);
-
+#ifdef MOZ_ENABLE_NPAPI
   // OS X Specific calls to allow the plugin to manage the cursor.
   async SetCursor(NSCursorInfo cursorInfo);
   async ShowCursor(bool show);
   async PushCursor(NSCursorInfo cursorInfo);
   async PopCursor();
+#endif
 
   sync NPN_SetException(nsCString message);
 
@@ -148,8 +154,10 @@ parent:
   intr GetKeyState(int32_t aVirtKey)
     returns (int16_t aState);
 
+#ifdef MOZ_ENABLE_NPAPI
   intr NPN_SetValue_NPPVpluginRequiresAudioDeviceChanges(bool shouldRegister)
     returns (NPError result);
+#endif
 };
 
 } // namespace plugins

@@ -140,7 +140,7 @@ struct Zone : public JS::shadow::Zone,
 {
     explicit Zone(JSRuntime* rt);
     ~Zone();
-    MOZ_MUST_USE bool init(bool isSystem);
+    [[nodiscard]] bool init(bool isSystem);
 
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
@@ -172,7 +172,7 @@ struct Zone : public JS::shadow::Zone,
     bool isTooMuchMalloc() const { return gcMallocBytes <= 0; }
     void onTooMuchMalloc();
 
-    MOZ_MUST_USE void* onOutOfMemory(js::AllocFunction allocFunc, size_t nbytes,
+    [[nodiscard]] void* onOutOfMemory(js::AllocFunction allocFunc, size_t nbytes,
                                                void* reallocPtr = nullptr) {
         if (!js::CurrentThreadCanAccessRuntime(runtime_))
             return nullptr;
@@ -422,7 +422,7 @@ struct Zone : public JS::shadow::Zone,
     }
 
     // Creates a HashNumber based on getUniqueId. Returns false on OOM.
-    MOZ_MUST_USE bool getHashCode(js::gc::Cell* cell, js::HashNumber* hashp) {
+    [[nodiscard]] bool getHashCode(js::gc::Cell* cell, js::HashNumber* hashp) {
         uint64_t uid;
         if (!getUniqueId(cell, &uid))
             return false;
@@ -432,7 +432,7 @@ struct Zone : public JS::shadow::Zone,
 
     // Puts an existing UID in |uidp|, or creates a new UID for this Cell and
     // puts that into |uidp|. Returns false on OOM.
-    MOZ_MUST_USE bool getUniqueId(js::gc::Cell* cell, uint64_t* uidp) {
+    [[nodiscard]] bool getUniqueId(js::gc::Cell* cell, uint64_t* uidp) {
         MOZ_ASSERT(uidp);
         MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
 
@@ -472,7 +472,7 @@ struct Zone : public JS::shadow::Zone,
     }
 
     // Return true if this cell has a UID associated with it.
-    MOZ_MUST_USE bool hasUniqueId(js::gc::Cell* cell) {
+    [[nodiscard]] bool hasUniqueId(js::gc::Cell* cell) {
         MOZ_ASSERT(js::CurrentThreadCanAccessZone(this));
         return uniqueIds_.has(cell);
     }
@@ -731,7 +731,7 @@ class ZoneAllocPolicy
     void free_(void* p) { js_free(p); }
     void reportAllocOverflow() const {}
 
-    MOZ_MUST_USE bool checkSimulatedOOM() const {
+    [[nodiscard]] bool checkSimulatedOOM() const {
         return !js::oom::ShouldFailWithOOM();
     }
 };

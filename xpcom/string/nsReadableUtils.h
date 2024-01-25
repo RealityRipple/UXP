@@ -39,7 +39,7 @@ void LossyCopyUTF16toASCII(const char16ptr_t aSource, nsACString& aDest);
 void CopyASCIItoUTF16(const char* aSource, nsAString& aDest);
 
 void CopyUTF16toUTF8(const nsAString& aSource, nsACString& aDest);
-MOZ_MUST_USE bool CopyUTF16toUTF8(const nsAString& aSource, nsACString& aDest,
+[[nodiscard]] bool CopyUTF16toUTF8(const nsAString& aSource, nsACString& aDest,
                                   const mozilla::fallible_t&);
 void CopyUTF8toUTF16(const nsACString& aSource, nsAString& aDest);
 
@@ -48,22 +48,22 @@ void CopyUTF8toUTF16(const char* aSource, nsAString& aDest);
 
 void LossyAppendUTF16toASCII(const nsAString& aSource, nsACString& aDest);
 void AppendASCIItoUTF16(const nsACString& aSource, nsAString& aDest);
-MOZ_MUST_USE bool AppendASCIItoUTF16(const nsACString& aSource,
+[[nodiscard]] bool AppendASCIItoUTF16(const nsACString& aSource,
                                      nsAString& aDest,
                                      const mozilla::fallible_t&);
 
 void LossyAppendUTF16toASCII(const char16ptr_t aSource, nsACString& aDest);
-MOZ_MUST_USE bool AppendASCIItoUTF16(const char* aSource,
+[[nodiscard]] bool AppendASCIItoUTF16(const char* aSource,
                                      nsAString& aDest,
                                      const mozilla::fallible_t&);
 void AppendASCIItoUTF16(const char* aSource, nsAString& aDest);
 
 void AppendUTF16toUTF8(const nsAString& aSource, nsACString& aDest);
-MOZ_MUST_USE bool AppendUTF16toUTF8(const nsAString& aSource,
+[[nodiscard]] bool AppendUTF16toUTF8(const nsAString& aSource,
                                     nsACString& aDest,
                                     const mozilla::fallible_t&);
 void AppendUTF8toUTF16(const nsACString& aSource, nsAString& aDest);
-MOZ_MUST_USE bool AppendUTF8toUTF16(const nsACString& aSource,
+[[nodiscard]] bool AppendUTF8toUTF16(const nsACString& aSource,
                                     nsAString& aDest,
                                     const mozilla::fallible_t&);
 

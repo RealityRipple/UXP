@@ -16,8 +16,10 @@
 
 class nsIURI;
 struct PRLibrary;
+#ifdef MOZ_ENABLE_NPAPI
 struct nsPluginInfo;
 class nsNPAPIPlugin;
+#endif
 
 namespace mozilla {
 namespace dom {
@@ -106,9 +108,11 @@ public:
     ePluginState_MaxValue = 3,
   };
 
+#ifdef MOZ_ENABLE_NPAPI
   nsPluginTag(nsPluginInfo* aPluginInfo,
               int64_t aLastModifiedTime,
               bool fromExtension);
+#endif
   nsPluginTag(const char* aName,
               const char* aDescription,
               const char* aFileName,
@@ -166,7 +170,9 @@ public:
   bool          mHadLocalInstance;
 
   PRLibrary     *mLibrary;
+#ifdef MOZ_ENABLE_NPAPI
   RefPtr<nsNPAPIPlugin> mPlugin;
+#endif
   bool          mIsJavaPlugin;
   bool          mIsFlashPlugin;
   bool          mSupportsAsyncInit;

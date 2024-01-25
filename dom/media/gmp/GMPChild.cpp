@@ -10,7 +10,6 @@
 #include "GMPVideoDecoderChild.h"
 #include "GMPVideoEncoderChild.h"
 #include "GMPAudioDecoderChild.h"
-#include "GMPDecryptorChild.h"
 #include "GMPVideoHost.h"
 #include "nsDebugImpl.h"
 #include "nsIFile.h"
@@ -164,13 +163,12 @@ GMPChild::RecvSetNodeId(const nsCString& aNodeId)
 GMPErr
 GMPChild::GetAPI(const char* aAPIName,
                  void* aHostAPI,
-                 void** aPluginAPI,
-                 uint32_t aDecryptorId)
+                 void** aPluginAPI)
 {
   if (!mGMPLoader) {
     return GMPGenericErr;
   }
-  return mGMPLoader->GetAPI(aAPIName, aHostAPI, aPluginAPI, aDecryptorId);
+  return mGMPLoader->GetAPI(aAPIName, aHostAPI, aPluginAPI);
 }
 
 bool

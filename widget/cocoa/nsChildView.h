@@ -109,6 +109,51 @@ class WidgetRenderingContext;
 
 @end
 
+#if !defined(MAC_OS_X_VERSION_10_6) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)
+@interface NSEvent (SnowLeopardEventFeatures)
++ (NSUInteger)pressedMouseButtons;
++ (NSUInteger)modifierFlags;
+@end
+#endif
+
+#if !defined(MAC_OS_X_VERSION_10_7) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7)
+enum {
+   NSFullScreenWindowMask = 1 << 14
+};
+
+@interface NSWindow (LionWindowFeatures)
+- (NSRect)convertRectToScreen:(NSRect)aRect;
+@end
+
+#ifdef __LP64__
+enum {
+  NSEventSwipeTrackingLockDirection = 0x1 << 0,
+  NSEventSwipeTrackingClampGestureAmount = 0x1 << 1
+};
+typedef NSUInteger NSEventSwipeTrackingOptions;
+
+enum {
+  NSEventGestureAxisNone = 0,
+  NSEventGestureAxisHorizontal,
+  NSEventGestureAxisVertical
+};
+typedef NSInteger NSEventGestureAxis;
+
+@interface NSEvent (FluidSwipeTracking)
++ (BOOL)isSwipeTrackingFromScrollEventsEnabled;
+- (BOOL)hasPreciseScrollingDeltas;
+- (CGFloat)scrollingDeltaX;
+- (CGFloat)scrollingDeltaY;
+- (NSEventPhase)phase;
+- (void)trackSwipeEventWithOptions:(NSEventSwipeTrackingOptions)options
+          dampenAmountThresholdMin:(CGFloat)minDampenThreshold
+                               max:(CGFloat)maxDampenThreshold
+                      usingHandler:(void (^)(CGFloat gestureAmount, NSEventPhase phase, BOOL isComplete, BOOL *stop))trackingHandler;
+@end
+#endif // #ifdef __LP64__
+#endif // #if !defined(MAC_OS_X_VERSION_10_7) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7)
+
+
 @interface ChildView : NSView<
 #ifdef ACCESSIBILITY
                               mozAccessible,
@@ -303,11 +348,10 @@ public:
   nsChildView();
 
   // nsIWidget interface
-  virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
-                                       nsNativeWidget aNativeParent,
-                                       const LayoutDeviceIntRect& aRect,
-                                       nsWidgetInitData* aInitData = nullptr)
-                                       override;
+  [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
+                                        nsNativeWidget aNativeParent,
+                                        const LayoutDeviceIntRect& aRect,
+                                        nsWidgetInitData* aInitData = nullptr) override;
 
   virtual void            Destroy() override;
 

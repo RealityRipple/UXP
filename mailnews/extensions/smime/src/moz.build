@@ -18,5 +18,4 @@ FINAL_LIBRARY = 'mail'
 
 LOCAL_INCLUDES += [
     '/security/manager/pki',
-    '/security/pkix/include'
 ]

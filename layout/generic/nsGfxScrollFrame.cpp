@@ -61,7 +61,9 @@
 #include "AsyncScrollBase.h"
 #include "ScrollSnap.h"
 #include "UnitTransforms.h"
+#ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginFrame.h"
+#endif
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include <mozilla/layers/AxisPhysicsModel.h>
 #include <mozilla/layers/AxisPhysicsMSDModel.h>
@@ -2175,7 +2177,7 @@ ScrollFrameHelper::CompleteAsyncScroll(const nsRect &aRange, nsIAtom* aOrigin)
 bool
 ScrollFrameHelper::HasPluginFrames()
 {
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
+#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK)) && defined(MOZ_ENABLE_NPAPI)
   if (XRE_IsContentProcess()) {
     nsPresContext* presContext = mOuter->PresContext();
     nsRootPresContext* rootPresContext = presContext->GetRootPresContext();

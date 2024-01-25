@@ -50,6 +50,7 @@
 #include "MediaDecoder.h"
 #include "MediaPrefs.h"
 #include "MediaResource.h"
+#include "MediaShutdownManager.h"
 
 #include "nsICategoryManager.h"
 #include "nsIContentPolicy.h"
@@ -3176,6 +3177,13 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
   NotifyOwnerDocumentActivityChanged();
 
   MOZ_ASSERT(NS_IsMainThread());
+
+  // We initialize the MediaShutdownManager as the HTMLMediaElement is always
+  // constructed on the main thread, and not during stable state.
+  // (MediaShutdownManager make use of nsIAsyncShutdownClient which is written
+  // in JS)
+  MediaShutdownManager::InitStatics();
+
   mWatchManager.Watch(mDownloadSuspendedByCache, &HTMLMediaElement::UpdateReadyStateInternal);
   // Paradoxically, there is a self-edge whereby UpdateReadyStateInternal refuses
   // to run until mReadyState reaches at least HAVE_METADATA by some other means.

@@ -33,12 +33,12 @@ class Encoder
     Bytes& bytes_;
 
     template <class T>
-    MOZ_MUST_USE bool write(const T& v) {
+    [[nodiscard]] bool write(const T& v) {
         return bytes_.append(reinterpret_cast<const uint8_t*>(&v), sizeof(T));
     }
 
     template <typename UInt>
-    MOZ_MUST_USE bool writeVarU(UInt i) {
+    [[nodiscard]] bool writeVarU(UInt i) {
         do {
             uint8_t byte = i & 0x7f;
             i >>= 7;
@@ -51,7 +51,7 @@ class Encoder
     }
 
     template <typename SInt>
-    MOZ_MUST_USE bool writeVarS(SInt i) {
+    [[nodiscard]] bool writeVarS(SInt i) {
         bool done;
         do {
             uint8_t byte = i & 0x7f;
@@ -111,48 +111,48 @@ class Encoder
     // Fixed-size encoding operations simply copy the literal bytes (without
     // attempting to align).
 
-    MOZ_MUST_USE bool writeFixedU7(uint8_t i) {
+    [[nodiscard]] bool writeFixedU7(uint8_t i) {
         MOZ_ASSERT(i <= uint8_t(INT8_MAX));
         return writeFixedU8(i);
     }
-    MOZ_MUST_USE bool writeFixedU8(uint8_t i) {
+    [[nodiscard]] bool writeFixedU8(uint8_t i) {
         return write<uint8_t>(i);
     }
-    MOZ_MUST_USE bool writeFixedU32(uint32_t i) {
+    [[nodiscard]] bool writeFixedU32(uint32_t i) {
         return write<uint32_t>(i);
     }
-    MOZ_MUST_USE bool writeFixedF32(RawF32 f) {
+    [[nodiscard]] bool writeFixedF32(RawF32 f) {
         return write<uint32_t>(f.bits());
     }
-    MOZ_MUST_USE bool writeFixedF64(RawF64 d) {
+    [[nodiscard]] bool writeFixedF64(RawF64 d) {
         return write<uint64_t>(d.bits());
     }
 
     // Variable-length encodings that all use LEB128.
 
-    MOZ_MUST_USE bool writeVarU32(uint32_t i) {
+    [[nodiscard]] bool writeVarU32(uint32_t i) {
         return writeVarU<uint32_t>(i);
     }
-    MOZ_MUST_USE bool writeVarS32(int32_t i) {
+    [[nodiscard]] bool writeVarS32(int32_t i) {
         return writeVarS<int32_t>(i);
     }
-    MOZ_MUST_USE bool writeVarU64(uint64_t i) {
+    [[nodiscard]] bool writeVarU64(uint64_t i) {
         return writeVarU<uint64_t>(i);
     }
-    MOZ_MUST_USE bool writeVarS64(int64_t i) {
+    [[nodiscard]] bool writeVarS64(int64_t i) {
         return writeVarS<int64_t>(i);
     }
-    MOZ_MUST_USE bool writeValType(ValType type) {
+    [[nodiscard]] bool writeValType(ValType type) {
         static_assert(size_t(TypeCode::Limit) <= UINT8_MAX, "fits");
         MOZ_ASSERT(size_t(type) < size_t(TypeCode::Limit));
         return writeFixedU8(uint8_t(type));
     }
-    MOZ_MUST_USE bool writeBlockType(ExprType type) {
+    [[nodiscard]] bool writeBlockType(ExprType type) {
         static_assert(size_t(TypeCode::Limit) <= UINT8_MAX, "fits");
         MOZ_ASSERT(size_t(type) < size_t(TypeCode::Limit));
         return writeFixedU8(uint8_t(type));
     }
-    MOZ_MUST_USE bool writeOp(Op op) {
+    [[nodiscard]] bool writeOp(Op op) {
         static_assert(size_t(Op::Limit) <= 2 * UINT8_MAX, "fits");
         MOZ_ASSERT(size_t(op) < size_t(Op::Limit));
         if (size_t(op) < UINT8_MAX)
@@ -163,7 +163,7 @@ class Encoder
 
     // Fixed-length encodings that allow back-patching.
 
-    MOZ_MUST_USE bool writePatchableFixedU7(size_t* offset) {
+    [[nodiscard]] bool writePatchableFixedU7(size_t* offset) {
         *offset = bytes_.length();
         return writeFixedU8(UINT8_MAX);
     }
@@ -173,7 +173,7 @@ class Encoder
 
     // Variable-length encodings that allow back-patching.
 
-    MOZ_MUST_USE bool writePatchableVarU32(size_t* offset) {
+    [[nodiscard]] bool writePatchableVarU32(size_t* offset) {
         *offset = bytes_.length();
         return writeVarU32(UINT32_MAX);
     }
@@ -184,7 +184,7 @@ class Encoder
     // Byte ranges start with an LEB128 length followed by an arbitrary sequence
     // of bytes. When used for strings, bytes are to be interpreted as utf8.
 
-    MOZ_MUST_USE bool writeBytes(const void* bytes, uint32_t numBytes) {
+    [[nodiscard]] bool writeBytes(const void* bytes, uint32_t numBytes) {
         return writeVarU32(numBytes) &&
                bytes_.append(reinterpret_cast<const uint8_t*>(bytes), numBytes);
     }
@@ -195,7 +195,7 @@ class Encoder
     // end while the size's varU32 must be stored at the beginning. Immediately
     // after the section length is the string id of the section.
 
-    MOZ_MUST_USE bool startSection(SectionId id, size_t* offset) {
+    [[nodiscard]] bool startSection(SectionId id, size_t* offset) {
         MOZ_ASSERT(id != SectionId::UserDefined); // not supported yet
 
         return writeVarU32(uint32_t(id)) &&
@@ -218,7 +218,7 @@ class Decoder
     UniqueChars* error_;
 
     template <class T>
-    MOZ_MUST_USE bool read(T* out) {
+    [[nodiscard]] bool read(T* out) {
         if (bytesRemain() < sizeof(T))
             return false;
         memcpy((void*)out, cur_, sizeof(T));
@@ -243,7 +243,7 @@ class Decoder
     }
 
     template <typename UInt>
-    MOZ_MUST_USE bool readVarU(UInt* out) {
+    [[nodiscard]] bool readVarU(UInt* out) {
         const unsigned numBits = sizeof(UInt) * CHAR_BIT;
         const unsigned remainderBits = numBits % 7;
         const unsigned numBitsInSevens = numBits - remainderBits;
@@ -267,7 +267,7 @@ class Decoder
     }
 
     template <typename SInt>
-    MOZ_MUST_USE bool readVarS(SInt* out) {
+    [[nodiscard]] bool readVarS(SInt* out) {
         const unsigned numBits = sizeof(SInt) * CHAR_BIT;
         const unsigned remainderBits = numBits % 7;
         const unsigned numBitsInSevens = numBits - remainderBits;
@@ -344,20 +344,20 @@ class Decoder
     // Fixed-size encoding operations simply copy the literal bytes (without
     // attempting to align).
 
-    MOZ_MUST_USE bool readFixedU8(uint8_t* i) {
+    [[nodiscard]] bool readFixedU8(uint8_t* i) {
         return read<uint8_t>(i);
     }
-    MOZ_MUST_USE bool readFixedU32(uint32_t* u) {
+    [[nodiscard]] bool readFixedU32(uint32_t* u) {
         return read<uint32_t>(u);
     }
-    MOZ_MUST_USE bool readFixedF32(RawF32* f) {
+    [[nodiscard]] bool readFixedF32(RawF32* f) {
         uint32_t u;
         if (!read<uint32_t>(&u))
             return false;
         *f = RawF32::fromBits(u);
         return true;
     }
-    MOZ_MUST_USE bool readFixedF64(RawF64* d) {
+    [[nodiscard]] bool readFixedF64(RawF64* d) {
         uint64_t u;
         if (!read<uint64_t>(&u))
             return false;
@@ -367,27 +367,27 @@ class Decoder
 
     // Variable-length encodings that all use LEB128.
 
-    MOZ_MUST_USE bool readVarU32(uint32_t* out) {
+    [[nodiscard]] bool readVarU32(uint32_t* out) {
         return readVarU<uint32_t>(out);
     }
-    MOZ_MUST_USE bool readVarS32(int32_t* out) {
+    [[nodiscard]] bool readVarS32(int32_t* out) {
         return readVarS<int32_t>(out);
     }
-    MOZ_MUST_USE bool readVarU64(uint64_t* out) {
+    [[nodiscard]] bool readVarU64(uint64_t* out) {
         return readVarU<uint64_t>(out);
     }
-    MOZ_MUST_USE bool readVarS64(int64_t* out) {
+    [[nodiscard]] bool readVarS64(int64_t* out) {
         return readVarS<int64_t>(out);
     }
-    MOZ_MUST_USE bool readValType(uint8_t* type) {
+    [[nodiscard]] bool readValType(uint8_t* type) {
         static_assert(uint8_t(TypeCode::Limit) <= UINT8_MAX, "fits");
         return readFixedU8(type);
     }
-    MOZ_MUST_USE bool readBlockType(uint8_t* type) {
+    [[nodiscard]] bool readBlockType(uint8_t* type) {
         static_assert(size_t(TypeCode::Limit) <= UINT8_MAX, "fits");
         return readFixedU8(type);
     }
-    MOZ_MUST_USE bool readOp(uint16_t* op) {
+    [[nodiscard]] bool readOp(uint16_t* op) {
         static_assert(size_t(Op::Limit) <= 2 * UINT8_MAX, "fits");
         uint8_t u8;
         if (!readFixedU8(&u8))
@@ -404,7 +404,7 @@ class Decoder
 
     // See writeBytes comment.
 
-    MOZ_MUST_USE bool readBytes(uint32_t numBytes, const uint8_t** bytes = nullptr) {
+    [[nodiscard]] bool readBytes(uint32_t numBytes, const uint8_t** bytes = nullptr) {
         if (bytes)
             *bytes = cur_;
         if (bytesRemain() < numBytes)
@@ -417,7 +417,7 @@ class Decoder
 
     static const uint32_t NotStarted = UINT32_MAX;
 
-    MOZ_MUST_USE bool startSection(SectionId id,
+    [[nodiscard]] bool startSection(SectionId id,
                                    uint32_t* startOffset,
                                    uint32_t* size,
                                    const char* sectionName)
@@ -451,7 +451,7 @@ class Decoder
       fail:
         return fail("failed to start %s section", sectionName);
     }
-    MOZ_MUST_USE bool finishSection(uint32_t startOffset, uint32_t size,
+    [[nodiscard]] bool finishSection(uint32_t startOffset, uint32_t size,
                                     const char* sectionName)
     {
         if (size != (cur_ - beg_) - startOffset)
@@ -462,7 +462,7 @@ class Decoder
     // "User sections" do not cause validation errors unless the error is in
     // the user-defined section header itself.
 
-    MOZ_MUST_USE bool startUserDefinedSection(const char* expectedId,
+    [[nodiscard]] bool startUserDefinedSection(const char* expectedId,
                                               size_t expectedIdSize,
                                               uint32_t* sectionStart,
                                               uint32_t* sectionSize)
@@ -492,7 +492,7 @@ class Decoder
         return fail("failed to start user-defined section");
     }
     template <size_t IdSizeWith0>
-    MOZ_MUST_USE bool startUserDefinedSection(const char (&id)[IdSizeWith0],
+    [[nodiscard]] bool startUserDefinedSection(const char (&id)[IdSizeWith0],
                                               uint32_t* sectionStart,
                                               uint32_t* sectionSize)
     {
@@ -506,7 +506,7 @@ class Decoder
         MOZ_ASSERT(cur_ <= end_);
         clearError();
     }
-    MOZ_MUST_USE bool skipUserDefinedSection() {
+    [[nodiscard]] bool skipUserDefinedSection() {
         uint32_t sectionStart, sectionSize;
         if (!startUserDefinedSection(nullptr, 0, &sectionStart, &sectionSize))
             return false;
@@ -587,56 +587,56 @@ class Decoder
 UniqueChars
 DecodeName(Decoder& d);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeTableLimits(Decoder& d, TableDescVector* tables);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 GlobalIsJSCompatible(Decoder& d, ValType type, bool isMutable);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 EncodeLocalEntries(Encoder& d, const ValTypeVector& locals);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeLocalEntries(Decoder& d, ModuleKind kind, ValTypeVector* locals);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeGlobalType(Decoder& d, ValType* type, bool* isMutable);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeInitializerExpression(Decoder& d, const GlobalDescVector& globals, ValType expected,
                             InitExpr* init);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeLimits(Decoder& d, Limits* limits);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeMemoryLimits(Decoder& d, bool hasMemory, Limits* memory);
 
 // Section macros.
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodePreamble(Decoder& d);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeTypeSection(Decoder& d, SigWithIdVector* sigs);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeImportSection(Decoder& d, const SigWithIdVector& sigs, Uint32Vector* funcSigIndices,
                     GlobalDescVector* globals, TableDescVector* tables, Maybe<Limits>* memory,
                     ImportVector* imports);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeFunctionSection(Decoder& d, const SigWithIdVector& sigs, size_t numImportedFunc,
                       Uint32Vector* funcSigIndexes);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeUnknownSections(Decoder& d);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeDataSection(Decoder& d, bool usesMemory, uint32_t minMemoryByteLength,
                   const GlobalDescVector& globals, DataSegmentVector* segments);
 
-MOZ_MUST_USE bool
+[[nodiscard]] bool
 DecodeMemorySection(Decoder& d, bool hasMemory, Limits* memory, bool* present);
 
 } // namespace wasm

@@ -34,6 +34,8 @@ OSXVersionToOperatingSystem(uint32_t aOSXVersion) {
   switch (nsCocoaFeatures::ExtractMajorVersion(aOSXVersion)) {
     case 10:
       switch (nsCocoaFeatures::ExtractMinorVersion(aOSXVersion)) {
+        case 5:
+          return OperatingSystem::OSX10_5;
         case 6:
           return OperatingSystem::OSX10_6;
         case 7:
@@ -68,6 +70,8 @@ OSXVersionToOperatingSystem(uint32_t aOSXVersion) {
       return OperatingSystem::OSX12_0;
     case 13:
       return OperatingSystem::OSX13_0;
+    case 14:
+      return OperatingSystem::OSX14_0;
     default:
       break;
   }
@@ -371,7 +375,8 @@ GfxInfo::FindMonitors(JSContext* aCx, JS::HandleObject aOutArray)
   // CVDisplayLinkGetNominalOutputVideoRefreshPeriod, but that's a little
   // involved. Ideally we could query it from vsync. For now, we leave it out.
   int32_t deviceCount = 0;
-  for (NSScreen* screen in [NSScreen screens]) {
+  for (NSUInteger i = 0; i < [[NSScreen screens] count]; i++) {
+	NSScreen *screen = (NSScreen *)[[NSScreen screens] objectAtIndex:i];
     NSRect rect = [screen frame];
 
     JS::Rooted<JSObject*> obj(aCx, JS_NewPlainObject(aCx));

@@ -1,6 +1,7 @@
 /* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
  *
  * Copyright 2015 Mozilla Foundation
+ * Copyright 2023 Moonchild Productions
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,22 +117,22 @@ class MOZ_STACK_CLASS ModuleGenerator
 
     bool funcIsCompiled(uint32_t funcIndex) const;
     const CodeRange& funcCodeRange(uint32_t funcIndex) const;
-    MOZ_MUST_USE bool patchCallSites(TrapExitOffsetArray* maybeTrapExits = nullptr);
-    MOZ_MUST_USE bool patchFarJumps(const TrapExitOffsetArray& trapExits);
-    MOZ_MUST_USE bool finishTask(IonCompileTask* task);
-    MOZ_MUST_USE bool finishOutstandingTask();
-    MOZ_MUST_USE bool finishFuncExports();
-    MOZ_MUST_USE bool finishCodegen();
-    MOZ_MUST_USE bool finishLinkData(Bytes& code);
-    MOZ_MUST_USE bool addFuncImport(const Sig& sig, uint32_t globalDataOffset);
-    MOZ_MUST_USE bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
-    MOZ_MUST_USE bool allocateGlobal(GlobalDesc* global);
+    [[nodiscard]] bool patchCallSites(TrapExitOffsetArray* maybeTrapExits = nullptr);
+    [[nodiscard]] bool patchFarJumps(const TrapExitOffsetArray& trapExits);
+    [[nodiscard]] bool finishTask(IonCompileTask* task);
+    [[nodiscard]] bool finishOutstandingTask();
+    [[nodiscard]] bool finishFuncExports();
+    [[nodiscard]] bool finishCodegen();
+    [[nodiscard]] bool finishLinkData(Bytes& code);
+    [[nodiscard]] bool addFuncImport(const Sig& sig, uint32_t globalDataOffset);
+    [[nodiscard]] bool allocateGlobalBytes(uint32_t bytes, uint32_t align, uint32_t* globalDataOff);
+    [[nodiscard]] bool allocateGlobal(GlobalDesc* global);
 
   public:
     explicit ModuleGenerator(ImportVector&& imports);
     ~ModuleGenerator();
 
-    MOZ_MUST_USE bool init(UniqueModuleGeneratorData shared, const CompileArgs& args,
+    [[nodiscard]] bool init(UniqueModuleGeneratorData shared, const CompileArgs& args,
                            Metadata* maybeAsmJSMetadata = nullptr);
 
     bool isAsmJS() const { return metadata_->kind == ModuleKind::AsmJS; }
@@ -159,23 +160,23 @@ class MOZ_STACK_CLASS ModuleGenerator
     uint32_t numFuncs() const;
 
     // Exports:
-    MOZ_MUST_USE bool addFuncExport(UniqueChars fieldName, uint32_t funcIndex);
-    MOZ_MUST_USE bool addTableExport(UniqueChars fieldName);
-    MOZ_MUST_USE bool addMemoryExport(UniqueChars fieldName);
-    MOZ_MUST_USE bool addGlobalExport(UniqueChars fieldName, uint32_t globalIndex);
+    [[nodiscard]] bool addFuncExport(UniqueChars fieldName, uint32_t funcIndex);
+    [[nodiscard]] bool addTableExport(UniqueChars fieldName);
+    [[nodiscard]] bool addMemoryExport(UniqueChars fieldName);
+    [[nodiscard]] bool addGlobalExport(UniqueChars fieldName, uint32_t globalIndex);
 
     // Function definitions:
-    MOZ_MUST_USE bool startFuncDefs();
-    MOZ_MUST_USE bool startFuncDef(uint32_t lineOrBytecode, FunctionGenerator* fg);
-    MOZ_MUST_USE bool finishFuncDef(uint32_t funcIndex, FunctionGenerator* fg);
-    MOZ_MUST_USE bool finishFuncDefs();
+    [[nodiscard]] bool startFuncDefs();
+    [[nodiscard]] bool startFuncDef(uint32_t lineOrBytecode, FunctionGenerator* fg);
+    [[nodiscard]] bool finishFuncDef(uint32_t funcIndex, FunctionGenerator* fg);
+    [[nodiscard]] bool finishFuncDefs();
 
     // Start function:
     bool setStartFunction(uint32_t funcIndex);
 
     // Segments:
     void setDataSegments(DataSegmentVector&& segments);
-    MOZ_MUST_USE bool addElemSegment(InitExpr offset, Uint32Vector&& elemFuncIndices);
+    [[nodiscard]] bool addElemSegment(InitExpr offset, Uint32Vector&& elemFuncIndices);
 
     // Function names:
     void setFuncNames(NameInBytecodeVector&& funcNames);
@@ -183,12 +184,12 @@ class MOZ_STACK_CLASS ModuleGenerator
     // asm.js lazy initialization:
     void initSig(uint32_t sigIndex, Sig&& sig);
     void initFuncSig(uint32_t funcIndex, uint32_t sigIndex);
-    MOZ_MUST_USE bool initImport(uint32_t funcIndex, uint32_t sigIndex);
-    MOZ_MUST_USE bool initSigTableLength(uint32_t sigIndex, uint32_t length);
-    MOZ_MUST_USE bool initSigTableElems(uint32_t sigIndex, Uint32Vector&& elemFuncIndices);
+    [[nodiscard]] bool initImport(uint32_t funcIndex, uint32_t sigIndex);
+    [[nodiscard]] bool initSigTableLength(uint32_t sigIndex, uint32_t length);
+    [[nodiscard]] bool initSigTableElems(uint32_t sigIndex, Uint32Vector&& elemFuncIndices);
     void initMemoryUsage(MemoryUsage memoryUsage);
     void bumpMinMemoryLength(uint32_t newMinMemoryLength);
-    MOZ_MUST_USE bool addGlobal(ValType type, bool isConst, uint32_t* index);
+    [[nodiscard]] bool addGlobal(ValType type, bool isConst, uint32_t* index);
 
     // Finish compilation, provided the list of imports and source bytecode.
     // Both these Vectors may be empty (viz., b/c asm.js does different things
@@ -240,7 +241,7 @@ class MOZ_STACK_CLASS FunctionGenerator
     Bytes& bytes() {
         return bytes_;
     }
-    MOZ_MUST_USE bool addCallSiteLineNum(uint32_t lineno) {
+    [[nodiscard]] bool addCallSiteLineNum(uint32_t lineno) {
         return callSiteLineNums_.append(lineno);
     }
 };

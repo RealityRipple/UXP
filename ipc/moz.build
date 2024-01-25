@@ -5,16 +5,19 @@
 
 DIRS += [
     'chromium',
-    'contentproc',
     'glue',
     'ipdl',
     'testshell',
 ]
+
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    DIRS += [
+        'app',
+        'contentproc',
+    ]
 
 if CONFIG['MOZ_ENABLE_DBUS']:
     DIRS += ['dbus']
 
 if CONFIG['OS_ARCH'] == 'WINNT':
     DIRS += ['mscom']
-
-DIRS += ['app']

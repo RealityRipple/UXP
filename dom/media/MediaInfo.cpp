@@ -144,9 +144,9 @@ AudioConfig::SampleSize(AudioConfig::SampleFormat aFormat)
   switch (aFormat) {
     case FORMAT_U8:     return 1;
     case FORMAT_S16:    return 2;
-    case FORMAT_S24:    MOZ_FALLTHROUGH;
-    case FORMAT_S24LSB: MOZ_FALLTHROUGH;
-    case FORMAT_S32:    MOZ_FALLTHROUGH;
+    case FORMAT_S24:    [[fallthrough]];
+    case FORMAT_S24LSB: [[fallthrough]];
+    case FORMAT_S32:    [[fallthrough]];
     case FORMAT_FLT:    return 4;
     case FORMAT_NONE:
     default:            return 0;
@@ -159,11 +159,11 @@ AudioConfig::FormatToBits(AudioConfig::SampleFormat aFormat)
   switch (aFormat) {
     case FORMAT_U8:     return 8;
     case FORMAT_S16:    return 16;
-    case FORMAT_S24LSB: MOZ_FALLTHROUGH;
+    case FORMAT_S24LSB: [[fallthrough]];
     case FORMAT_S24:    return 24;
-    case FORMAT_S32:    MOZ_FALLTHROUGH;
+    case FORMAT_S32:    [[fallthrough]];
     case FORMAT_FLT:    return 32;
-    case FORMAT_NONE:   MOZ_FALLTHROUGH;
+    case FORMAT_NONE:   [[fallthrough]];
     default:            return 0;
   }
 }

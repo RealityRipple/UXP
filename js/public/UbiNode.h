@@ -285,7 +285,7 @@ class BaseStackFrame {
     // simplifies the principals check into the boolean isSystem() state. This
     // is fine because we only expose JS::ubi::Stack to devtools and chrome
     // code, and not to the web platform.
-    virtual MOZ_MUST_USE bool constructSavedFrameStack(JSContext* cx,
+    [[nodiscard]] virtual bool constructSavedFrameStack(JSContext* cx,
                                                        MutableHandleObject outSavedFrameStack)
         const = 0;
 
@@ -416,7 +416,7 @@ class StackFrame {
     StackFrame parent() const { return base()->parent(); }
     bool isSystem() const { return base()->isSystem(); }
     bool isSelfHosted(JSContext* cx) const { return base()->isSelfHosted(cx); }
-    MOZ_MUST_USE bool constructSavedFrameStack(JSContext* cx,
+    [[nodiscard]] bool constructSavedFrameStack(JSContext* cx,
                                                MutableHandleObject outSavedFrameStack) const {
         return base()->constructSavedFrameStack(cx, outSavedFrameStack);
     }
@@ -449,7 +449,7 @@ class ConcreteStackFrame<void> : public BaseStackFrame {
 
     uint64_t identifier() const override { return 0; }
     void trace(JSTracer* trc) override { }
-    MOZ_MUST_USE bool constructSavedFrameStack(JSContext* cx, MutableHandleObject out)
+    [[nodiscard]] bool constructSavedFrameStack(JSContext* cx, MutableHandleObject out)
         const override
     {
         out.set(nullptr);
@@ -465,7 +465,7 @@ class ConcreteStackFrame<void> : public BaseStackFrame {
     bool isSelfHosted(JSContext* cx) const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
 };
 
-MOZ_MUST_USE JS_PUBLIC_API(bool)
+[[nodiscard]] JS_PUBLIC_API(bool)
 ConstructSavedFrameStackSlow(JSContext* cx,
                              JS::ubi::StackFrame& frame,
                              MutableHandleObject outSavedFrameStack);
@@ -628,7 +628,7 @@ class JS_PUBLIC_API(Base) {
     // Otherwise, place nullptr in the out parameter. Caller maintains ownership
     // of the out parameter. True is returned on success, false is returned on
     // OOM.
-    virtual MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
+    [[nodiscard]] virtual bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
         const
     {
         outName.reset(nullptr);
@@ -778,7 +778,7 @@ class Node {
     JS::Zone* zone()                const { return base()->zone(); }
     JSCompartment* compartment()    const { return base()->compartment(); }
     const char* jsObjectClassName() const { return base()->jsObjectClassName(); }
-    MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName) const {
+    [[nodiscard]] bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName) const {
         return base()->jsObjectConstructorName(cx, outName);
     }
 
@@ -981,12 +981,12 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(RootList) {
     RootList(JSContext* cx, Maybe<AutoCheckCannotGC>& noGC, bool wantNames = false);
 
     // Find all GC roots.
-    MOZ_MUST_USE bool init();
+    [[nodiscard]] bool init();
     // Find only GC roots in the provided set of |JSCompartment|s.
-    MOZ_MUST_USE bool init(CompartmentSet& debuggees);
+    [[nodiscard]] bool init(CompartmentSet& debuggees);
     // Find only GC roots in the given Debugger object's set of debuggee
     // compartments.
-    MOZ_MUST_USE bool init(HandleObject debuggees);
+    [[nodiscard]] bool init(HandleObject debuggees);
 
     // Returns true if the RootList has been initialized successfully, false
     // otherwise.
@@ -995,7 +995,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(RootList) {
     // Explicitly add the given Node as a root in this RootList. If wantNames is
     // true, you must pass an edgeName. The RootList does not take ownership of
     // edgeName.
-    MOZ_MUST_USE bool addRoot(Node node, const char16_t* edgeName = nullptr);
+    [[nodiscard]] bool addRoot(Node node, const char16_t* edgeName = nullptr);
 };
 
 
@@ -1100,7 +1100,7 @@ class JS_PUBLIC_API(Concrete<JSObject>) : public TracerConcreteWithCompartment<J
     }
 
     const char* jsObjectClassName() const override;
-    MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
+    [[nodiscard]] bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
         const override;
     Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 

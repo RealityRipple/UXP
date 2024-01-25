@@ -161,7 +161,6 @@ LOCAL_INCLUDES += [
     '/dom/base',
     '/dom/crypto',
     '/security/certverifier',
-    '/security/pkix/include',
 ]
 
 LOCAL_INCLUDES += [
@@ -181,6 +180,9 @@ DEFINES['CERT_AddTempCertToPerm'] = '__CERT_AddTempCertToPerm'
 USE_LIBS += [
     'crmf',
 ]
+
+# mozpkix is always linked statically from the in-tree sources.
+USE_LIBS += [ 'mozpkix' ]
 
 include('/ipc/chromium/chromium-config.mozbuild')
 

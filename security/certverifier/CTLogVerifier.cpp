@@ -9,8 +9,8 @@
 #include "hasht.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
-#include "pkix/pkixnss.h"
-#include "pkix/pkixutil.h"
+#include "mozpkix/pkixnss.h"
+#include "mozpkix/pkixutil.h"
 
 namespace mozilla { namespace ct {
 
@@ -74,7 +74,7 @@ public:
     return Success;
   }
 
-  Result VerifyECDSASignedDigest(const SignedDigest&, Input) override
+  Result VerifyECDSASignedData(Input, DigestAlgorithm, Input, Input) override
   {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
@@ -93,8 +93,12 @@ public:
     return Success;
   }
 
-  Result VerifyRSAPKCS1SignedDigest(const SignedDigest&, Input) override
+  Result VerifyRSAPKCS1SignedData(Input, DigestAlgorithm, Input, Input) override
   {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+
+  Result VerifyRSAPSSSignedData(Input, DigestAlgorithm, Input, Input) override {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
@@ -219,36 +223,18 @@ CTLogVerifier::SignatureParametersMatch(const DigitallySigned& signature)
 Result
 CTLogVerifier::VerifySignature(Input data, Input signature)
 {
-  uint8_t digest[SHA256_LENGTH];
-  Result rv = DigestBufNSS(data, DigestAlgorithm::sha256, digest,
-                           ArrayLength(digest));
-  if (rv != Success) {
-    return rv;
-  }
-
-  SignedDigest signedDigest;
-  signedDigest.digestAlgorithm = DigestAlgorithm::sha256;
-  rv = signedDigest.digest.Init(digest, ArrayLength(digest));
-  if (rv != Success) {
-    return rv;
-  }
-  rv = signedDigest.signature.Init(signature);
-  if (rv != Success) {
-    return rv;
-  }
-
   Input spki;
-  rv = BufferToInput(mSubjectPublicKeyInfo, spki);
+  Result rv = BufferToInput(mSubjectPublicKeyInfo, spki);
   if (rv != Success) {
     return rv;
   }
 
   switch (mSignatureAlgorithm) {
     case DigitallySigned::SignatureAlgorithm::RSA:
-      rv = VerifyRSAPKCS1SignedDigestNSS(signedDigest, spki, nullptr);
+      rv = VerifyRSAPKCS1SignedDataNSS(data, DigestAlgorithm::sha256, signature, spki, nullptr);
       break;
     case DigitallySigned::SignatureAlgorithm::ECDSA:
-      rv = VerifyECDSASignedDigestNSS(signedDigest, spki, nullptr);
+      rv = VerifyECDSASignedDataNSS(data, DigestAlgorithm::sha256, signature, spki, nullptr);
       break;
     // We do not expect new values added to this enum any time soon,
     // so just listing all the available ones seems to be the easiest way

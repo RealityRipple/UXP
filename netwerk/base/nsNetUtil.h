@@ -527,7 +527,7 @@ nsresult NS_BackgroundOutputStream(nsIOutputStream **result,
                                    uint32_t          segmentSize  = 0,
                                    uint32_t          segmentCount = 0);
 
-MOZ_MUST_USE nsresult
+[[nodiscard]] nsresult
 NS_NewBufferedInputStream(nsIInputStream **result,
                           nsIInputStream  *str,
                           uint32_t         bufferSize);

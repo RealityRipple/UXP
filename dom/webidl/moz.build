@@ -9,6 +9,9 @@ GENERATED_WEBIDL_FILES = [
 
 PREPROCESSED_WEBIDL_FILES = [
     'HTMLMediaElement.webidl',
+    'HTMLObjectElement.webidl',
+    'LegacyQueryInterface.webidl',
+    'MimeType.webidl',
     'Navigator.webidl',
     'Node.webidl',
     'Performance.webidl',
@@ -72,6 +75,7 @@ WEBIDL_FILES = [
     'ChromeUtils.webidl',
     'Client.webidl',
     'Clients.webidl',
+    'Clipboard.webidl',
     'ClipboardEvent.webidl',
     'CommandEvent.webidl',
     'Comment.webidl',
@@ -211,7 +215,6 @@ WEBIDL_FILES = [
     'HTMLMetaElement.webidl',
     'HTMLMeterElement.webidl',
     'HTMLModElement.webidl',
-    'HTMLObjectElement.webidl',
     'HTMLOListElement.webidl',
     'HTMLOptGroupElement.webidl',
     'HTMLOptionElement.webidl',
@@ -273,7 +276,6 @@ WEBIDL_FILES = [
     'KeyframeAnimationOptions.webidl',
     'KeyframeEffect.webidl',
     'KeyIdsInitData.webidl',
-    'LegacyQueryInterface.webidl',
     'LinkStyle.webidl',
     'ListBoxObject.webidl',
     'LocalMediaStream.webidl',
@@ -298,7 +300,6 @@ WEBIDL_FILES = [
     'MessageChannel.webidl',
     'MessageEvent.webidl',
     'MessagePort.webidl',
-    'MimeType.webidl',
     'MimeTypeArray.webidl',
     'MouseEvent.webidl',
     'MouseScrollEvent.webidl',
@@ -342,8 +343,6 @@ WEBIDL_FILES = [
     'Permissions.webidl',
     'PermissionSettings.webidl',
     'PermissionStatus.webidl',
-    'Plugin.webidl',
-    'PluginArray.webidl',
     'PointerEvent.webidl',
     'PopupBoxObject.webidl',
     'Position.webidl',
@@ -646,6 +645,12 @@ if CONFIG['MOZ_SECUREELEMENT']:
          'SecureElementManager.webidl',
     ]
 
+if CONFIG['MOZ_ENABLE_NPAPI']:
+    WEBIDL_FILES += [
+         'Plugin.webidl',
+         'PluginArray.webidl',
+    ]
+
 WEBIDL_FILES += [
     'InstallTrigger.webidl',
 ]
@@ -676,8 +681,10 @@ GENERATED_EVENTS_WEBIDL_FILES = [
     'PopStateEvent.webidl',
     'PopupBlockedEvent.webidl',
     'ProgressEvent.webidl',
+    'PromiseRejectionEvent.webidl',
     'RecordErrorEvent.webidl',
     'ScrollViewChangeEvent.webidl',
+    'SecurityPolicyViolationEvent.webidl',
     'ServiceWorkerMessageEvent.webidl',
     'StyleRuleChangeEvent.webidl',
     'StyleSheetApplicableStateChangeEvent.webidl',
@@ -712,12 +719,12 @@ if CONFIG['MOZ_GAMEPAD']:
         'GamepadEvent.webidl',
     ]
 
-if CONFIG['MOZ_PHOENIX'] or CONFIG['MOZ_SUITE']:
+if CONFIG['MOZ_BUILD_APP'] in ['xulrunner'] or CONFIG['MOZ_PHOENIX'] or CONFIG['MOZ_SUITE']:
     WEBIDL_FILES += [
         'BrowserFeedWriter.webidl',
     ]
 
-if CONFIG['MOZ_PHOENIX']:
+if CONFIG['MOZ_PHOENIX'] or CONFIG['MOZ_XULRUNNER']:
     WEBIDL_FILES += [
         'External.webidl',
     ]
