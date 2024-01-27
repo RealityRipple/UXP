@@ -297,6 +297,7 @@ bool nsContentUtils::sGettersDecodeURLHash = false;
 bool nsContentUtils::sPrivacyResistFingerprinting = false;
 bool nsContentUtils::sSendPerformanceTimingNotifications = false;
 bool nsContentUtils::sUseActivityCursor = false;
+bool nsContentUtils::sPreloadEnabled = true;
 
 uint32_t nsContentUtils::sHandlingInputTimeout = 1000;
 
@@ -634,6 +635,9 @@ nsContentUtils::Init()
 
   Preferences::AddBoolVarCache(&sUseActivityCursor,
                                "ui.use_activity_cursor", false);
+
+  Preferences::AddBoolVarCache(&sPreloadEnabled,
+                               "network.preload", true);
 
   Element::InitCCCallbacks();
 
@@ -4127,6 +4131,10 @@ void
 nsContentUtils::DispatchEventForPreloadURI(nsIDOMNode* aNode,
                                            nsContentPolicyType& aPolicyType)
 {
+  if (!IsPreloadEnabled()) {
+    return;
+  }
+
   nsCOMPtr<nsINode> domNode = do_QueryInterface(aNode);
   if (domNode && domNode->IsInComposedDoc()) {
     bool success = aPolicyType != nsIContentPolicy::TYPE_INVALID;
@@ -7394,6 +7402,12 @@ bool
 nsContentUtils::GPCEnabled()
 {
   return nsContentUtils::sGPCEnabled;
+}
+
+bool
+nsContentUtils::IsPreloadEnabled()
+{
+  return nsContentUtils::sPreloadEnabled;
 }
 
 mozilla::LogModule*
