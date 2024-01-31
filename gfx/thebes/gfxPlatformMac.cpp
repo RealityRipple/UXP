@@ -25,6 +25,7 @@
 #include <dlfcn.h>
 #include <CoreVideo/CoreVideo.h>
 
+#include "nsCocoaFeatures.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "VsyncSource.h"
 
@@ -73,11 +74,19 @@ DisableFontActivation()
 
 gfxPlatformMac::gfxPlatformMac()
 {
-    DisableFontActivation();
+    // Backout bug 850408
+    if(nsCocoaFeatures::OnSnowLeopardOrLater()) {
+         DisableFontActivation();
+    }
     mFontAntiAliasingThreshold = ReadAntiAliasingThreshold();
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     uint32_t canvasMask = BackendTypeBit(BackendType::SKIA);
-    uint32_t contentMask = BackendTypeBit(BackendType::SKIA);
+#else
+    uint32_t canvasMask = BackendTypeBit(BackendType::SKIA) |
+                          BackendTypeBit(BackendType::COREGRAPHICS);
+#endif
+    uint32_t contentMask = canvasMask;
     InitBackendPrefs(canvasMask, BackendType::SKIA,
                      contentMask, BackendType::SKIA);
 
@@ -93,12 +102,16 @@ gfxPlatformMac::gfxPlatformMac()
         }
     }
 
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     MacIOSurfaceLib::LoadLibrary();
+#endif
 }
 
 gfxPlatformMac::~gfxPlatformMac()
 {
+#if defined(MAC_OS_X_VERSION_10_6) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
     gfxCoreTextShaper::Shutdown();
+#endif
 }
 
 #if !defined(MAC_OS_X_VERSION_10_6) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)

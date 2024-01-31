@@ -3667,9 +3667,55 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
   NSSize viewSize = [self bounds].size;
   gfx::IntSize backingSize = gfx::IntSize::Truncate(viewSize.width * scale, viewSize.height * scale);
+#if defined(MAC_OS_X_VERSION_10_7) && (MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7)
   LayoutDeviceIntRegion region = [self nativeDirtyRegionWithBoundingRect:aRect];
 
   bool painted = mGeckoChild->PaintWindowInContext(cgContext, region, backingSize);
+#else
+  CGContextSaveGState(cgContext);
+
+  LayoutDeviceIntRegion region = [self nativeDirtyRegionWithBoundingRect:aRect];
+
+  // Create Cairo objects.
+  RefPtr<gfxQuartzSurface> targetSurface;
+
+  RefPtr<gfx::DrawTarget> dt =
+    gfx::Factory::CreateDrawTargetForCairoCGContext(cgContext,
+                                                    gfx::IntSize(backingSize.width,
+                                                                 backingSize.height));
+  if (!dt || !dt->IsValid()) {
+    // This used to be an assertion, so keep crashing in nightly+aurora
+    gfxDevCrash(mozilla::gfx::LogReason::InvalidContext) << "Cannot create target with CreateDrawTargetForCairoCGContext " << backingSize;
+    return;
+  }
+  dt->AddUserData(&gfxContext::sDontUseAsSourceKey, dt, nullptr);
+  RefPtr<gfxContext> targetContext = gfxContext::CreateOrNull(dt);
+  MOZ_ASSERT(targetContext); // already checked the draw target above
+
+  // Set up the clip region.
+  targetContext->NewPath();
+  for (auto iter = region.RectIter(); !iter.Done(); iter.Next()) {
+    const LayoutDeviceIntRect& r = iter.Get();
+    targetContext->Rectangle(gfxRect(r.x, r.y, r.width, r.height));
+  }
+  targetContext->Clip();
+
+  nsAutoRetainCocoaObject kungFuDeathGrip(self);
+  bool painted = false;
+  if (mGeckoChild->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
+    nsBaseWidget::AutoLayerManagerSetup
+      setupLayerManager(mGeckoChild, targetContext, BufferMode::BUFFER_NONE);
+    painted = mGeckoChild->PaintWindow(region);
+  } else if (mGeckoChild->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT) {
+    // We only need this so that we actually get DidPaintWindow fired
+    painted = mGeckoChild->PaintWindow(region);
+  }
+
+  targetContext = nullptr;
+  targetSurface = nullptr;
+
+  CGContextRestoreGState(cgContext);
+#endif
 
   // Undo the scale transform so that from now on the context is in
   // CocoaPoints again.
