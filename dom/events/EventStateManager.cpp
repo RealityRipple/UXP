@@ -3229,10 +3229,14 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       if (pluginFrame) {
         MOZ_ASSERT(pluginFrame->WantsToHandleWheelEventAsDefaultAction());
         action = WheelPrefs::ACTION_SEND_TO_PLUGIN;
-      } else if (wheelEvent->mFlags.mHandledByAPZ) {
-        action = WheelPrefs::ACTION_NONE;
       } else {
-        action = WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
+#endif
+        if (wheelEvent->mFlags.mHandledByAPZ) {
+          action = WheelPrefs::ACTION_NONE;
+        } else {
+          action = WheelPrefs::GetInstance()->ComputeActionFor(wheelEvent);
+        }
+#ifdef MOZ_ENABLE_NPAPI
       }
 #endif
       switch (action) {
