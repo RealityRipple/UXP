@@ -44,10 +44,6 @@
 #include "ocsp.h"
 #include "nssb64.h"
 
-#ifndef PORT_Sprintf
-#define PORT_Sprintf sprintf
-#endif
-
 #ifndef PORT_Strstr
 #define PORT_Strstr strstr
 #endif
@@ -906,7 +902,7 @@ lockedVars_WaitForDone(lockedVars *lv)
 }
 
 int /* returns count */
-    lockedVars_AddToCount(lockedVars *lv, int addend)
+lockedVars_AddToCount(lockedVars *lv, int addend)
 {
     int rv;
 
@@ -1535,15 +1531,15 @@ handle_connection(PRFileDesc *tcp_sock, PRFileDesc *model_sock)
                     }
                 }
             } else if (reqLen <= 0) { /* hit eof */
-                PORT_Sprintf(msgBuf, "Get or Post incomplete after %d bytes.\r\n",
-                             bufDat);
+                snprintf(msgBuf, sizeof(msgBuf), "Get or Post incomplete after %d bytes.\r\n",
+                         bufDat);
 
                 iovs[numIOVs].iov_base = msgBuf;
                 iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);
                 numIOVs++;
             } else if (reqLen < bufDat) {
-                PORT_Sprintf(msgBuf, "Discarded %d characters.\r\n",
-                             bufDat - reqLen);
+                snprintf(msgBuf, sizeof(msgBuf), "Discarded %d characters.\r\n",
+                         bufDat - reqLen);
 
                 iovs[numIOVs].iov_base = msgBuf;
                 iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);
@@ -1986,7 +1982,7 @@ loser:
 static SECStatus
 configureEchWithData(PRFileDesc *model_sock)
 {
-/* The input should be a Base64-encoded ECHKey struct:
+    /* The input should be a Base64-encoded ECHKey struct:
      *  struct {
      *     opaque pkcs8_ech_keypair<0..2^16-1>;
      *     ECHConfigs configs<0..2^16>; // draft-ietf-tls-esni-09

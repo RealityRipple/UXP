@@ -82,7 +82,7 @@ ssl_CertIsUsable(sslSocket *ss, CERTCertificate *cert)
      *   if (!ss->ssl3.hs.hashType == handshake_hash_record  &&
      *           ss->ssl3.hs.hashType == handshake_hash_single) {
      *   return PR_TRUE;
-     * 2) assume if ss->peerSignatureSchemesCount == 0 we are using the
+     * 2) assume if ss->ss->ssl3.hs.clientAuthSignatureSchemesLen == 0 we are using the
      *    old handshake.
      * There is one case where using 2 will be wrong: we somehow call this
      * function outside the case where of out GetClientAuthData context.
@@ -90,15 +90,15 @@ ssl_CertIsUsable(sslSocket *ss, CERTCertificate *cert)
      * best we can do is either always assume good or always assume bad.
      * I think the best results is to always assume good, so we use
      * option 2 here to handle that case as well.*/
-    if (ss->peerSignatureSchemeCount == 0) {
+    if (ss->ssl3.hs.clientAuthSignatureSchemesLen == 0) {
         return PR_TRUE;
     }
-    if (ss->peerSignatureSchemes == NULL) {
+    if (ss->ssl3.hs.clientAuthSignatureSchemes == NULL) {
         return PR_FALSE; /* should this really be an assert? */
     }
     rv = ssl_PickClientSignatureScheme(ss, cert, NULL,
-                                       ss->peerSignatureSchemes,
-                                       ss->peerSignatureSchemeCount,
+                                       ss->ssl3.hs.clientAuthSignatureSchemes,
+                                       ss->ssl3.hs.clientAuthSignatureSchemesLen,
                                        &scheme);
     if (rv != SECSuccess) {
         return PR_FALSE;
@@ -206,6 +206,9 @@ NSS_GetClientAuthData(void *arg,
                                              certUsageSSLClient,
                                              PR_FALSE, chosenNickName == NULL,
                                              pw_arg);
+        if (certList == NULL) {
+            return SECFailure;
+        }
         /* filter only the certs that meet the nickname requirements */
         if (chosenNickName) {
             rv = CERT_FilterCertListByNickname(certList, chosenNickName,
@@ -219,13 +222,10 @@ NSS_GetClientAuthData(void *arg,
         }
         if ((rv != SECSuccess) || CERT_LIST_EMPTY(certList)) {
             CERT_DestroyCertList(certList);
-            certList = NULL;
+            return SECFailure;
         }
     }
-    if (certList == NULL) {
-        /* no user certs meeting the nickname/usage requirements found */
-        return SECFailure;
-    }
+
     /* now remove any certs that can't meet the connection requirements */
     rv = ssl_FilterClientCertListBySSLSocket(ss, certList);
     if ((rv != SECSuccess) || CERT_LIST_EMPTY(certList)) {
