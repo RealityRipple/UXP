@@ -20,6 +20,16 @@ const LINUX_INTEROP_IMAGE = {
   path: "automation/taskcluster/docker-interop"
 };
 
+const ACVP_IMAGE = {
+  name: "acvp",
+  path: "automation/taskcluster/docker-acvp"
+};
+
+const ECCKIILA_IMAGE = {
+  name: "ecckiila",
+  path: "automation/taskcluster/docker-ecckiila"
+};
+
 const CLANG_FORMAT_IMAGE = {
   name: "clang-format",
   path: "automation/taskcluster/docker-clang-format"
@@ -39,11 +49,6 @@ const FUZZ_IMAGE = {
 const FUZZ_IMAGE_32 = {
   name: "fuzz32",
   path: "automation/taskcluster/docker-fuzz32"
-};
-
-const SAW_IMAGE = {
-  name: "saw",
-  path: "automation/taskcluster/docker-saw"
 };
 
 const WINDOWS_CHECKOUT_CMD =
@@ -262,6 +267,11 @@ export default async function main() {
     collection: "debug"
   }, "build_gyp.sh");
 
+  await scheduleWindows("Windows 2012 64 Static (opt)", {
+    platform: "windows2012-64",
+    collection: "opt-static"
+  }, "build_gyp.sh --opt --static");
+
   await scheduleWindows("Windows 2012 32 (opt)", {
     platform: "windows2012-32",
   }, "build_gyp.sh --opt -t ia32");
@@ -319,6 +329,7 @@ export default async function main() {
   );
 
   await scheduleMac("Mac (opt)", {collection: "opt"}, "--opt");
+  await scheduleMac("Mac Static (opt)", {collection: "opt-static"}, "--opt --static -Ddisable_libpkix=1");
   await scheduleMac("Mac (debug)", {collection: "debug"});
 
   // Must be executed after all other tasks are scheduled
@@ -525,7 +536,9 @@ async function scheduleLinux(name, overrides, args = "") {
       "/bin/bash",
       "-c",
       "bin/checkout.sh && nss/automation/taskcluster/scripts/run_tests.sh"
-    ]
+    ],
+    provisioner: "nss-t",
+    workerType: "t-linux-xlarge-gcp"
   }));
 
   // Extra builds.
@@ -541,7 +554,14 @@ async function scheduleLinux(name, overrides, args = "") {
     },
     symbol: "clang-4"
   }));
-
+  queue.scheduleTask(merge(extra_base, {
+    name: `${name} w/ clang-10`,
+    env: {
+      CC: "clang-10",
+      CCC: "clang++-10",
+    },
+    symbol: "clang-10"
+  }));
   queue.scheduleTask(merge(extra_base, {
     name: `${name} w/ gcc-4.4`,
     image: LINUX_GCC44_IMAGE,
@@ -587,33 +607,6 @@ async function scheduleLinux(name, overrides, args = "") {
       CCC: "g++-5"
     },
     symbol: "gcc-5"
-  }));
-
-  queue.scheduleTask(merge(extra_base, {
-    name: `${name} w/ gcc-6`,
-    env: {
-      CC: "gcc-6",
-      CCC: "g++-6"
-    },
-    symbol: "gcc-6"
-  }));
-
-  queue.scheduleTask(merge(extra_base, {
-    name: `${name} w/ gcc-9`,
-    env: {
-      CC: "gcc-9",
-      CCC: "g++-9"
-    },
-    symbol: "gcc-9"
-  }));
-
-  queue.scheduleTask(merge(extra_base, {
-    name: `${name} w/ gcc-10`,
-    env: {
-      CC: "gcc-10",
-      CCC: "g++-10",
-    },
-    symbol: "gcc-10"
   }));
 
   queue.scheduleTask(merge(extra_base, {
@@ -674,6 +667,8 @@ function scheduleFuzzingRun(base, name, target, max_len, symbol = null, corpus =
         `-max_total_time=${MAX_FUZZ_TIME} ` +
         `-max_len=${max_len}`
     ],
+    provisioner: "nss-t",
+    workerType: "t-linux-xlarge-gcp",
     symbol: symbol || name
   }));
 }
@@ -891,14 +886,14 @@ async function scheduleFuzzing32() {
 
 async function scheduleWindows(name, base, build_script) {
   base = merge(base, {
-    workerType: "win2012r2",
+    workerType: "b-win2012-azure",
     env: {
       PATH: "c:\\mozilla-build\\bin;c:\\mozilla-build\\python;" +
            "c:\\mozilla-build\\msys\\local\\bin;c:\\mozilla-build\\7zip;" +
            "c:\\mozilla-build\\info-zip;c:\\mozilla-build\\python\\Scripts;" +
            "c:\\mozilla-build\\yasm;c:\\mozilla-build\\msys\\bin;" +
            "c:\\Windows\\system32;c:\\mozilla-build\\upx391w;" +
-           "c:\\mozilla-build\\moztools-x64\\bin;c:\\mozilla-build\\wget",
+           "c:\\mozilla-build\\moztools-x64\\bin;c:\\mozilla-build\\wget;c:\\Program Files\\Mercurial",
       DOMSUF: "localdomain",
       HOST: "localhost",
     },
@@ -1156,6 +1151,18 @@ async function scheduleTools() {
   }));
 
   queue.scheduleTask(merge(base, {
+    symbol: "acvp",
+    name: "acvp",
+    image: ACVP_IMAGE,
+    command: [
+      "/bin/bash",
+      "-c",
+      "bin/checkout.sh && bin/run.sh"
+    ]
+  }));
+
+
+  queue.scheduleTask(merge(base, {
     symbol: "scan-build",
     name: "scan-build",
     image: FUZZ_IMAGE,
@@ -1188,72 +1195,15 @@ async function scheduleTools() {
       "bin/checkout.sh && nss/automation/taskcluster/scripts/run_hacl.sh"
     ]
   }));
-
-  let task_saw = queue.scheduleTask(merge(base, {
-    symbol: "B",
-    group: "SAW",
-    name: "LLVM bitcode build (32 bit)",
-    image: SAW_IMAGE,
-    kind: "build",
-    env: {
-      AR: "llvm-ar-3.8",
-      CC: "clang-3.8",
-      CCC: "clang++-3.8"
-    },
-    artifacts: {
-      public: {
-        expires: 24 * 7,
-        type: "directory",
-        path: "/home/worker/artifacts"
-      }
-    },
-    command: [
-      "/bin/bash",
-      "-c",
-      "bin/checkout.sh && nss/automation/taskcluster/scripts/build_gyp.sh --disable-tests --emit-llvm -t ia32"
-    ]
-  }));
-
+  
   queue.scheduleTask(merge(base, {
-    parent: task_saw,
-    symbol: "bmul",
-    group: "SAW",
-    name: "bmul.saw",
-    image: SAW_IMAGE,
+    symbol: "ecckiila",
+    name: "ecckiila",
+    image: ECCKIILA_IMAGE,
     command: [
       "/bin/bash",
       "-c",
-      "bin/checkout.sh && nss/automation/taskcluster/scripts/run_saw.sh bmul"
-    ]
-  }));
-
-  // TODO: The ChaCha20 saw verification is currently disabled because the new
-  //       HACL 32-bit code can't be verified by saw right now to the best of
-  //       my knowledge.
-  //       Bug 1604130
-  // queue.scheduleTask(merge(base, {
-  //   parent: task_saw,
-  //   symbol: "ChaCha20",
-  //   group: "SAW",
-  //   name: "chacha20.saw",
-  //   image: SAW_IMAGE,
-  //   command: [
-  //     "/bin/bash",
-  //     "-c",
-  //     "bin/checkout.sh && nss/automation/taskcluster/scripts/run_saw.sh chacha20"
-  //   ]
-  // }));
-
-  queue.scheduleTask(merge(base, {
-    parent: task_saw,
-    symbol: "Poly1305",
-    group: "SAW",
-    name: "poly1305.saw",
-    image: SAW_IMAGE,
-    command: [
-      "/bin/bash",
-      "-c",
-      "bin/checkout.sh && nss/automation/taskcluster/scripts/run_saw.sh poly1305"
+      "bin/checkout.sh && bin/ecckiila.sh && bin/run.sh"
     ]
   }));
 

@@ -6,6 +6,7 @@
 #include "stubs.h"
 #endif
 #include "prtypes.h"
+#include "prenv.h"
 #include "secerr.h"
 #include "blapi.h"
 #include "hasht.h"
@@ -30,6 +31,12 @@ nsslow_GetFIPSEnabled(void)
     FILE *f;
     char d;
     size_t size;
+    const char *env;
+
+    env = PR_GetEnvSecure("NSS_FIPS");
+    if (env && (*env == 'y' || *env == 'f' || *env == '1' || *env == 't')) {
+        return 1;
+    }
 
     f = fopen("/proc/sys/crypto/fips_enabled", "r");
     if (!f)
@@ -60,7 +67,7 @@ NSSLOW_Init(void)
     /* make sure the FIPS product is installed if we are trying to
      * go into FIPS mode */
     if (nsslow_GetFIPSEnabled()) {
-        if (BL_FIPSEntryOK(PR_TRUE) != SECSuccess) {
+        if (BL_FIPSEntryOK(PR_TRUE, PR_FALSE) != SECSuccess) {
             PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
             post_failed = PR_TRUE;
             return NULL;
