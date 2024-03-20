@@ -96,6 +96,8 @@ static sslOptions ssl_defaults = {
     .enableTls13GreaseEch = PR_FALSE,
     .enableTls13BackendEch = PR_FALSE,
     .callExtensionWriterOnEchInner = PR_FALSE,
+    .enableGrease = PR_FALSE,
+    .enableChXtnPermutation = PR_FALSE
 };
 
 /*
@@ -399,10 +401,6 @@ ssl_DupSocket(sslSocket *os)
                 goto loser;
             }
         }
-        /* The original socket 'owns' the copy of these, so
-         * just set the target copies to zero */
-        ss->peerSignatureSchemes = NULL;
-        ss->peerSignatureSchemeCount = 0;
 
         /* Create security data */
         rv = ssl_CopySecurityInfo(ss, os);
@@ -494,10 +492,6 @@ ssl_DestroySocketContents(sslSocket *ss)
     tls13_ReleaseAntiReplayContext(ss->antiReplay);
 
     tls13_DestroyPsk(ss->psk);
-    /* data in peer Signature schemes comes from the buffer system,
-     * so there is nothing to free here. Make sure that's the case */
-    PORT_Assert(ss->peerSignatureSchemes == NULL);
-    PORT_Assert(ss->peerSignatureSchemeCount == 0);
 
     tls13_DestroyEchConfigs(&ss->echConfigs);
     SECKEY_DestroyPrivateKey(ss->echPrivKey);
@@ -897,6 +891,14 @@ SSL_OptionSet(PRFileDesc *fd, PRInt32 which, PRIntn val)
 
         case SSL_SUPPRESS_END_OF_EARLY_DATA:
             ss->opt.suppressEndOfEarlyData = val;
+            break;
+
+        case SSL_ENABLE_GREASE:
+            ss->opt.enableGrease = val;
+            break;
+
+        case SSL_ENABLE_CH_EXTENSION_PERMUTATION:
+            ss->opt.enableChXtnPermutation = val;
             break;
 
         default:
@@ -2572,8 +2574,7 @@ SSL_ReconfigFD(PRFileDesc *model, PRFileDesc *fd)
         ss->handshakeCallbackData = sm->handshakeCallbackData;
     if (sm->pkcs11PinArg)
         ss->pkcs11PinArg = sm->pkcs11PinArg;
-    ss->peerSignatureSchemes = NULL;
-    ss->peerSignatureSchemeCount = 0;
+
     return fd;
 }
 
@@ -3899,7 +3900,7 @@ loser:
     return SECFailure;
 }
 
-#if defined(XP_UNIX) || defined(XP_WIN32) || defined(XP_BEOS)
+#if defined(XP_UNIX) || defined(XP_WIN32)
 #define NSS_HAVE_GETENV 1
 #endif
 
@@ -4245,8 +4246,6 @@ ssl_NewSocket(PRBool makeLocks, SSLProtocolVariant protocolVariant)
     ss->echPubKey = NULL;
     ss->antiReplay = NULL;
     ss->psk = NULL;
-    ss->peerSignatureSchemes = NULL;
-    ss->peerSignatureSchemeCount = 0;
 
     if (makeLocks) {
         rv = ssl_MakeLocks(ss);

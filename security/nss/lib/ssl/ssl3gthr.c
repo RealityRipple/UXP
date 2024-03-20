@@ -26,16 +26,16 @@ typedef struct ssl2GatherStr ssl2Gather;
 SECStatus
 ssl3_InitGather(sslGather *gs)
 {
-    SECStatus status;
-
     gs->state = GS_INIT;
     gs->writeOffset = 0;
     gs->readOffset = 0;
     gs->dtlsPacketOffset = 0;
     gs->dtlsPacket.len = 0;
     gs->rejectV2Records = PR_FALSE;
-    status = sslBuffer_Grow(&gs->buf, 4096);
-    return status;
+    /* Allocate plaintext buffer to maximum possibly needed size. It needs to
+     * be larger than recordSizeLimit for TLS 1.0 and 1.1 compatability.
+     * The TLS 1.2 ciphertext is larger than the TLS 1.3 ciphertext. */
+    return sslBuffer_Grow(&gs->buf, TLS_1_2_MAX_CTEXT_LENGTH);
 }
 
 /* Caller must hold RecvBufLock. */
@@ -231,7 +231,7 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
                     break; /* End this case.  Continue around the loop. */
                 }
 
-            /* FALL THROUGH if (gs->remainder == 0) as we just received
+                /* FALL THROUGH if (gs->remainder == 0) as we just received
                  * an empty record and there's really no point in calling
                  * ssl_DefRecv() with buf=NULL and len=0. */
 
@@ -560,6 +560,15 @@ ssl3_GatherCompleteHandshake(sslSocket *ss, int flags)
             cText.buf = &ss->gs.inbuf;
             rv = ssl3_HandleRecord(ss, &cText);
         }
+
+#ifdef DEBUG
+        /* In Debug builds free gather ciphertext buffer after each decryption
+         * for advanced ASAN coverage/utilization. The buffer content has been
+         * used at this point, ssl3_HandleRecord() and thereby the decryption
+         * functions are only called from this point of the implementation. */
+        sslBuffer_Clear(&ss->gs.inbuf);
+#endif
+
         if (rv < 0) {
             return ss->recvdCloseNotify ? 0 : rv;
         }

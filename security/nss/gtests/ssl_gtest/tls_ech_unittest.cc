@@ -1968,10 +1968,12 @@ TEST_F(TlsConnectStreamTls13, EchRejectUnknownCriticalExtension) {
   len_buf.Write(0, tmp + non_crit_exts.len() - 2, 2);
   echconfig.Splice(len_buf, 4, 2);
 
+  /* Expect that retry configs containing unsupported mandatory extensions can
+   * not be set and lead to SEC_ERROR_INVALID_ARGS. */
   EXPECT_EQ(SECFailure,
             SSL_SetClientEchConfigs(client_->ssl_fd(), crit_rec.data(),
                                     crit_rec.len()));
-  EXPECT_EQ(SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION, PORT_GetError());
+  EXPECT_EQ(SEC_ERROR_INVALID_ARGS, PORT_GetError());
   EXPECT_EQ(SECSuccess, SSL_EnableTls13GreaseEch(client_->ssl_fd(),
                                                  PR_FALSE));  // Don't GREASE
   auto filter = MakeTlsFilter<TlsExtensionCapture>(
@@ -2340,7 +2342,9 @@ TEST_F(TlsConnectStreamTls13, EchBadCiphersuite) {
   ConnectExpectFail();
 }
 
-// Connect to a 1.2 server, it should ignore ECH.
+/* ECH (configured) client connects to a 1.2 server, this MUST lead to an
+ * 'ech_required' alert being sent by the client when handling the handshake
+ * finished messages [draft-ietf-tls-esni-14, Section 6.1.6]. */
 TEST_F(TlsConnectStreamTls13, EchToTls12Server) {
   EnsureTlsSetup();
   SetupEch(client_, server_);
@@ -2351,7 +2355,14 @@ TEST_F(TlsConnectStreamTls13, EchToTls12Server) {
 
   client_->ExpectEch(false);
   server_->ExpectEch(false);
-  Connect();
+
+  client_->ExpectSendAlert(kTlsAlertEchRequired, kTlsAlertFatal);
+  server_->ExpectReceiveAlert(kTlsAlertEchRequired, kTlsAlertFatal);
+  ConnectExpectFailOneSide(TlsAgent::CLIENT);
+  client_->CheckErrorCode(SSL_ERROR_ECH_RETRY_WITHOUT_ECH);
+
+  /* Reset expectations for the TlsAgent deconstructor. */
+  server_->ExpectReceiveAlert(kTlsAlertCloseNotify, kTlsAlertWarning);
 }
 
 TEST_F(TlsConnectStreamTls13, NoEchFromTls12Client) {
@@ -2871,6 +2882,28 @@ TEST_F(TlsConnectStreamTls13Ech, EchPublicNameNotLdh) {
       u8"\u2077",
   };
   ValidatePublicNames(kNotLdh, SECFailure);
+}
+
+TEST_F(TlsConnectStreamTls13, EchClientHelloExtensionPermutation) {
+  EnsureTlsSetup();
+  PR_ASSERT(SSL_OptionSet(client_->ssl_fd(),
+                          SSL_ENABLE_CH_EXTENSION_PERMUTATION,
+                          PR_TRUE) == SECSuccess);
+  SetupEch(client_, server_);
+
+  client_->ExpectEch();
+  server_->ExpectEch();
+  Connect();
+}
+
+TEST_F(TlsConnectStreamTls13, EchGreaseClientHelloExtensionPermutation) {
+  EnsureTlsSetup();
+  PR_ASSERT(SSL_OptionSet(client_->ssl_fd(),
+                          SSL_ENABLE_CH_EXTENSION_PERMUTATION,
+                          PR_TRUE) == SECSuccess);
+  PR_ASSERT(SSL_EnableTls13GreaseEch(client_->ssl_fd(), PR_FALSE) ==
+            SECSuccess);
+  Connect();
 }
 
 INSTANTIATE_TEST_SUITE_P(EchAgentTest, TlsAgentEchTest,
