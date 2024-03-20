@@ -9,9 +9,8 @@
 
 #include "mpi-priv.h"
 #include "mplogic.h"
-#if defined(OSF1)
-#include <c_asm.h>
-#endif
+
+#include <assert.h>
 
 #if defined(__arm__) && \
     ((defined(__thumb__) && !defined(__thumb2__)) || defined(__ARM_ARCH_3__))
@@ -805,15 +804,18 @@ CLEANUP:
 
 /* }}} */
 
-/* {{{ mp_mul(a, b, c) */
+/* {{{ s_mp_mulg(a, b, c) */
 
 /*
-  mp_mul(a, b, c)
+  s_mp_mulg(a, b, c)
 
-  Compute c = a * b.  All parameters may be identical.
+  Compute c = a * b.  All parameters may be identical. if constantTime is set,
+  then the operations are done in constant time. The original is mostly
+  constant time as long as s_mpv_mul_d_add() is constant time. This is true
+  of the x86 assembler, as well as the current c code.
  */
 mp_err
-mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
+s_mp_mulg(const mp_int *a, const mp_int *b, mp_int *c, int constantTime)
 {
     mp_digit *pb;
     mp_int tmp;
@@ -849,7 +851,14 @@ mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
         goto CLEANUP;
 
 #ifdef NSS_USE_COMBA
-    if ((MP_USED(a) == MP_USED(b)) && IS_POWER_OF_2(MP_USED(b))) {
+    /* comba isn't constant time because it clamps! If we cared
+     * (we needed a constant time version of multiply that was 'faster'
+     * we could easily pass constantTime down to the comba code and
+     * get it to skip the clamp... but here are assembler versions
+     * which add comba to platforms that can't compile the normal
+     * comba's imbedded assembler which would also need to change, so
+     * for now we just skip comba when we are running constant time. */
+    if (!constantTime && (MP_USED(a) == MP_USED(b)) && IS_POWER_OF_2(MP_USED(b))) {
         if (MP_USED(a) == 4) {
             s_mp_mul_comba_4(a, b, c);
             goto CLEANUP;
@@ -879,13 +888,15 @@ mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
         mp_digit b_i = *pb++;
 
         /* Inner product:  Digits of a */
-        if (b_i)
+        if (constantTime || b_i)
             s_mpv_mul_d_add(MP_DIGITS(a), useda, b_i, MP_DIGITS(c) + ib);
         else
             MP_DIGIT(c, ib + useda) = b_i;
     }
 
-    s_mp_clamp(c);
+    if (!constantTime) {
+        s_mp_clamp(c);
+    }
 
     if (SIGN(a) == SIGN(b) || s_mp_cmp_d(c, 0) == MP_EQ)
         SIGN(c) = ZPOS;
@@ -895,7 +906,51 @@ mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
 CLEANUP:
     mp_clear(&tmp);
     return res;
+} /* end smp_mulg() */
+
+/* }}} */
+
+/* {{{ mp_mul(a, b, c) */
+
+/*
+  mp_mul(a, b, c)
+
+  Compute c = a * b.  All parameters may be identical.
+ */
+
+mp_err
+mp_mul(const mp_int *a, const mp_int *b, mp_int *c)
+{
+    return s_mp_mulg(a, b, c, 0);
 } /* end mp_mul() */
+
+/* }}} */
+
+/* {{{ mp_mulCT(a, b, c) */
+
+/*
+  mp_mulCT(a, b, c)
+
+  Compute c = a * b. In constant time. Parameters may not be identical.
+  NOTE: a and b may be modified.
+ */
+
+mp_err
+mp_mulCT(mp_int *a, mp_int *b, mp_int *c, mp_size setSize)
+{
+    mp_err res;
+
+    /* make the multiply values fixed length so multiply
+     * doesn't leak the length. at this point all the
+     * values are blinded, but once we finish we want the
+     * output size to be hidden (so no clamping the out put) */
+    MP_CHECKOK(s_mp_pad(a, setSize));
+    MP_CHECKOK(s_mp_pad(b, setSize));
+    MP_CHECKOK(s_mp_pad(c, 2 * setSize));
+    MP_CHECKOK(s_mp_mulg(a, b, c, 1));
+CLEANUP:
+    return res;
+} /* end mp_mulCT() */
 
 /* }}} */
 
@@ -1271,6 +1326,138 @@ mp_mod(const mp_int *a, const mp_int *m, mp_int *c)
 
 /* }}} */
 
+/* {{{ s_mp_subCT_d(a, b, borrow, c) */
+
+/*
+  s_mp_subCT_d(a, b, borrow, c)
+
+  Compute c = (a -b) - subtract in constant time. returns borrow
+ */
+mp_digit
+s_mp_subCT_d(mp_digit a, mp_digit b, mp_digit borrow, mp_digit *ret)
+{
+    *ret = a - b - borrow;
+    return MP_CT_LTU(a, *ret) | (MP_CT_EQ(a, *ret) & borrow);
+} /*  s_mp_subCT_d() */
+
+/* }}} */
+
+/* {{{ mp_subCT(a, b, ret, borrow) */
+
+/* return ret= a - b and borrow in borrow. done in constant time.
+ * b could be modified.
+ */
+mp_err
+mp_subCT(const mp_int *a, mp_int *b, mp_int *ret, mp_digit *borrow)
+{
+    mp_size used_a = MP_USED(a);
+    mp_size i;
+    mp_err res;
+
+    MP_CHECKOK(s_mp_pad(b, used_a));
+    MP_CHECKOK(s_mp_pad(ret, used_a));
+    *borrow = 0;
+    for (i = 0; i < used_a; i++) {
+        *borrow = s_mp_subCT_d(MP_DIGIT(a, i), MP_DIGIT(b, i), *borrow,
+                               &MP_DIGIT(ret, i));
+    }
+
+    res = MP_OKAY;
+CLEANUP:
+    return res;
+} /*  end mp_subCT() */
+
+/* }}} */
+
+/* {{{ mp_selectCT(cond, a, b, ret) */
+
+/*
+ * return ret= cond ? a : b; cond should be either 0 or 1
+ */
+mp_err
+mp_selectCT(mp_digit cond, const mp_int *a, const mp_int *b, mp_int *ret)
+{
+    mp_size used_a = MP_USED(a);
+    mp_err res;
+    mp_size i;
+
+    cond *= MP_DIGIT_MAX;
+
+    /* we currently require these to be equal on input,
+     * we could use pad to extend one of them, but that might
+     * leak data as it wouldn't be constant time */
+    if (used_a != MP_USED(b)) {
+        return MP_BADARG;
+    }
+
+    MP_CHECKOK(s_mp_pad(ret, used_a));
+    for (i = 0; i < used_a; i++) {
+        MP_DIGIT(ret, i) = MP_CT_SEL_DIGIT(cond, MP_DIGIT(a, i), MP_DIGIT(b, i));
+    }
+    res = MP_OKAY;
+CLEANUP:
+    return res;
+} /* end mp_selectCT() */
+
+/* {{{ mp_reduceCT(a, m, c) */
+
+/*
+  mp_reduceCT(a, m, c)
+
+  Compute c = aR^-1 (mod m) in constant time.
+   input should be in montgomery form. If input is the
+   result of a montgomery multiply then out put will be
+   in mongomery form.
+   Result will be reduced to MP_USED(m), but not be
+   clamped.
+ */
+
+mp_err
+mp_reduceCT(const mp_int *a, const mp_int *m, mp_digit n0i, mp_int *c)
+{
+    mp_size used_m = MP_USED(m);
+    mp_size used_c = used_m * 2 + 1;
+    mp_digit *m_digits, *c_digits;
+    mp_size i;
+    mp_digit borrow, carry;
+    mp_err res;
+    mp_int sub;
+
+    MP_DIGITS(&sub) = 0;
+    MP_CHECKOK(mp_init_size(&sub, used_m));
+
+    if (a != c) {
+        MP_CHECKOK(mp_copy(a, c));
+    }
+    MP_CHECKOK(s_mp_pad(c, used_c));
+    m_digits = MP_DIGITS(m);
+    c_digits = MP_DIGITS(c);
+    for (i = 0; i < used_m; i++) {
+        mp_digit m_i = MP_DIGIT(c, i) * n0i;
+        s_mpv_mul_d_add_propCT(m_digits, used_m, m_i, c_digits++, used_c--);
+    }
+    s_mp_rshd(c, used_m);
+    /* MP_USED(c) should be used_m+1 with the high word being any carry
+     * from the previous multiply, save that carry and drop the high
+     * word for the substraction below */
+    carry = MP_DIGIT(c, used_m);
+    MP_DIGIT(c, used_m) = 0;
+    MP_USED(c) = used_m;
+    /* mp_subCT wants c and m to be the same size, we've already
+     * guarrenteed that in the previous statement, so mp_subCT won't actually
+     * modify m, so it's safe to recast */
+    MP_CHECKOK(mp_subCT(c, (mp_int *)m, &sub, &borrow));
+
+    /* we return c-m if c >= m no borrow or there was a borrow and a carry */
+    MP_CHECKOK(mp_selectCT(borrow ^ carry, c, &sub, c));
+    res = MP_OKAY;
+CLEANUP:
+    mp_clear(&sub);
+    return res;
+} /* end mp_reduceCT() */
+
+/* }}} */
+
 /* {{{ mp_mod_d(a, d, c) */
 
 /*
@@ -1380,6 +1567,37 @@ mp_mulmod(const mp_int *a, const mp_int *b, const mp_int *m, mp_int *c)
     if ((res = mp_mul(a, b, c)) != MP_OKAY)
         return res;
     if ((res = mp_mod(c, m, c)) != MP_OKAY)
+        return res;
+
+    return MP_OKAY;
+}
+
+/* }}} */
+
+/* {{{ mp_mulmontmodCT(a, b, m, c) */
+
+/*
+  mp_mulmontmodCT(a, b, m, c)
+
+  Compute c = (a * b) mod m in constant time wrt a and b. either a or b
+  should be in montgomery form and the output is native. If both a and b
+  are in montgomery form, then the output will also be in montgomery form
+  and can be recovered with an mp_reduceCT call.
+  NOTE: a and b may be modified.
+ */
+
+mp_err
+mp_mulmontmodCT(mp_int *a, mp_int *b, const mp_int *m, mp_digit n0i,
+                mp_int *c)
+{
+    mp_err res;
+
+    ARGCHK(a != NULL && b != NULL && m != NULL && c != NULL, MP_BADARG);
+
+    if ((res = mp_mulCT(a, b, c, MP_USED(m))) != MP_OKAY)
+        return res;
+
+    if ((res = mp_reduceCT(c, m, n0i, c)) != MP_OKAY)
         return res;
 
     return MP_OKAY;
@@ -2523,12 +2741,6 @@ mp_read_raw(mp_int *mp, char *str, int len)
 
     mp_zero(mp);
 
-    /* Get sign from first byte */
-    if (ustr[0])
-        SIGN(mp) = NEG;
-    else
-        SIGN(mp) = ZPOS;
-
     /* Read the rest of the digits */
     for (ix = 1; ix < len; ix++) {
         if ((res = mp_mul_d(mp, 256, mp)) != MP_OKAY)
@@ -2536,6 +2748,12 @@ mp_read_raw(mp_int *mp, char *str, int len)
         if ((res = mp_add_d(mp, ustr[ix], mp)) != MP_OKAY)
             return res;
     }
+
+    /* Get sign from first byte */
+    if (ustr[0])
+        SIGN(mp) = NEG;
+    else
+        SIGN(mp) = ZPOS;
 
     return MP_OKAY;
 
@@ -3248,7 +3466,8 @@ CLEANUP:
 /* {{{ s_mp_add_d(mp, d) */
 
 /* Add d to |mp| in place                                                 */
-mp_err s_mp_add_d(mp_int *mp, mp_digit d) /* unsigned digit addition */
+mp_err
+s_mp_add_d(mp_int *mp, mp_digit d) /* unsigned digit addition */
 {
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_ADD_WORD)
     mp_word w, k = 0;
@@ -3305,7 +3524,8 @@ CLEANUP:
 /* {{{ s_mp_sub_d(mp, d) */
 
 /* Subtract d from |mp| in place, assumes |mp| > d                        */
-mp_err s_mp_sub_d(mp_int *mp, mp_digit d) /* unsigned digit subtract */
+mp_err
+s_mp_sub_d(mp_int *mp, mp_digit d) /* unsigned digit subtract */
 {
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_SUB_WORD)
     mp_word w, b = 0;
@@ -3512,7 +3732,8 @@ CLEANUP:
 /* {{{ s_mp_add(a, b) */
 
 /* Compute a = |a| + |b|                                                  */
-mp_err s_mp_add(mp_int *a, const mp_int *b) /* magnitude addition      */
+mp_err
+s_mp_add(mp_int *a, const mp_int *b) /* magnitude addition      */
 {
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_ADD_WORD)
     mp_word w = 0;
@@ -3775,7 +3996,8 @@ s_mp_add_offset(mp_int *a, mp_int *b, mp_size offset)
 /* {{{ s_mp_sub(a, b) */
 
 /* Compute a = |a| - |b|, assumes |a| >= |b|                              */
-mp_err s_mp_sub(mp_int *a, const mp_int *b) /* magnitude subtract      */
+mp_err
+s_mp_sub(mp_int *a, const mp_int *b) /* magnitude subtract      */
 {
     mp_digit *pa, *pb, *limit;
 #if !defined(MP_NO_MP_WORD) && !defined(MP_NO_SUB_WORD)
@@ -3930,12 +4152,6 @@ s_mp_mul(mp_int *a, const mp_int *b)
         Plo = (mp_digit)product;                                \
         Phi = (mp_digit)(product >> MP_DIGIT_BIT);              \
     }
-#elif defined(OSF1)
-#define MP_MUL_DxD(a, b, Phi, Plo)              \
-    {                                           \
-        Plo = asm("mulq %a0, %a1, %v0", a, b);  \
-        Phi = asm("umulh %a0, %a1, %v0", a, b); \
-    }
 #else
 #define MP_MUL_DxD(a, b, Phi, Plo)                                 \
     {                                                              \
@@ -3946,14 +4162,62 @@ s_mp_mul(mp_int *a, const mp_int *b)
         a1b0 = (a >> MP_HALF_DIGIT_BIT) * (b & MP_HALF_DIGIT_MAX); \
         a1b0 += a0b1;                                              \
         Phi += a1b0 >> MP_HALF_DIGIT_BIT;                          \
-        if (a1b0 < a0b1)                                           \
-            Phi += MP_HALF_RADIX;                                  \
+        Phi += (MP_CT_LTU(a1b0, a0b1)) << MP_HALF_DIGIT_BIT;       \
         a1b0 <<= MP_HALF_DIGIT_BIT;                                \
         Plo += a1b0;                                               \
-        if (Plo < a1b0)                                            \
-            ++Phi;                                                 \
+        Phi += MP_CT_LTU(Plo, a1b0);                               \
     }
 #endif
+
+/* Constant time version of s_mpv_mul_d_add_prop.
+ * Presently, this is only used by the Constant time Montgomery arithmetic code. */
+/* c += a * b */
+void
+s_mpv_mul_d_add_propCT(const mp_digit *a, mp_size a_len, mp_digit b,
+                       mp_digit *c, mp_size c_len)
+{
+#if !defined(MP_NO_MP_WORD) && !defined(MP_NO_MUL_WORD)
+    mp_digit d = 0;
+
+    c_len -= a_len;
+    /* Inner product:  Digits of a */
+    while (a_len--) {
+        mp_word w = ((mp_word)b * *a++) + *c + d;
+        *c++ = ACCUM(w);
+        d = CARRYOUT(w);
+    }
+
+    /* propagate the carry to the end, even if carry is zero */
+    while (c_len--) {
+        mp_word w = (mp_word)*c + d;
+        *c++ = ACCUM(w);
+        d = CARRYOUT(w);
+    }
+#else
+    mp_digit carry = 0;
+    c_len -= a_len;
+    while (a_len--) {
+        mp_digit a_i = *a++;
+        mp_digit a0b0, a1b1;
+        MP_MUL_DxD(a_i, b, a1b1, a0b0);
+
+        a0b0 += carry;
+        a1b1 += MP_CT_LTU(a0b0, carry);
+        a0b0 += a_i = *c;
+        a1b1 += MP_CT_LTU(a0b0, a_i);
+
+        *c++ = a0b0;
+        carry = a1b1;
+    }
+    /* propagate the carry to the end, even if carry is zero */
+    while (c_len--) {
+        mp_digit c_i = *c;
+        carry += c_i;
+        *c++ = carry;
+        carry = MP_CT_LTU(carry, c_i);
+    }
+#endif
+}
 
 #if !defined(MP_ASSEMBLY_MULTIPLY)
 /* c = a * b */
@@ -3979,8 +4243,7 @@ s_mpv_mul_d(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
         MP_MUL_DxD(a_i, b, a1b1, a0b0);
 
         a0b0 += carry;
-        if (a0b0 < carry)
-            ++a1b1;
+        a1b1 += MP_CT_LTU(a0b0, carry);
         *c++ = a0b0;
         carry = a1b1;
     }
@@ -4012,11 +4275,9 @@ s_mpv_mul_d_add(const mp_digit *a, mp_size a_len, mp_digit b,
         MP_MUL_DxD(a_i, b, a1b1, a0b0);
 
         a0b0 += carry;
-        if (a0b0 < carry)
-            ++a1b1;
+        a1b1 += MP_CT_LTU(a0b0, carry);
         a0b0 += a_i = *c;
-        if (a0b0 < a_i)
-            ++a1b1;
+        a1b1 += MP_CT_LTU(a0b0, a_i);
         *c++ = a0b0;
         carry = a1b1;
     }
@@ -4080,12 +4341,6 @@ s_mpv_mul_d_add_prop(const mp_digit *a, mp_size a_len, mp_digit b, mp_digit *c)
         unsigned long long square = (unsigned long long)a * a; \
         Plo = (mp_digit)square;                                \
         Phi = (mp_digit)(square >> MP_DIGIT_BIT);              \
-    }
-#elif defined(OSF1)
-#define MP_SQR_D(a, Phi, Plo)                \
-    {                                        \
-        Plo = asm("mulq  %a0, %a0, %v0", a); \
-        Phi = asm("umulh %a0, %a0, %v0", a); \
     }
 #else
 #define MP_SQR_D(a, Phi, Plo)                                      \
@@ -4253,9 +4508,10 @@ s_mp_sqr(mp_int *a)
   Compute a = a / b and b = a mod b.  Assumes b > a.
  */
 
-mp_err s_mp_div(mp_int *rem,  /* i: dividend, o: remainder */
-                mp_int *div,  /* i: divisor                */
-                mp_int *quot) /* i: 0;        o: quotient  */
+mp_err
+s_mp_div(mp_int *rem,  /* i: dividend, o: remainder */
+         mp_int *div,  /* i: divisor                */
+         mp_int *quot) /* i: 0;        o: quotient  */
 {
     mp_int part, t;
     mp_digit q_msd;

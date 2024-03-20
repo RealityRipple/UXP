@@ -30,8 +30,6 @@ JSS 4.4.0 Release Notes
 `New in JSS 4.40 <#new_in_jss_4.40>`__
 --------------------------------------
 
-.. container::
-
 .. _new_functionality:
 
 `New Functionality <#new_functionality>`__
@@ -81,7 +79,7 @@ JSS 4.4.0 Release Notes
 
 .. container::
 
-   -  You can check out the source from mercurial via hg clone -r  055aa3ce8a61
+   -  You can check out the source from mercurial via hg clone -r  055aa3ce8a61
       https://hg.mozilla.org/projects/jss
 
    -  JSS 4.4.0 works with OpenJDK versions 1.7 or higher we suggest the latest - OpenJDK 1.8.
