@@ -179,10 +179,12 @@ if test "$GNU_CC"; then
     CFLAGS="$CFLAGS -fno-math-errno -pipe"
     CXXFLAGS="$CXXFLAGS -fno-exceptions -fno-math-errno -pipe"
 
-    if test "$CPU_ARCH" = "x86" -o "$CPU_ARCH" = "x86_64"; then
-      CFLAGS="$CFLAGS -msse2 -mfpmath=sse"
-      CXXFLAGS="$CXXFLAGS -msse2 -mfpmath=sse"
-    fi
+    case "${host_cpu}" in
+      i*86)
+        CFLAGS="$CFLAGS -msse2 -mfpmath=sse"
+        CXXFLAGS="$CXXFLAGS -msse2 -mfpmath=sse"
+        ;;
+    esac
 
     if test -z "$CLANG_CC"; then
         case "$CC_VERSION" in
@@ -190,9 +192,9 @@ if test "$GNU_CC"; then
             AC_MSG_ERROR([Unsupported GCC version.])
             ;;
         *)
-            # Lifetime Dead Store Elimination level 2 (default in GCC6+) breaks Gecko.
-            # Instead of completely disabling this optimization on newer GCC's,
-            # we'll force them to use level 1 optimization with -flifetime-dse=1.
+            # Lifetime Dead Store Elimination level 2 (default in GCC) breaks Goanna.
+            # Instead of completely disabling this optimization, we force level 1
+            # optimization instead with -flifetime-dse=1.
             # Add it first so that a mozconfig can override by setting CFLAGS/CXXFLAGS.
             CFLAGS="-flifetime-dse=1 $CFLAGS"
             CXXFLAGS="-flifetime-dse=1 $CXXFLAGS"
