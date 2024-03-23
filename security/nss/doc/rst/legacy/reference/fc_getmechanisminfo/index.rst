@@ -15,7 +15,7 @@ FC_GetMechanismInfo
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_GetMechanismInfo(
         CK_SLOT_ID slotID,

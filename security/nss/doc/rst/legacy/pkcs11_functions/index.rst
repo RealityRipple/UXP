@@ -37,7 +37,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax
 
-   .. code::
+   .. code:: notranslate
 
        #include "secmod.h"
 
@@ -84,7 +84,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_2
 
-   .. code::
+   .. code:: notranslate
 
        #include "secmod.h"
 
@@ -121,7 +121,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_3
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
 
@@ -151,7 +151,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_4
 
-   .. code::
+   .. code:: notranslate
 
        #include "pk11pub.h"
 
@@ -234,7 +234,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_5
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
        #include <certt.h>
@@ -279,7 +279,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_6
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
        #include <certt.h>
@@ -325,7 +325,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_7
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
 
@@ -360,7 +360,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_8
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
 
@@ -395,7 +395,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_9
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
        #include <prtypes.h>
@@ -425,7 +425,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_10
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
        #include <prtypes.h>
@@ -455,7 +455,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_11
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
        #include <prtypes.h>
@@ -486,7 +486,7 @@ NSS PKCS11 Functions
    .. rubric:: Syntax
       :name: syntax_12
 
-   .. code::
+   .. code:: notranslate
 
        #include <pk11pub.h>
        #include <prtypes.h>
@@ -511,7 +511,7 @@ NSS PKCS11 Functions
 
    The callback function set up by PK11_SetPasswordFunc has the following prototype:
 
-   .. code::
+   .. code:: eval
 
       typedef char *(*PK11PasswordFunc)(
         PK11SlotInfo *slot,

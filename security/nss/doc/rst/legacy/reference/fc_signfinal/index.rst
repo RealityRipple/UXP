@@ -15,7 +15,7 @@ FC_SignFinal
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_SignFinal(
         CK_SESSION_HANDLE hSession,

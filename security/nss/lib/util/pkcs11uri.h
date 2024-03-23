@@ -56,24 +56,11 @@ extern char *PK11URI_FormatURI(PLArenaPool *arena, PK11URI *uri);
 /* Destroy a PK11URI object. */
 extern void PK11URI_DestroyURI(PK11URI *uri);
 
-/* Retrieve a path attribute with the given name. This function can be used only
- * when we can assume that the attribute value is a string (such as "label" or
- * "type"). If it can be a binary blob (such as "id"), use
- * PK11URI_GetPathAttributeItem.
- */
+/* Retrieve a path attribute with the given name. */
 extern const char *PK11URI_GetPathAttribute(PK11URI *uri, const char *name);
 
-/* Retrieve a query attribute with the given name. This function can be used
- * only when we can assume that the attribute value is a string (such as
- * "module-name").  If it can be a binary blob, use
- * PK11URI_GetQueryAttributeItem.*/
+/* Retrieve a query attribute with the given name. */
 extern const char *PK11URI_GetQueryAttribute(PK11URI *uri, const char *name);
-
-/* Retrieve a path attribute with the given name as a SECItem. */
-extern const SECItem *PK11URI_GetPathAttributeItem(PK11URI *uri, const char *name);
-
-/* Retrieve a query attribute with the given name as a SECItem. */
-extern const SECItem *PK11URI_GetQueryAttributeItem(PK11URI *uri, const char *name);
 
 SEC_END_PROTOS
 

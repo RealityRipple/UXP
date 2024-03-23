@@ -11,7 +11,7 @@ NSS Sample Code Sample_1_Hashing
 .. container::
 
    This is an example program that demonstrates how to compute the hash of a file and save it to
-   another file.  This program illustrates the use of NSS message APIs.
+   another file.  This program illustrates the use of NSS message APIs.
 
 .. _sample_code_1:
 
@@ -20,7 +20,7 @@ NSS Sample Code Sample_1_Hashing
 
 .. container::
 
-   .. code:: c
+   .. code:: brush:
 
       /* NSPR Headers */
       #include <prprf.h>

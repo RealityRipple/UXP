@@ -15,7 +15,7 @@ FC_InitPIN
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_InitPIN(
         CK_SESSION_HANDLE hSession,

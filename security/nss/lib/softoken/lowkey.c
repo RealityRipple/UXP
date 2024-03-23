@@ -226,18 +226,15 @@ nsslowkey_DestroyPublicKey(NSSLOWKEYPublicKey *pubk)
 unsigned
 nsslowkey_PublicModulusLen(NSSLOWKEYPublicKey *pubk)
 {
+    unsigned char b0;
+
     /* interpret modulus length as key strength... in
      * fortezza that's the public key length */
 
     switch (pubk->keyType) {
         case NSSLOWKEYRSAKey:
-            if (pubk->u.rsa.modulus.len == 0) {
-                return 0;
-            }
-            if (pubk->u.rsa.modulus.data[0] == 0) {
-                return pubk->u.rsa.modulus.len - 1;
-            }
-            return pubk->u.rsa.modulus.len;
+            b0 = pubk->u.rsa.modulus.data[0];
+            return b0 ? pubk->u.rsa.modulus.len : pubk->u.rsa.modulus.len - 1;
         default:
             break;
     }
@@ -247,15 +244,13 @@ nsslowkey_PublicModulusLen(NSSLOWKEYPublicKey *pubk)
 unsigned
 nsslowkey_PrivateModulusLen(NSSLOWKEYPrivateKey *privk)
 {
+
+    unsigned char b0;
+
     switch (privk->keyType) {
         case NSSLOWKEYRSAKey:
-            if (privk->u.rsa.modulus.len == 0) {
-                return 0;
-            }
-            if (privk->u.rsa.modulus.data[0] == 0) {
-                return privk->u.rsa.modulus.len - 1;
-            }
-            return privk->u.rsa.modulus.len;
+            b0 = privk->u.rsa.modulus.data[0];
+            return b0 ? privk->u.rsa.modulus.len : privk->u.rsa.modulus.len - 1;
         default:
             break;
     }

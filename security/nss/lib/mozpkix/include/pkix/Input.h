@@ -304,7 +304,7 @@ inline bool InputContains(const Input& input, uint8_t toFind) {
     }
   }
 }
-}  // namespace pkix
-}  // namespace mozilla
+}
+}  // namespace mozilla::pkix
 
 #endif  // mozilla_pkix_Input_h

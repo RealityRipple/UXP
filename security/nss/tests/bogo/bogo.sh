@@ -12,9 +12,6 @@
 #
 ########################################################################
 
-# Currently used BorringSSL version
-BOGO_VERSION=48f794765b0df3310649e6a6c6f71c5cd845f445
-
 bogo_init()
 {
   SCRIPTNAME="bogo.sh"
@@ -28,12 +25,11 @@ bogo_init()
   BORING=${BORING:=boringssl}
   if [ ! -d "$BORING" ]; then
     git clone -q https://boringssl.googlesource.com/boringssl "$BORING"
-    git -C "$BORING" checkout -q $BOGO_VERSION
+    git -C "$BORING" checkout -q 7f4f41fa81c03e0f8ef1ab5b3d1d566b5968f107
   fi
 
   SCRIPTNAME="bogo.sh"
-  html_head "bogo test  "
-  html_msg $? 0 "Bogo" "Checking out BoringSSL revision $BOGO_VERSION"
+  html_head "bogo test"
 }
 
 bogo_cleanup()
@@ -48,16 +44,11 @@ cwd=$(pwd -P)
 SOURCE_DIR="$(cd "$cwd"/../..; pwd -P)"
 bogo_init
 (cd "$BORING"/ssl/test/runner;
-git apply ${SOURCE_DIR}/gtests/nss_bogo_shim/nss_loose_local_errors.patch)
-html_msg $? 0 "Bogo" "NSS -loose-local-errors patch application"
-html_head "bogo log   "
-echo ""
-(cd "$BORING"/ssl/test/runner;
-GOPATH="$cwd" go test -pipe -shim-path "${BINDIR}"/nss_bogo_shim \
-	 -loose-errors -loose-local-errors -allow-unimplemented \
-     -shim-config "${SOURCE_DIR}/gtests/nss_bogo_shim/config.json") \
-	 2>bogo.errors | tee bogo.log | grep -v 'UNIMPLEMENTED'
-RES="${PIPESTATUS[0]}"
-html_head "bogo result"
-html_msg $RES 0 "Bogo" "Test Run"
+ GOPATH="$cwd" go test -pipe -shim-path "${BINDIR}"/nss_bogo_shim \
+	 -loose-errors -allow-unimplemented \
+	 -shim-config "${SOURCE_DIR}/gtests/nss_bogo_shim/config.json") \
+	 2>bogo.errors | tee bogo.log
+html_msg "${PIPESTATUS[0]}" 0 "Bogo" "Run successfully"
+grep -i 'FAILED\|Assertion failure' bogo.errors
+html_msg $? 1 "Bogo" "No failures"
 bogo_cleanup

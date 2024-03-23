@@ -15,7 +15,7 @@ NSC_Login
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV NSC_Login(
         CK_SESSION_HANDLE hSession,

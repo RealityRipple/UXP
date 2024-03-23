@@ -47,7 +47,7 @@ static const char *qattr_names[] = {
 
 struct PK11URIBufferStr {
     PLArenaPool *arena;
-    unsigned char *data;
+    char *data;
     size_t size;
     size_t allocated;
 };
@@ -55,7 +55,7 @@ typedef struct PK11URIBufferStr PK11URIBuffer;
 
 struct PK11URIAttributeListEntryStr {
     char *name;
-    SECItem value;
+    char *value;
 };
 typedef struct PK11URIAttributeListEntryStr PK11URIAttributeListEntry;
 
@@ -133,11 +133,11 @@ pk11uri_DestroyBuffer(PK11URIBuffer *buffer)
 
 /* URI encoding functions. */
 static char *
-pk11uri_Escape(PLArenaPool *arena, const unsigned char *value, size_t length,
+pk11uri_Escape(PLArenaPool *arena, const char *value, size_t length,
                const char *available)
 {
     PK11URIBuffer buffer;
-    const unsigned char *p;
+    const char *p;
     unsigned char buf[4];
     char *result = NULL;
     SECStatus ret;
@@ -154,7 +154,7 @@ pk11uri_Escape(PLArenaPool *arena, const unsigned char *value, size_t length,
                 goto fail;
             }
         } else {
-            ret = pk11uri_AppendBuffer(&buffer, p, 1);
+            ret = pk11uri_AppendBuffer(&buffer, (const unsigned char *)p, 1);
             if (ret != SECSuccess) {
                 goto fail;
             }
@@ -167,7 +167,7 @@ pk11uri_Escape(PLArenaPool *arena, const unsigned char *value, size_t length,
     }
 
     /* Steal the memory allocated in buffer. */
-    result = (char *)buffer.data;
+    result = buffer.data;
     buffer.data = NULL;
 
 fail:
@@ -176,18 +176,18 @@ fail:
     return result;
 }
 
-static unsigned char *
-pk11uri_Unescape(PLArenaPool *arena, const char *value, size_t *length)
+static char *
+pk11uri_Unescape(PLArenaPool *arena, const char *value, size_t length)
 {
     PK11URIBuffer buffer;
     const char *p;
     unsigned char buf[1];
-    unsigned char *result = NULL;
+    char *result = NULL;
     SECStatus ret;
 
     pk11uri_InitBuffer(&buffer, arena);
 
-    for (p = value; p < value + *length; p++) {
+    for (p = value; p < value + length; p++) {
         if (*p == '%') {
             int c;
             size_t i;
@@ -218,7 +218,6 @@ pk11uri_Unescape(PLArenaPool *arena, const char *value, size_t *length)
             goto fail;
         }
     }
-    *length = buffer.size;
     buf[0] = '\0';
     ret = pk11uri_AppendBuffer(&buffer, buf, 1);
     if (ret != SECSuccess) {
@@ -278,7 +277,7 @@ pk11uri_CompareQueryAttributeName(const char *a, const char *b)
 
 static SECStatus
 pk11uri_InsertToAttributeList(PK11URIAttributeList *attrs,
-                              char *name, unsigned char *value, size_t size,
+                              char *name, char *value,
                               PK11URIAttributeCompareNameFunc compare_name,
                               PRBool allow_duplicate)
 {
@@ -310,9 +309,7 @@ pk11uri_InsertToAttributeList(PK11URIAttributeList *attrs,
     }
 
     attrs->attrs[i].name = name;
-    attrs->attrs[i].value.type = siBuffer;
-    attrs->attrs[i].value.data = value;
-    attrs->attrs[i].value.len = size;
+    attrs->attrs[i].value = value;
 
     attrs->num_attrs++;
 
@@ -326,8 +323,7 @@ pk11uri_InsertToAttributeListEscaped(PK11URIAttributeList *attrs,
                                      PK11URIAttributeCompareNameFunc compare_name,
                                      PRBool allow_duplicate)
 {
-    char *name_copy = NULL;
-    unsigned char *value_copy = NULL;
+    char *name_copy = NULL, *value_copy = NULL;
     SECStatus ret;
 
     if (attrs->arena) {
@@ -341,13 +337,13 @@ pk11uri_InsertToAttributeListEscaped(PK11URIAttributeList *attrs,
     memcpy(name_copy, name, name_size);
     name_copy[name_size] = '\0';
 
-    value_copy = pk11uri_Unescape(attrs->arena, value, &value_size);
+    value_copy = pk11uri_Unescape(attrs->arena, value, value_size);
     if (value_copy == NULL) {
         goto fail;
     }
 
-    ret = pk11uri_InsertToAttributeList(attrs, name_copy, value_copy, value_size,
-                                        compare_name, allow_duplicate);
+    ret = pk11uri_InsertToAttributeList(attrs, name_copy, value_copy, compare_name,
+                                        allow_duplicate);
     if (ret != SECSuccess) {
         goto fail;
     }
@@ -378,7 +374,7 @@ pk11uri_DestroyAttributeList(PK11URIAttributeList *attrs)
 
         for (i = 0; i < attrs->num_attrs; i++) {
             PORT_Free(attrs->attrs[i].name);
-            PORT_Free(attrs->attrs[i].value.data);
+            PORT_Free(attrs->attrs[i].value);
         }
         PORT_Free(attrs->attrs);
     }
@@ -418,7 +414,7 @@ pk11uri_AppendAttributeListToBuffer(PK11URIBuffer *buffer,
             return ret;
         }
 
-        escaped = pk11uri_Escape(buffer->arena, attr->value.data, attr->value.len,
+        escaped = pk11uri_Escape(buffer->arena, attr->value, strlen(attr->value),
                                  unescaped);
         if (escaped == NULL) {
             return ret;
@@ -514,9 +510,7 @@ pk11uri_InsertAttributes(PK11URIAttributeList *dest_attrs,
         if (j < num_attr_names) {
             /* Named attribute. */
             ret = pk11uri_InsertToAttributeList(dest_attrs,
-                                                name,
-                                                (unsigned char *)value,
-                                                strlen(value),
+                                                name, value,
                                                 compare_name,
                                                 allow_duplicate);
             if (ret != SECSuccess) {
@@ -525,9 +519,7 @@ pk11uri_InsertAttributes(PK11URIAttributeList *dest_attrs,
         } else {
             /* Vendor attribute. */
             ret = pk11uri_InsertToAttributeList(dest_vattrs,
-                                                name,
-                                                (unsigned char *)value,
-                                                strlen(value),
+                                                name, value,
                                                 strcmp,
                                                 vendor_allow_duplicate);
             if (ret != SECSuccess) {
@@ -785,7 +777,7 @@ PK11URI_FormatURI(PLArenaPool *arena, PK11URI *uri)
         goto fail;
     }
 
-    result = (char *)buffer.data;
+    result = buffer.data;
     buffer.data = NULL;
 
 fail:
@@ -806,7 +798,7 @@ PK11URI_DestroyURI(PK11URI *uri)
 }
 
 /* Accessors. */
-static const SECItem *
+static const char *
 pk11uri_GetAttribute(PK11URIAttributeList *attrs,
                      PK11URIAttributeList *vattrs,
                      const char *name)
@@ -815,53 +807,27 @@ pk11uri_GetAttribute(PK11URIAttributeList *attrs,
 
     for (i = 0; i < attrs->num_attrs; i++) {
         if (strcmp(name, attrs->attrs[i].name) == 0) {
-            return &attrs->attrs[i].value;
+            return attrs->attrs[i].value;
         }
     }
 
     for (i = 0; i < vattrs->num_attrs; i++) {
         if (strcmp(name, vattrs->attrs[i].name) == 0) {
-            return &vattrs->attrs[i].value;
+            return vattrs->attrs[i].value;
         }
     }
 
     return NULL;
 }
 
-const SECItem *
-PK11URI_GetPathAttributeItem(PK11URI *uri, const char *name)
+const char *
+PK11URI_GetPathAttribute(PK11URI *uri, const char *name)
 {
     return pk11uri_GetAttribute(&uri->pattrs, &uri->vpattrs, name);
 }
 
 const char *
-PK11URI_GetPathAttribute(PK11URI *uri, const char *name)
-{
-    const SECItem *value;
-
-    value = PK11URI_GetPathAttributeItem(uri, name);
-    if (!value) {
-        return NULL;
-    }
-
-    return (const char *)value->data;
-}
-
-const SECItem *
-PK11URI_GetQueryAttributeItem(PK11URI *uri, const char *name)
-{
-    return pk11uri_GetAttribute(&uri->qattrs, &uri->vqattrs, name);
-}
-
-const char *
 PK11URI_GetQueryAttribute(PK11URI *uri, const char *name)
 {
-    const SECItem *value;
-
-    value = PK11URI_GetQueryAttributeItem(uri, name);
-    if (!value) {
-        return NULL;
-    }
-
-    return (const char *)value->data;
+    return pk11uri_GetAttribute(&uri->qattrs, &uri->vqattrs, name);
 }

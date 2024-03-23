@@ -15,7 +15,7 @@ FC_SignUpdate
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_SignUpdate(
         CK_SESSION_HANDLE hSession,

@@ -13,6 +13,9 @@
 
 #ifdef XP_UNIX
 #include <termios.h>
+#endif
+
+#if defined(XP_UNIX) || defined(XP_BEOS)
 #include <unistd.h> /* for isatty() */
 #endif
 
@@ -25,29 +28,31 @@ static char *quiet_fgets(char *buf, int length, FILE *input);
 #define QUIET_FGETS fgets
 #endif
 
-#if !defined(_WINDOWS)
 static void
 echoOff(int fd)
 {
+#if defined(XP_UNIX)
     if (isatty(fd)) {
         struct termios tio;
         tcgetattr(fd, &tio);
         tio.c_lflag &= ~ECHO;
         tcsetattr(fd, TCSAFLUSH, &tio);
     }
+#endif
 }
 
 static void
 echoOn(int fd)
 {
+#if defined(XP_UNIX)
     if (isatty(fd)) {
         struct termios tio;
         tcgetattr(fd, &tio);
         tio.c_lflag |= ECHO;
         tcsetattr(fd, TCSAFLUSH, &tio);
     }
-}
 #endif
+}
 
 char *
 SEC_GetPassword(FILE *input, FILE *output, char *prompt,

@@ -679,8 +679,9 @@ SECU_SECItemToHex(const SECItem *item, char *dst)
         unsigned char *src = item->data;
         unsigned int len = item->len;
         for (; len > 0; --len, dst += 2) {
-            snprintf(dst, 3, "%02x", *src++);
+            sprintf(dst, "%02x", *src++);
         }
+        *dst = '\0';
     }
 }
 

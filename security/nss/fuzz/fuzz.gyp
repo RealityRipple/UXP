@@ -50,11 +50,17 @@
       ],
       'conditions': [
         ['fuzz_oss==0', {
-          'all_dependent_settings': {
-            'libraries': [
-              '-fsanitize=fuzzer',
-             ],
-          }
+          'sources': [
+            '<!@(ls <(DEPTH)/fuzz/libFuzzer/*.cpp)',
+          ],
+          'cflags/': [
+            ['exclude', '-fsanitize-coverage'],
+          ],
+          'xcode_settings': {
+            'OTHER_CFLAGS/': [
+              ['exclude', '-fsanitize-coverage'],
+            ],
+          },
         }, {
           'all_dependent_settings': {
             'libraries': ['-lFuzzingEngine'],

@@ -4,13 +4,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <algorithm>
-#include <cstdint>
+#include <stdint.h>
 #include <memory>
 #include "cryptohi.h"
 #include "cpputil.h"
 #include "databuffer.h"
-#include "json_reader.h"
 #include "gtest/gtest.h"
 #include "nss.h"
 #include "nss_scoped_ptrs.h"
@@ -18,6 +16,15 @@
 #include "secerr.h"
 #include "sechash.h"
 #include "pk11_signature_test.h"
+
+#include "testvectors/rsa_signature_2048_sha224-vectors.h"
+#include "testvectors/rsa_signature_2048_sha256-vectors.h"
+#include "testvectors/rsa_signature_2048_sha512-vectors.h"
+#include "testvectors/rsa_signature_3072_sha256-vectors.h"
+#include "testvectors/rsa_signature_3072_sha384-vectors.h"
+#include "testvectors/rsa_signature_3072_sha512-vectors.h"
+#include "testvectors/rsa_signature_4096_sha384-vectors.h"
+#include "testvectors/rsa_signature_4096_sha512-vectors.h"
 #include "testvectors/rsa_signature-vectors.h"
 
 namespace nss_test {
@@ -45,7 +52,7 @@ class Pkcs11RsaBaseTest : public Pk11SignatureTest {
   Pkcs11RsaBaseTest(SECOidTag hashOid)
       : Pk11SignatureTest(CKM_RSA_PKCS, hashOid, RsaHashToComboMech(hashOid)) {}
 
-  void Verify(const RsaSignatureTestVector& vec) {
+  void Verify(const RsaSignatureTestVector vec) {
     Pkcs11SignatureTestParams params = {
         DataBuffer(), DataBuffer(vec.public_key.data(), vec.public_key.size()),
         DataBuffer(vec.msg.data(), vec.msg.size()),
@@ -54,107 +61,40 @@ class Pkcs11RsaBaseTest : public Pk11SignatureTest {
   }
 };
 
-class Pkcs11RsaPkcs1WycheproofTest : public ::testing::Test {
+class Pkcs11RsaPkcs1WycheproofTest
+    : public Pkcs11RsaBaseTest,
+      public ::testing::WithParamInterface<RsaSignatureTestVector> {
+ public:
+  Pkcs11RsaPkcs1WycheproofTest() : Pkcs11RsaBaseTest(GetParam().hash_oid) {}
+
  protected:
-  static void ReadTestAttr(RsaSignatureTestVector& t, const std::string& n,
-                           JsonReader& r) {
-    if (n == "msg") {
-      t.msg = r.ReadHex();
-    } else if (n == "sig") {
-      t.sig = r.ReadHex();
-    } else {
-      FAIL() << "unknown test key: " << n;
-    }
-  }
+  void Verify1(const RsaSignatureTestVector vec) {
+    SECItem spki_item = {siBuffer, toUcharPtr(vec.public_key.data()),
+                         static_cast<unsigned int>(vec.public_key.size())};
 
-  void RunGroup(JsonReader& r) {
-    std::vector<RsaSignatureTestVector> tests;
-    std::vector<uint8_t> public_key;
-    SECOidTag hash_oid = SEC_OID_UNKNOWN;
-    uint64_t keysize = 0;
-    while (r.NextItem()) {
-      std::string n = r.ReadLabel();
-      if (n == "") {
-        break;
-      }
-      if (n == "e" || n == "keyAsn" || n == "keyJwk" || n == "keyPem" ||
-          n == "n") {
-        r.SkipValue();
-      } else if (n == "keyDer") {
-        public_key = r.ReadHex();
-      } else if (n == "keysize") {
-        keysize = r.ReadInt();
-      } else if (n == "type") {
-        ASSERT_EQ("RsassaPkcs1Verify", r.ReadString());
-      } else if (n == "sha") {
-        hash_oid = r.ReadHash();
-      } else if (n == "tests") {
-        WycheproofReadTests(
-            r, &tests, ReadTestAttr, false,
-            [keysize](RsaSignatureTestVector& t, const std::string& result,
-                      const std::vector<std::string>& flags) {
-              if (result == "acceptable" && keysize >= 1024 &&
-                  std::find_if(flags.begin(), flags.end(), [](std::string v) {
-                    return v == "SmallModulus" || v == "SmallPublicKey";
-                  }) != flags.end()) {
-                t.valid = true;
-              };
-            });
-      } else {
-        FAIL() << "unknown group label: " << n;
-      }
-    }
+    ScopedCERTSubjectPublicKeyInfo cert_spki(
+        SECKEY_DecodeDERSubjectPublicKeyInfo(&spki_item));
+    ASSERT_TRUE(cert_spki);
 
-    for (auto& t : tests) {
-      Pkcs11RsaBaseTestWrap test(hash_oid);
-      t.hash_oid = hash_oid;
-      t.public_key = public_key;
-      test.Run(t);
-    }
-  }
+    ScopedSECKEYPublicKey pub_key(SECKEY_ExtractPublicKey(cert_spki.get()));
+    ASSERT_TRUE(pub_key);
 
- private:
-  class Pkcs11RsaBaseTestWrap : public Pkcs11RsaBaseTest {
-   public:
-    Pkcs11RsaBaseTestWrap(SECOidTag hash) : Pkcs11RsaBaseTest(hash) {}
-    void TestBody() {}
+    DataBuffer hash;
+    hash.Allocate(static_cast<size_t>(HASH_ResultLenByOidTag(vec.hash_oid)));
+    SECStatus rv = PK11_HashBuf(vec.hash_oid, toUcharPtr(hash.data()),
+                                toUcharPtr(vec.msg.data()), vec.msg.size());
+    ASSERT_EQ(rv, SECSuccess);
 
-    void Verify1(const RsaSignatureTestVector& vec) {
-      SECItem spki_item = {siBuffer, toUcharPtr(vec.public_key.data()),
-                           static_cast<unsigned int>(vec.public_key.size())};
+    // Verify.
+    SECItem hash_item = {siBuffer, toUcharPtr(hash.data()),
+                         static_cast<unsigned int>(hash.len())};
+    SECItem sig_item = {siBuffer, toUcharPtr(vec.sig.data()),
+                        static_cast<unsigned int>(vec.sig.size())};
 
-      ScopedCERTSubjectPublicKeyInfo cert_spki(
-          SECKEY_DecodeDERSubjectPublicKeyInfo(&spki_item));
-      ASSERT_TRUE(cert_spki);
-
-      ScopedSECKEYPublicKey pub_key(SECKEY_ExtractPublicKey(cert_spki.get()));
-      ASSERT_TRUE(pub_key);
-
-      DataBuffer hash;
-      hash.Allocate(static_cast<size_t>(HASH_ResultLenByOidTag(vec.hash_oid)));
-      SECStatus rv = PK11_HashBuf(vec.hash_oid, toUcharPtr(hash.data()),
-                                  toUcharPtr(vec.msg.data()), vec.msg.size());
-      ASSERT_EQ(rv, SECSuccess);
-
-      // Verify.
-      SECItem hash_item = {siBuffer, toUcharPtr(hash.data()),
-                           static_cast<unsigned int>(hash.len())};
-      SECItem sig_item = {siBuffer, toUcharPtr(vec.sig.data()),
-                          static_cast<unsigned int>(vec.sig.size())};
-
-      rv = VFY_VerifyDigestDirect(&hash_item, pub_key.get(), &sig_item,
-                                  SEC_OID_PKCS1_RSA_ENCRYPTION, vec.hash_oid,
-                                  nullptr);
-      EXPECT_EQ(rv, vec.valid ? SECSuccess : SECFailure);
-    };
-
-    void Run(const RsaSignatureTestVector& vec) {
-      /* Using VFY_ interface */
-      Verify1(vec);
-      /* Using PKCS #11 interface */
-      setSkipRaw(true);
-      Verify(vec);
-    }
+    rv = VFY_VerifyDigestDirect(&hash_item, pub_key.get(), &sig_item,
+                                SEC_OID_PKCS1_RSA_ENCRYPTION, vec.hash_oid,
+                                nullptr);
+    EXPECT_EQ(rv, vec.valid ? SECSuccess : SECFailure);
   };
 };
 
@@ -169,11 +109,7 @@ class Pkcs11RsaPkcs1WycheproofTest : public ::testing::Test {
  * Use 6 as the invalid value since modLen % 16 must be zero.
  */
 TEST(RsaPkcs1Test, Pkcs1MinimumPadding) {
-#define RSA_SHORT_KEY_LENGTH 736
-/* if our minimum supported key length is big enough to handle
- * our largest Hash function, we can't test a short length */
-#if RSA_MIN_MODULUS_BITS < RSA_SHORT_KEY_LENGTH
-  const size_t kRsaShortKeyBits = RSA_SHORT_KEY_LENGTH;
+  const size_t kRsaShortKeyBits = 736;
   const size_t kRsaKeyBits = 752;
   static const std::vector<uint8_t> kMsg{'T', 'E', 'S', 'T'};
   static const std::vector<uint8_t> kSha512DigestInfo{
@@ -273,9 +209,6 @@ TEST(RsaPkcs1Test, Pkcs1MinimumPadding) {
                               SEC_OID_PKCS1_RSA_ENCRYPTION, SEC_OID_SHA512,
                               nullptr);
   EXPECT_EQ(SECSuccess, rv);
-#else
-  GTEST_SKIP();
-#endif
 }
 
 TEST(RsaPkcs1Test, RequireNullParameter) {
@@ -314,10 +247,48 @@ TEST(RsaPkcs1Test, RequireNullParameter) {
 #endif
 }
 
-TEST_F(Pkcs11RsaPkcs1WycheproofTest, Pkcs11RsaPkcs1WycheproofTest) {
-  WycheproofHeader("rsa_signature", "RSASSA-PKCS1-v1_5",
-                   "rsassa_pkcs1_verify_schema.json",
-                   [this](JsonReader& r) { RunGroup(r); });
+TEST_P(Pkcs11RsaPkcs1WycheproofTest, Verify) {
+  /* Using VFY_ interface */
+  Verify1(GetParam());
+  /* Using PKCS #11 interface */
+  setSkipRaw(true);
+  Verify(GetParam());
 }
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof2048RsaSignatureSha224Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature2048Sha224WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof2048RsaSignatureSha256Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature2048Sha256WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof2048RsaSignatureSha512Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature2048Sha512WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof3072RsaSignatureSha256Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature3072Sha256WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof3072RsaSignatureSha384Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature3072Sha384WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof3072RsaSignatureSha512Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature3072Sha512WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof4096RsaSignatureSha384Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature4096Sha384WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(
+    Wycheproof4096RsaSignatureSha512Test, Pkcs11RsaPkcs1WycheproofTest,
+    ::testing::ValuesIn(kRsaSignature4096Sha512WycheproofVectors));
+
+INSTANTIATE_TEST_SUITE_P(WycheproofRsaSignatureTest,
+                         Pkcs11RsaPkcs1WycheproofTest,
+                         ::testing::ValuesIn(kRsaSignatureWycheproofVectors));
 
 }  // namespace nss_test

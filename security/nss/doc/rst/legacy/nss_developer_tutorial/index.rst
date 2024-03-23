@@ -8,6 +8,8 @@ NSS Developer Tutorial
 `NSS Coding Style <#nss_coding_style>`__
 ----------------------------------------
 
+.. container::
+
 `Formatting <#formatting>`__
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -23,7 +25,7 @@ NSS Developer Tutorial
 
    **Curly braces**: both of the following styles are allowed:
 
-   .. code::
+   .. code:: brush:
 
       if (condition) {
           action1();
@@ -33,7 +35,7 @@ NSS Developer Tutorial
 
    Or:
 
-   .. code::
+   .. code:: brush:
 
       if (condition)
       {
@@ -50,7 +52,7 @@ NSS Developer Tutorial
    When a block of code consists of a single statement, NSS doesn’t require curly braces, so both of
    these examples are fine:
 
-   .. code::
+   .. code:: brush:
 
       if (condition) {
           action();
@@ -58,7 +60,7 @@ NSS Developer Tutorial
 
    Or:
 
-   .. code::
+   .. code:: brush:
 
       if (condition)
           action();
@@ -67,16 +69,16 @@ NSS Developer Tutorial
 
    **Multiple-line comments** should be formatted as follows:
 
-   .. code::
+   .. code:: brush:
 
       /*
        * Line1
        * Line2
-       */
+       */ 
 
    or
 
-   .. code::
+   .. code:: brush:
 
       /*
       ** Line 1
@@ -85,7 +87,7 @@ NSS Developer Tutorial
 
    The following styles are also common, because they conserve vertical space:
 
-   .. code::
+   .. code:: brush:
 
       /* Line1
        * Line2
@@ -93,7 +95,7 @@ NSS Developer Tutorial
 
    or
 
-   .. code::
+   .. code:: brush:
 
       /* Line1
       ** Line2
@@ -101,7 +103,7 @@ NSS Developer Tutorial
 
    or
 
-   .. code::
+   .. code:: brush:
 
       /* Line1
        * Line2 */
@@ -127,7 +129,7 @@ NSS Developer Tutorial
 
    A data buffer is usually represented as:
 
-   .. code:: c
+   .. code:: brush:
 
       unsigned char *data;
       unsigned int len;
@@ -145,16 +147,16 @@ NSS Developer Tutorial
 
 .. container::
 
-   NSS requires C99.  However, not all features from C99 are equally available.
+   NSS requires C99.  However, not all features from C99 are equally available.
 
    -  Variables can be declared, at the point they are first used.
    -  The ``inline`` keyword can be used.
    -  Variadic macro arguments are permitted, but their use should be limited to using
       ``__VA_ARGS__``.
    -  The exact-width integer types in NSPR should be used, in preference to those declared in
-      ``<stdint.h>`` (which will be used by NSPR in the future).
+      ``<stdint.h>`` (which will be used by NSPR in the future).
    -  Universal character names are not permitted, as are wide character types (``char16_t`` and
-      ``char32_t``).  NSS source should only include ASCII text.  Escape non-printing characters
+      ``char32_t``).  NSS source should only include ASCII text.  Escape non-printing characters
       (with ``\x`` if there is no special escape such as \\r, \\n, and \\t) and avoid defining
       string literals that use non-ASCII characters.
    -  One line comments starting with ``//`` are permitted.
@@ -162,7 +164,7 @@ NSS Developer Tutorial
    Check with nss-dev@ before using a language feature not already used, if you are uncertain.
    Please update this list if you do.
 
-   These restrictions are different for C++ unit tests, which can use most C++11 features.  The
+   These restrictions are different for C++ unit tests, which can use most C++11 features.  The
    `Mozilla C++ language features
    guide <https://developer.mozilla.org/en-US/docs/Using_CXX_in_Mozilla_code>`__, and the `Chromium
    C++ usage guide <https://chromium-cpp.appspot.com/>`__, list C++ features that are known to be
@@ -173,6 +175,8 @@ NSS Developer Tutorial
 
 `NSS C ABI backward compatibility <#nss_c_abi_backward_compatibility>`__
 ------------------------------------------------------------------------
+
+.. container::
 
 `Functions <#functions>`__
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -191,6 +195,8 @@ NSS Developer Tutorial
 
 `Types <#types>`__
 ------------------
+
+.. container::
 
 `Structs <#structs>`__
 ~~~~~~~~~~~~~~~~~~~~~~

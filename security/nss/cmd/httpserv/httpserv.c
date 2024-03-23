@@ -37,6 +37,10 @@
 #include "ocspti.h"
 #include "ocspi.h"
 
+#ifndef PORT_Sprintf
+#define PORT_Sprintf sprintf
+#endif
+
 #ifndef PORT_Strstr
 #define PORT_Strstr strstr
 #endif
@@ -683,7 +687,7 @@ handle_connection(
                 if (!request || !request->tbsRequest ||
                     !request->tbsRequest->requestList ||
                     !request->tbsRequest->requestList[0]) {
-                    snprintf(msgBuf, sizeof(msgBuf), "Cannot decode OCSP request.\r\n");
+                    PORT_Sprintf(msgBuf, "Cannot decode OCSP request.\r\n");
 
                     iovs[numIOVs].iov_base = msgBuf;
                     iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);
@@ -777,7 +781,7 @@ handle_connection(
                                                                              singleResponses, &pwdata);
 
                         if (!ocspResponse) {
-                            snprintf(msgBuf, sizeof(msgBuf), "Failed to encode response\r\n");
+                            PORT_Sprintf(msgBuf, "Failed to encode response\r\n");
                             iovs[numIOVs].iov_base = msgBuf;
                             iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);
                             numIOVs++;
@@ -814,15 +818,15 @@ handle_connection(
                 iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);
                 numIOVs++;
             } else if (reqLen <= 0) { /* hit eof */
-                snprintf(msgBuf, sizeof(msgBuf), "Get or Post incomplete after %d bytes.\r\n",
-                         bufDat);
+                PORT_Sprintf(msgBuf, "Get or Post incomplete after %d bytes.\r\n",
+                             bufDat);
 
                 iovs[numIOVs].iov_base = msgBuf;
                 iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);
                 numIOVs++;
             } else if (reqLen < bufDat) {
-                snprintf(msgBuf, sizeof(msgBuf), "Discarded %d characters.\r\n",
-                         bufDat - reqLen);
+                PORT_Sprintf(msgBuf, "Discarded %d characters.\r\n",
+                             bufDat - reqLen);
 
                 iovs[numIOVs].iov_base = msgBuf;
                 iovs[numIOVs].iov_len = PORT_Strlen(msgBuf);

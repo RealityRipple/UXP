@@ -16,7 +16,6 @@
 #include "secdig.h"
 #include "secerr.h"
 #include "keyi.h"
-#include "nss.h"
 
 /*
 ** Recover the DigestInfo from an RSA PKCS#1 signature.
@@ -240,12 +239,13 @@ loser:
     return SECFailure;
 }
 
-const SEC_ASN1Template hashParameterTemplate[] = {
-    { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(SECItem) },
-    { SEC_ASN1_OBJECT_ID, 0 },
-    { SEC_ASN1_SKIP_REST },
-    { 0 }
-};
+const SEC_ASN1Template hashParameterTemplate[] =
+    {
+      { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(SECItem) },
+      { SEC_ASN1_OBJECT_ID, 0 },
+      { SEC_ASN1_SKIP_REST },
+      { 0 }
+    };
 
 /*
  * Get just the encryption algorithm from the signature algorithm
@@ -347,8 +347,8 @@ sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
                 PORT_DestroyCheapArena(&tmpArena);
 
                 /* only accept hash algorithms */
-                if (rv != SECSuccess || HASH_GetHashTypeByOidTag(*hashalg) == HASH_AlgNULL) {
-                    /* error set by sec_DecodeRSAPSSParams or HASH_GetHashTypeByOidTag */
+                if (HASH_GetHashTypeByOidTag(*hashalg) == HASH_AlgNULL) {
+                    /* error set by HASH_GetHashTypeByOidTag */
                     return SECFailure;
                 }
             } else {
@@ -467,7 +467,6 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     unsigned int sigLen;
     KeyType type;
     PRUint32 policyFlags;
-    PRInt32 optFlags;
 
     /* make sure the encryption algorithm matches the key type */
     /* RSA-PSS algorithm can be used with both rsaKey and rsaPssKey */
@@ -477,16 +476,7 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
         PORT_SetError(SEC_ERROR_PKCS7_KEYALG_MISMATCH);
         return NULL;
     }
-    if (NSS_OptionGet(NSS_KEY_SIZE_POLICY_FLAGS, &optFlags) != SECFailure) {
-        if (optFlags & NSS_KEY_SIZE_POLICY_VERIFY_FLAG) {
-            rv = seckey_EnforceKeySize(key->keyType,
-                                       SECKEY_PublicKeyStrengthInBits(key),
-                                       SEC_ERROR_SIGNATURE_ALGORITHM_DISABLED);
-            if (rv != SECSuccess) {
-                return NULL;
-            }
-        }
-    }
+
     /* check the policy on the encryption algorithm */
     if ((NSS_GetAlgorithmPolicy(encAlg, &policyFlags) == SECFailure) ||
         !(policyFlags & NSS_USE_ALG_IN_ANY_SIGNATURE)) {

@@ -15,7 +15,7 @@ FC_GetSlotList
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_GetSlotList(
         CK_BBOOL tokenPresent,

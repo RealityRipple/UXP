@@ -42,12 +42,12 @@ sslkey
    .. rubric:: Syntax
       :name: syntax
 
-   .. code::
+   .. code:: notranslate
 
       #include <key.h>
       #include <keyt.h>
 
-   .. code::
+   .. code:: notranslate
 
       SECKEYKeyDBHandle *SECKEY_GetDefaultKeyDB(void);
 
@@ -71,12 +71,12 @@ sslkey
    .. rubric:: Syntax
       :name: syntax_2
 
-   .. code::
+   .. code:: notranslate
 
       #include <key.h>
       #include <keyt.h>
 
-   .. code::
+   .. code:: notranslate
 
       void SECKEY_DestroyPrivateKey(SECKEYPrivateKey *key);
 
@@ -86,7 +86,7 @@ sslkey
    This function has the following parameter:
 
    +-------------------------------------------------+-------------------------------------------------+
-   | .. code::                           | A pointer to the private key structure to       |
+   | .. code:: notranslate                           | A pointer to the private key structure to       |
    |                                                 | destroy.                                        |
    |    key                                          |                                                 |
    +-------------------------------------------------+-------------------------------------------------+

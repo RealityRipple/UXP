@@ -154,11 +154,11 @@ main(int argc, char **argv)
                     usage(prog, NULL);
                     break;
                 default:
-                    snprintf(buf, sizeof(buf), "unknown option %c", arg[1]);
+                    sprintf(buf, "unknown option %c", arg[1]);
                     usage(prog, buf);
             }
         } else {
-            snprintf(buf, sizeof(buf), "unknown argument %s", arg);
+            sprintf(buf, "unknown argument %s", arg);
             usage(prog, buf);
         }
     }

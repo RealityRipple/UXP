@@ -8,7 +8,7 @@
 #include "nss.h"
 #include "pk11pub.h"
 #include "sechash.h"
-#include "json_reader.h"
+#include "json.h"
 
 #include "databuffer.h"
 
@@ -18,6 +18,8 @@
 #include "pk11_signature_test.h"
 #include "pk11_rsapss_vectors.h"
 #include "testvectors_base/test-structs.h"
+
+extern std::string g_source_dir;
 
 namespace nss_test {
 
@@ -76,6 +78,48 @@ class Pkcs11RsaPssTest : public Pkcs11RsaPssTestBase {
 
 class Pkcs11RsaPssTestWycheproof : public ::testing::Test {
  public:
+  Pkcs11RsaPssTestWycheproof() {}
+
+  void Run(const std::string& file) {
+    std::string basename = "rsa_pss_" + file + "_test.json";
+    std::string dir = ::g_source_dir + "/../common/wycheproof/source_vectors/";
+    std::cout << "Running tests from: " << basename << std::endl;
+
+    JsonReader r(dir + basename);
+    while (r.NextItem()) {
+      std::string n = r.ReadLabel();
+      if (n == "") {
+        break;
+      }
+      if (n == "algorithm") {
+        ASSERT_EQ("RSASSA-PSS", r.ReadString());
+      } else if (n == "generatorVersion") {
+        (void)r.ReadString();
+      } else if (n == "numberOfTests") {
+        (void)r.ReadInt();
+      } else if (n == "header") {
+        while (r.NextItemArray()) {
+          std::cout << r.ReadString() << std::endl;
+        }
+      } else if (n == "notes") {
+        while (r.NextItem()) {
+          std::string note = r.ReadLabel();
+          if (note == "") {
+            break;
+          }
+          std::cout << note << ": " << r.ReadString() << std::endl;
+        }
+      } else if (n == "schema") {
+        ASSERT_EQ("rsassa_pss_verify_schema.json", r.ReadString());
+      } else if (n == "testGroups") {
+        while (r.NextItemArray()) {
+          RunGroup(r);
+        }
+      }
+    }
+  }
+
+ private:
   struct TestVector {
     uint64_t id;
     std::vector<uint8_t> msg;
@@ -83,25 +127,6 @@ class Pkcs11RsaPssTestWycheproof : public ::testing::Test {
     bool valid;
   };
 
-  Pkcs11RsaPssTestWycheproof() {}
-
-  void Run(const std::string& file) {
-    WycheproofHeader("rsa_pss_" + file, "RSASSA-PSS",
-                     "rsassa_pss_verify_schema.json",
-                     [this](JsonReader& r) { RunGroup(r); });
-  }
-
-  static void ReadTestAttr(TestVector& t, const std::string& n, JsonReader& r) {
-    if (n == "msg") {
-      t.msg = r.ReadHex();
-    } else if (n == "sig") {
-      t.sig = r.ReadHex();
-    } else {
-      FAIL() << "unknown key in test: " << n;
-    }
-  }
-
- private:
   class Pkcs11RsaPssTestWrap : public Pkcs11RsaPssTestBase {
    public:
     Pkcs11RsaPssTestWrap(SECOidTag hash, CK_RSA_PKCS_MGF_TYPE mgf, int s_len)
@@ -113,6 +138,37 @@ class Pkcs11RsaPssTestWycheproof : public ::testing::Test {
       Pk11SignatureTest::Verify(params, valid);
     }
   };
+
+  void ReadTests(JsonReader& r, std::vector<TestVector>* tests) {
+    while (r.NextItemArray()) {
+      TestVector t;
+      while (r.NextItem()) {
+        std::string n = r.ReadLabel();
+        if (n == "") {
+          break;
+        }
+        if (n == "tcId") {
+          t.id = r.ReadInt();
+        } else if (n == "comment") {
+          (void)r.ReadString();
+        } else if (n == "msg") {
+          t.msg = r.ReadHex();
+        } else if (n == "sig") {
+          t.sig = r.ReadHex();
+        } else if (n == "result") {
+          std::string s = r.ReadString();
+          t.valid = (s == "valid" || s == "acceptable");
+        } else if (n == "flags") {
+          while (r.NextItemArray()) {
+            (void)r.ReadString();
+          }
+        } else {
+          FAIL() << "unknown test entry attribute";
+        }
+      }
+      tests->push_back(t);
+    }
+  }
 
   void RunTests(const std::vector<uint8_t>& public_key, SECOidTag hash,
                 CK_RSA_PKCS_MGF_TYPE mgf, int s_len,
@@ -189,7 +245,7 @@ class Pkcs11RsaPssTestWycheproof : public ::testing::Test {
       } else if (n == "type") {
         ASSERT_EQ("RsassaPssVerify", r.ReadString());
       } else if (n == "tests") {
-        WycheproofReadTests(r, &tests, ReadTestAttr);
+        ReadTests(r, &tests);
       } else {
         FAIL() << "unknown test group attribute: " << n;
       }

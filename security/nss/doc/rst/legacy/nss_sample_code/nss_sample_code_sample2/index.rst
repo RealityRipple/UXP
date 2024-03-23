@@ -10,7 +10,7 @@ NSS Sample Code sample2
 
 .. container::
 
-   .. code::
+   .. code:: notranslate
 
       /* Example code to illustrate DES enccryption/decryption using NSS.
        * The example skips the details of obtaining the Key & IV to use, and

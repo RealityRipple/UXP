@@ -15,7 +15,7 @@ FC_VerifyRecoverInit
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_VerifyRecoverInit(
         CK_SESSION_HANDLE hSession,

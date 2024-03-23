@@ -15,7 +15,7 @@ FC_SetAttributeValue
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_SetAttributeValue(
         CK_SESSION_HANDLE hSession,

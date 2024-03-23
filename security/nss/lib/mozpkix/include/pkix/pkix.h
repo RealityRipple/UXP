@@ -156,7 +156,7 @@ Result VerifyEncodedOCSPResponse(
 // requirement for another value. Empty extensions are also rejected.
 Result CheckTLSFeaturesAreSatisfied(Input& cert,
                                     const Input* stapledOCSPResponse);
-}  // namespace pkix
-}  // namespace mozilla
+}
+}  // namespace mozilla::pkix
 
 #endif  // mozilla_pkix_pkix_h

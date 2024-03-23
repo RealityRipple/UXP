@@ -15,7 +15,7 @@ FC_SignEncryptUpdate
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_SignEncryptUpdate(
         CK_SESSION_HANDLE hSession,

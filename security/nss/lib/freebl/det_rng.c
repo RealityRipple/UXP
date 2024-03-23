@@ -155,9 +155,7 @@ PRNGTEST_RunHealthTests()
 }
 
 SECStatus
-PRNGTEST_Instantiate_Kat(const PRUint8 *entropy, unsigned int entropy_len,
-                         const PRUint8 *nonce, unsigned int nonce_len,
-                         const PRUint8 *personal_string, unsigned int ps_len)
+PRNGTEST_Instantiate_Kat()
 {
     return SECFailure;
 }

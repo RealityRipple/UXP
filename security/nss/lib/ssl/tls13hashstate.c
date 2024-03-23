@@ -171,6 +171,7 @@ tls13_HandleHrrCookie(sslSocket *ss,
     PRUint64 tmp64;
     const sslNamedGroupDef *selectedGroup;
     PRUint64 appTokenLen;
+    sslBuffer greaseBuf = SSL_BUFFER_EMPTY;
 
     rv = ssl_SelfEncryptUnprotect(ss, cookie, cookieLen,
                                   plaintext, &plaintextLen, sizeof(plaintext));
@@ -234,13 +235,20 @@ tls13_HandleHrrCookie(sslSocket *ss,
         }
         parsedEchData.aeadId = (HpkeAeadId)tmp64;
 
-        /* ECH accept_confirmation signal. */
         rv = sslRead_Read(&reader, TLS13_ECH_SIGNAL_LEN, &greaseReadBuf);
         if (rv != SECSuccess) {
             FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, illegal_parameter);
             return SECFailure;
         }
-        PORT_Memcpy(parsedEchData.signal, greaseReadBuf.buf, TLS13_ECH_SIGNAL_LEN);
+
+        if (echData) {
+            rv = sslBuffer_Append(&greaseBuf, greaseReadBuf.buf, greaseReadBuf.len);
+            if (rv != SECSuccess) {
+                FATAL_ERROR(ss, SSL_ERROR_INTERNAL_ERROR_ALERT, internal_error);
+                return SECFailure;
+            }
+            parsedEchData.signal = greaseBuf;
+        }
 
         /* ECH HPKE context may be empty. */
         rv = sslRead_ReadVariable(&reader, 2, &echHpkeBuf);
@@ -303,7 +311,6 @@ tls13_HandleHrrCookie(sslSocket *ss,
         rv = tls13_ConstructHelloRetryRequest(ss, cipherSuite,
                                               selectedGroup,
                                               cookie, cookieLen,
-                                              parsedEchData.signal,
                                               &messageBuf);
         if (rv != SECSuccess) {
             return SECFailure;

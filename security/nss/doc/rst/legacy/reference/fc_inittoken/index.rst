@@ -15,7 +15,7 @@ FC_InitToken
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_InitToken(
         CK_SLOT_ID slotID,

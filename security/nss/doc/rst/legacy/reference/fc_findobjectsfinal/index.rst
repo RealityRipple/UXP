@@ -15,7 +15,7 @@ FC_FindObjectsFinal
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_FindObjectsFinal(
         CK_SESSION_HANDLE hSession,

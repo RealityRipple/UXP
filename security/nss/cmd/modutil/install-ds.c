@@ -620,11 +620,11 @@ Pk11Install_PlatformName_GetVerString(Pk11Install_PlatformName* _this)
     tmp[0] = '\0';
 
     for (i = 0; i < _this->numDigits - 1; i++) {
-        snprintf(buf, sizeof(buf), "%s.", _this->verString[i]);
+        sprintf(buf, "%s.", _this->verString[i]);
         strcat(tmp, buf);
     }
     if (i < _this->numDigits) {
-        snprintf(buf, sizeof(buf), "%s", _this->verString[i]);
+        sprintf(buf, "%s", _this->verString[i]);
         strcat(tmp, buf);
     }
 
