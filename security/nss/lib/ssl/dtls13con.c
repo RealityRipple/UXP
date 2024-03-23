@@ -460,10 +460,11 @@ dtls13_HandleAck(sslSocket *ss, sslBuffer *databuf)
     SSL_TRC(10, ("%d: SSL3[%d]: Handling ACK", SSL_GETPID(), ss->fd));
     rv = ssl3_ConsumeHandshakeNumber(ss, &length, 2, &b, &l);
     if (rv != SECSuccess) {
-        goto loser;
+        return SECFailure;
     }
     if (length != l) {
-        goto loser;
+        tls13_FatalError(ss, SSL_ERROR_RX_MALFORMED_DTLS_ACK, decode_error);
+        return SECFailure;
     }
 
     while (l > 0) {
@@ -472,7 +473,7 @@ dtls13_HandleAck(sslSocket *ss, sslBuffer *databuf)
 
         rv = ssl3_ConsumeHandshakeNumber64(ss, &seq, 8, &b, &l);
         if (rv != SECSuccess) {
-            goto loser;
+            return SECFailure;
         }
 
         for (cursor = PR_LIST_HEAD(&ss->ssl3.hs.dtlsSentHandshake);
@@ -520,14 +521,6 @@ dtls13_HandleAck(sslSocket *ss, sslBuffer *databuf)
         }
     }
     return SECSuccess;
-
-loser:
-    /* Due to bug 1829391 we may incorrectly send an alert rather than
-     * ignore an invalid record here. */
-    SSL_TRC(11, ("%d: SSL3[%d]: Error processing DTLS1.3 ACK.",
-                 SSL_GETPID(), ss->fd));
-    PORT_SetError(SSL_ERROR_RX_MALFORMED_DTLS_ACK);
-    return SECFailure;
 }
 
 /* Clean up the read timer for the handshake cipher suites on the

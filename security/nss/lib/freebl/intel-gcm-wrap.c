@@ -214,12 +214,10 @@ intel_AES_GCM_EncryptUpdate(intel_AES_GCMContext *gcm,
 
     // GCM has a 16 octet block, with a 32-bit block counter
     // Limit in accordance with SP800-38D
-    if (sizeof(inlen) > 4) {
-        unsigned long long inlen_ull = inlen;
-        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-            PORT_SetError(SEC_ERROR_INPUT_LEN);
-            return SECFailure;
-        }
+    if (sizeof(inlen) > 4 &&
+        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return SECFailure;
     }
 
     if (!gcm->ctr_context_init) {
@@ -291,12 +289,10 @@ intel_AES_GCM_DecryptUpdate(intel_AES_GCMContext *gcm,
 
     // GCM has a 16 octet block, with a 32-bit block counter
     // Limit in accordance with SP800-38D
-    if (sizeof(inlen) > 4) {
-        unsigned long long inlen_ull = inlen;
-        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-            PORT_SetError(SEC_ERROR_INPUT_LEN);
-            return SECFailure;
-        }
+    if (sizeof(inlen) > 4 &&
+        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return SECFailure;
     }
 
     if (maxout < inlen) {
@@ -349,12 +345,10 @@ intel_AES_GCM_EncryptAEAD(intel_AES_GCMContext *gcm,
 
     // GCM has a 16 octet block, with a 32-bit block counter
     // Limit in accordance with SP800-38D
-    if (sizeof(inlen) > 4) {
-        unsigned long long inlen_ull = inlen;
-        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-            PORT_SetError(SEC_ERROR_INPUT_LEN);
-            return SECFailure;
-        }
+    if (sizeof(inlen) > 4 &&
+        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return SECFailure;
     }
     /* paramLen comes all the way from the application layer, make sure
      * it's correct */
@@ -432,12 +426,10 @@ intel_AES_GCM_DecryptAEAD(intel_AES_GCMContext *gcm,
 
     // GCM has a 16 octet block, with a 32-bit block counter
     // Limit in accordance with SP800-38D
-    if (sizeof(inlen) > 4) {
-        unsigned long long inlen_ull = inlen;
-        if (inlen_ull >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
-            PORT_SetError(SEC_ERROR_INPUT_LEN);
-            return SECFailure;
-        }
+    if (sizeof(inlen) > 4 &&
+        inlen >= ((1ULL << 32) - 2) * AES_BLOCK_SIZE) {
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return SECFailure;
     }
 
     if (maxout < inlen) {

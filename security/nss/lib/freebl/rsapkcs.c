@@ -80,10 +80,6 @@ constantTimeCondition(unsigned int c,
 static unsigned int
 rsa_modulusLen(SECItem *modulus)
 {
-    if (modulus->len == 0) {
-        return 0;
-    }
-
     unsigned char byteZero = modulus->data[0];
     unsigned int modLen = modulus->len - !byteZero;
     return modLen;
@@ -92,16 +88,8 @@ rsa_modulusLen(SECItem *modulus)
 static unsigned int
 rsa_modulusBits(SECItem *modulus)
 {
-    if (modulus->len == 0) {
-        return 0;
-    }
-
     unsigned char byteZero = modulus->data[0];
     unsigned int numBits = (modulus->len - 1) * 8;
-
-    if (byteZero == 0 && modulus->len == 1) {
-        return 0;
-    }
 
     if (byteZero == 0) {
         numBits -= 8;

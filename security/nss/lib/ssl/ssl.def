@@ -247,9 +247,3 @@ SSL_FilterClientCertListBySocket;
 ;+    local:
 ;+*;
 ;+};
-;+NSS_3.80 {    # NSS 3.80 release
-;+    global:
-SSL_ClientCertCallbackComplete;
-;+    local:
-;+*;
-;+};

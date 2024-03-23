@@ -15,7 +15,7 @@ FC_SetPIN
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_SetPIN(
         CK_SESSION_HANDLE hSession,

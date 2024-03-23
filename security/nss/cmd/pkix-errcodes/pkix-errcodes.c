@@ -17,9 +17,10 @@
 #undef PKIX_ERRORENTRY
 #define PKIX_ERRORENTRY(name, desc, plerr) #name
 
-const char *const PKIX_ErrorNames[] = {
+const char *const PKIX_ErrorNames[] =
+    {
 #include "pkix_errorstrings.h"
-};
+    };
 
 #undef PKIX_ERRORENTRY
 

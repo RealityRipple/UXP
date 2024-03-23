@@ -15,7 +15,7 @@ FC_DigestKey
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_DigestKey(
         CK_SESSION_HANDLE hSession,

@@ -15,7 +15,7 @@ FC_GenerateRandom
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_GenerateRandom(
         CK_SESSION_HANDLE hSession,

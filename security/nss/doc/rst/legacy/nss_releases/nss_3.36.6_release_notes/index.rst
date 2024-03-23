@@ -30,6 +30,8 @@ NSS 3.36.6 release notes
 `New in NSS 3.36.6 <#new_in_nss_3.36.6>`__
 ------------------------------------------
 
+.. container::
+
 .. _new_functionality:
 
 `New Functionality <#new_functionality>`__
@@ -47,7 +49,7 @@ NSS 3.36.6 release notes
 .. container::
 
    `Bug 1485864 <https://bugzilla.mozilla.org/show_bug.cgi?id=1485864>`__ - Cache side-channel
-   variant of the Bleichenbacher attack (CVE-2018-12404)
+   variant of the Bleichenbacher attack (CVE-2018-12404)
 
    `Bug 1389967 <https://bugzilla.mozilla.org/show_bug.cgi?id=1389967>`__ and `Bug
    1448748 <https://bugzilla.mozilla.org/show_bug.cgi?id=1448748>`__ - Fixes for MinGW on x64

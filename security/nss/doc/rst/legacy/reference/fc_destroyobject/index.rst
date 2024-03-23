@@ -15,7 +15,7 @@ FC_DestroyObject
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_DestroyObject(
         CK_SESSION_HANDLE hSession,

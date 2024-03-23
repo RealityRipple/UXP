@@ -15,7 +15,7 @@ FC_GenerateKeyPair
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_GenerateKeyPair(
         CK_SESSION_HANDLE hSession,

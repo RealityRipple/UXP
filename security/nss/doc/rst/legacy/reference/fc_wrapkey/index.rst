@@ -15,7 +15,7 @@ FC_WrapKey
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_WrapKey(
         CK_SESSION_HANDLE hSession,

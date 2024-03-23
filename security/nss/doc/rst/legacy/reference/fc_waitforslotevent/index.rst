@@ -15,7 +15,7 @@ FC_WaitForSlotEvent
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_WaitForSlotEvent(CK_FLAGS flags, CK_SLOT_ID_PTR pSlot CK_VOID_PTR pReserved);
 

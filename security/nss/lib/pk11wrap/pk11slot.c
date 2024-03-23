@@ -198,7 +198,8 @@ PK11_AddSlotToList(PK11SlotList *list, PK11SlotInfo *slot, PRBool sorted)
     PZ_Lock(list->lock);
     element = list->head;
     /* Insertion sort, with higher cipherOrders are sorted first in the list */
-    while (element && sorted && (element->slot->module->cipherOrder > le->slot->module->cipherOrder)) {
+    while (element && sorted && (element->slot->module->cipherOrder >
+                                 le->slot->module->cipherOrder)) {
         element = element->next;
     }
     if (element) {

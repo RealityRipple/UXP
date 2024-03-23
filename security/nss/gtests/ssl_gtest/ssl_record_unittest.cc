@@ -458,18 +458,17 @@ INSTANTIATE_TEST_SUITE_P(
  *
  * Parameter = Tuple of:
  * - TLS variant (datagram/stream)
- * - TLS version
  * - Content type to be set in zero-length record
  */
 class ZeroLengthRecordSetup
     : public TlsConnectTestBase,
       public testing::WithParamInterface<
-          std::tuple<SSLProtocolVariant, uint16_t, SSLContentType>> {
+          std::tuple<SSLProtocolVariant, SSLContentType>> {
  public:
   ZeroLengthRecordSetup()
-      : TlsConnectTestBase(std::get<0>(GetParam()), std::get<1>(GetParam())),
+      : TlsConnectTestBase(std::get<0>(GetParam()), 0),
         variant_(std::get<0>(GetParam())),
-        contentType_(std::get<2>(GetParam())){};
+        contentType_(std::get<1>(GetParam())){};
 
   void createZeroLengthRecord(DataBuffer& buffer, unsigned epoch = 0,
                               unsigned seqn = 0) {
@@ -527,56 +526,35 @@ class ZeroLengthRecordSetup
  * received in incorrect order (see ssl3con.c, line 13353).
  */
 TEST_P(ZeroLengthRecordSetup, ZeroLengthRecordRun) {
-  EnsureTlsSetup();
-
-  // Send zero-length record
   DataBuffer buffer;
   createZeroLengthRecord(buffer);
+
+  EnsureTlsSetup();
+  // Send zero-length record
   client_->SendDirect(buffer);
   // This must be set, otherwise handshake completness assertions might fail
   server_->StartConnect();
 
-  SSLAlertDescription alert = close_notify;
+  // DTLS ignores all cases but malformed alert
+  if (contentType_ != ssl_ct_alert && variant_ == ssl_variant_datagram) {
+    contentType_ = ssl_ct_handshake;
+  }
 
-  switch (variant_) {
-    case ssl_variant_datagram:
-      switch (contentType_) {
-        case ssl_ct_alert:
-          // Should actually be ignored, see bug 1829391.
-          alert = illegal_parameter;
-          break;
-        case ssl_ct_ack:
-          if (version_ == SSL_LIBRARY_VERSION_TLS_1_3) {
-            // Skipped due to bug 1829391.
-            GTEST_SKIP();
-          }
-          // DTLS versions < 1.3 correctly ignore the invalid record
-          // so we fall through.
-        case ssl_ct_change_cipher_spec:
-        case ssl_ct_application_data:
-        case ssl_ct_handshake:
-          server_->Handshake();
-          Connect();
-          return;
-      }
+  SSLAlertDescription alert;
+  switch (contentType_) {
+    case ssl_ct_alert:
+    case ssl_ct_change_cipher_spec:
+      alert = illegal_parameter;
       break;
-    case ssl_variant_stream:
-      switch (contentType_) {
-        case ssl_ct_alert:
-        case ssl_ct_change_cipher_spec:
-          alert = illegal_parameter;
-          break;
-        case ssl_ct_application_data:
-        case ssl_ct_ack:
-          alert = unexpected_message;
-          break;
-        case ssl_ct_handshake:
-          // TLS ignores unprotected zero-length handshake records
-          server_->Handshake();
-          Connect();
-          return;
-      }
+    case ssl_ct_application_data:
+      alert = unexpected_message;
       break;
+    default:  // ssl_ct_handshake
+      // Receive zero-length record
+      server_->Handshake();
+      // Connect successfully since empty record was ignored
+      Connect();
+      return;
   }
 
   // Assert alert is send for TLS and DTLS alert records
@@ -589,23 +567,24 @@ TEST_P(ZeroLengthRecordSetup, ZeroLengthRecordRun) {
   client_->Handshake();
 }
 
+// Test for TLS and DTLS
+const SSLProtocolVariant kZeroLengthRecordVariants[] = {ssl_variant_datagram,
+                                                        ssl_variant_stream};
+
 // Test for handshake, alert, change_cipher_spec and application data fragments
 const SSLContentType kZeroLengthRecordContentTypes[] = {
     ssl_ct_handshake, ssl_ct_alert, ssl_ct_change_cipher_spec,
-    ssl_ct_application_data, ssl_ct_ack};
+    ssl_ct_application_data};
 
 INSTANTIATE_TEST_SUITE_P(
     ZeroLengthRecordTest, ZeroLengthRecordSetup,
-    testing::Combine(TlsConnectTestBase::kTlsVariantsAll,
-                     TlsConnectTestBase::kTlsV11Plus,
+    testing::Combine(testing::ValuesIn(kZeroLengthRecordVariants),
                      testing::ValuesIn(kZeroLengthRecordContentTypes)),
     [](const testing::TestParamInfo<ZeroLengthRecordSetup::ParamType>& inf) {
       std::string variant =
           (std::get<0>(inf.param) == ssl_variant_stream) ? "Tls" : "Dtls";
-      std::string version = VersionString(std::get<1>(inf.param));
-      std::replace(version.begin(), version.end(), '.', '_');
       std::string contentType;
-      switch (std::get<2>(inf.param)) {
+      switch (std::get<1>(inf.param)) {
         case ssl_ct_handshake:
           contentType = "Handshake";
           break;
@@ -618,11 +597,10 @@ INSTANTIATE_TEST_SUITE_P(
         case ssl_ct_change_cipher_spec:
           contentType = "ChangeCipherSpec";
           break;
-        case ssl_ct_ack:
-          contentType = "Ack";
-          break;
+        default:
+          contentType = "InvalidParameter";
       }
-      return variant + version + "ZeroLength" + contentType + "Test";
+      return variant + "ZeroLength" + contentType + "Test";
     });
 
 /* Test correct handling of records with invalid content types.

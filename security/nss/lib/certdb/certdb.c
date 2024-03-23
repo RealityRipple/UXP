@@ -921,8 +921,7 @@ CERT_GetSlopTime(void)
     return pendingSlop; /* seconds */
 }
 
-SECStatus
-CERT_SetSlopTime(PRInt32 slop) /* seconds */
+SECStatus CERT_SetSlopTime(PRInt32 slop) /* seconds */
 {
     if (slop < 0)
         return SECFailure;

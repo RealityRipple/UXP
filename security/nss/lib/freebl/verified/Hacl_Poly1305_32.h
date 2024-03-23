@@ -28,12 +28,14 @@
 extern "C" {
 #endif
 
+#include "kremlin/internal/types.h"
+#include "kremlin/lowstar_endianness.h"
 #include <string.h>
-#include "krml/internal/types.h"
-#include "krml/lowstar_endianness.h"
-#include "krml/internal/target.h"
+#include <stdbool.h>
 
-#include "Hacl_Krmllib.h"
+#include "Hacl_Kremlib.h"
+
+extern uint32_t Hacl_Poly1305_32_blocklen;
 
 typedef uint64_t *Hacl_Poly1305_32_poly1305_ctx;
 

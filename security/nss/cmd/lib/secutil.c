@@ -20,7 +20,6 @@
 #include "secpkcs7.h"
 #include "secpkcs5.h"
 #include <stdarg.h>
-#include <stdio.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
@@ -233,15 +232,15 @@ SECU_GetModulePassword(PK11SlotInfo *slot, PRBool retry, void *arg)
 
     switch (pwdata->source) {
         case PW_NONE:
-            snprintf(prompt, sizeof(prompt), "Enter Password or Pin for \"%s\":",
-                     PK11_GetTokenName(slot));
+            sprintf(prompt, "Enter Password or Pin for \"%s\":",
+                    PK11_GetTokenName(slot));
             return SECU_GetPasswordString(NULL, prompt);
         case PW_FROMFILE:
             return SECU_FilePasswd(slot, retry, pwdata->data);
         case PW_EXTERNAL:
-            snprintf(prompt, sizeof(prompt),
-                     "Press Enter, then enter PIN for \"%s\" on external device.\n",
-                     PK11_GetTokenName(slot));
+            sprintf(prompt,
+                    "Press Enter, then enter PIN for \"%s\" on external device.\n",
+                    PK11_GetTokenName(slot));
             char *pw = SECU_GetPasswordString(NULL, prompt);
             PORT_Free(pw);
         /* Fall Through */
@@ -437,7 +436,7 @@ SECU_DefaultSSLDir(void)
     if (strlen(dir) >= PR_ARRAY_SIZE(sslDir)) {
         return NULL;
     }
-    snprintf(sslDir, sizeof(sslDir), "%s", dir);
+    sprintf(sslDir, "%s", dir);
 
     if (sslDir[strlen(sslDir) - 1] == '/')
         sslDir[strlen(sslDir) - 1] = 0;
@@ -451,9 +450,9 @@ SECU_AppendFilenameToDir(char *dir, char *filename)
     static char path[1000];
 
     if (dir[strlen(dir) - 1] == '/')
-        snprintf(path, sizeof(path), "%s%s", dir, filename);
+        sprintf(path, "%s%s", dir, filename);
     else
-        snprintf(path, sizeof(path), "%s/%s", dir, filename);
+        sprintf(path, "%s/%s", dir, filename);
     return path;
 }
 
@@ -474,11 +473,11 @@ SECU_ConfigDirectory(const char *base)
             home = "";
 
         if (*home && home[strlen(home) - 1] == '/')
-            snprintf(buf, sizeof(buf), "%.900s%s", home, dir);
+            sprintf(buf, "%.900s%s", home, dir);
         else
-            snprintf(buf, sizeof(buf), "%.900s/%s", home, dir);
+            sprintf(buf, "%.900s/%s", home, dir);
     } else {
-        snprintf(buf, sizeof(buf), "%.900s", base);
+        sprintf(buf, "%.900s", base);
         if (buf[strlen(buf) - 1] == '/')
             buf[strlen(buf) - 1] = 0;
     }
@@ -1420,7 +1419,7 @@ secu_PrintAttribute(FILE *out, SEC_PKCS7Attribute *attr, char *m, int level)
     if (attr->values != NULL) {
         i = 0;
         while ((value = attr->values[i++]) != NULL) {
-            snprintf(om, sizeof(om), "Value (%d)%s", i, attr->encoded ? " (encoded)" : "");
+            sprintf(om, "Value (%d)%s", i, attr->encoded ? " (encoded)" : "");
             if (attr->encoded || attr->typeTag == NULL) {
                 SECU_PrintAny(out, value, om, level + 1);
             } else {
@@ -2709,7 +2708,7 @@ secu_PrintSignerInfo(FILE *out, SEC_PKCS7SignerInfo *info,
         fprintf(out, "Authenticated Attributes:\n");
         iv = 0;
         while ((attr = info->authAttr[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Attribute (%d)", iv);
+            sprintf(om, "Attribute (%d)", iv);
             secu_PrintAttribute(out, attr, om, level + 2);
         }
     }
@@ -2724,7 +2723,7 @@ secu_PrintSignerInfo(FILE *out, SEC_PKCS7SignerInfo *info,
         fprintf(out, "Unauthenticated Attributes:\n");
         iv = 0;
         while ((attr = info->unAuthAttr[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Attribute (%x)", iv);
+            sprintf(om, "Attribute (%x)", iv);
             secu_PrintAttribute(out, attr, om, level + 2);
         }
     }
@@ -2758,7 +2757,7 @@ SECU_PrintCRLInfo(FILE *out, CERTCrl *crl, char *m, int level)
     if (crl->entries != NULL) {
         iv = 0;
         while ((entry = crl->entries[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Entry %d (0x%x):\n", iv, iv);
+            sprintf(om, "Entry %d (0x%x):\n", iv, iv);
             SECU_Indent(out, level + 1);
             fputs(om, out);
             SECU_PrintInteger(out, &(entry->serialNumber), "Serial Number",
@@ -2797,7 +2796,7 @@ secu_PrintPKCS7Signed(FILE *out, SEC_PKCS7SignedData *src,
         fprintf(out, "Digest Algorithm List:\n");
         iv = 0;
         while ((digAlg = src->digestAlgorithms[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Digest Algorithm (%x)", iv);
+            sprintf(om, "Digest Algorithm (%x)", iv);
             SECU_PrintAlgorithmID(out, digAlg, om, level + 2);
         }
     }
@@ -2814,7 +2813,7 @@ secu_PrintPKCS7Signed(FILE *out, SEC_PKCS7SignedData *src,
         fprintf(out, "Certificate List:\n");
         iv = 0;
         while ((aCert = src->rawCerts[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Certificate (%x)", iv);
+            sprintf(om, "Certificate (%x)", iv);
             rv = SECU_PrintSignedData(out, aCert, om, level + 2,
                                       (SECU_PPFunc)SECU_PrintCertificate);
             if (rv)
@@ -2828,7 +2827,7 @@ secu_PrintPKCS7Signed(FILE *out, SEC_PKCS7SignedData *src,
         fprintf(out, "Signed Revocation Lists:\n");
         iv = 0;
         while ((aCrl = src->crls[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Signed Revocation List (%x)", iv);
+            sprintf(om, "Signed Revocation List (%x)", iv);
             SECU_Indent(out, level + 2);
             fprintf(out, "%s:\n", om);
             SECU_PrintAlgorithmID(out, &aCrl->signatureWrap.signatureAlgorithm,
@@ -2847,7 +2846,7 @@ secu_PrintPKCS7Signed(FILE *out, SEC_PKCS7SignedData *src,
         fprintf(out, "Signer Information List:\n");
         iv = 0;
         while ((sigInfo = src->signerInfos[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Signer Information (%x)", iv);
+            sprintf(om, "Signer Information (%x)", iv);
             secu_PrintSignerInfo(out, sigInfo, om, level + 2);
         }
     }
@@ -2877,7 +2876,7 @@ secu_PrintPKCS7Enveloped(FILE *out, SEC_PKCS7EnvelopedData *src,
         fprintf(out, "Recipient Information List:\n");
         iv = 0;
         while ((recInfo = src->recipientInfos[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Recipient Information (%x)", iv);
+            sprintf(om, "Recipient Information (%x)", iv);
             secu_PrintRecipientInfo(out, recInfo, om, level + 2);
         }
     }
@@ -2914,7 +2913,7 @@ secu_PrintPKCS7SignedAndEnveloped(FILE *out,
         fprintf(out, "Recipient Information List:\n");
         iv = 0;
         while ((recInfo = src->recipientInfos[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Recipient Information (%x)", iv);
+            sprintf(om, "Recipient Information (%x)", iv);
             secu_PrintRecipientInfo(out, recInfo, om, level + 2);
         }
     }
@@ -2925,7 +2924,7 @@ secu_PrintPKCS7SignedAndEnveloped(FILE *out,
         fprintf(out, "Digest Algorithm List:\n");
         iv = 0;
         while ((digAlg = src->digestAlgorithms[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Digest Algorithm (%x)", iv);
+            sprintf(om, "Digest Algorithm (%x)", iv);
             SECU_PrintAlgorithmID(out, digAlg, om, level + 2);
         }
     }
@@ -2941,7 +2940,7 @@ secu_PrintPKCS7SignedAndEnveloped(FILE *out,
         fprintf(out, "Certificate List:\n");
         iv = 0;
         while ((aCert = src->rawCerts[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Certificate (%x)", iv);
+            sprintf(om, "Certificate (%x)", iv);
             rv = SECU_PrintSignedData(out, aCert, om, level + 2,
                                       (SECU_PPFunc)SECU_PrintCertificate);
             if (rv)
@@ -2955,7 +2954,7 @@ secu_PrintPKCS7SignedAndEnveloped(FILE *out,
         fprintf(out, "Signed Revocation Lists:\n");
         iv = 0;
         while ((aCrl = src->crls[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Signed Revocation List (%x)", iv);
+            sprintf(om, "Signed Revocation List (%x)", iv);
             SECU_Indent(out, level + 2);
             fprintf(out, "%s:\n", om);
             SECU_PrintAlgorithmID(out, &aCrl->signatureWrap.signatureAlgorithm,
@@ -2974,7 +2973,7 @@ secu_PrintPKCS7SignedAndEnveloped(FILE *out,
         fprintf(out, "Signer Information List:\n");
         iv = 0;
         while ((sigInfo = src->signerInfos[iv++]) != NULL) {
-            snprintf(om, sizeof(om), "Signer Information (%x)", iv);
+            sprintf(om, "Signer Information (%x)", iv);
             secu_PrintSignerInfo(out, sigInfo, om, level + 2);
         }
     }

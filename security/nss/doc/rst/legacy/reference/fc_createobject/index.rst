@@ -15,7 +15,7 @@ FC_CreateObject
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_CreateObject(
         CK_SESSION_HANDLE hSession,

@@ -408,7 +408,7 @@ class StrictNameMatchingPolicy : public NameMatchingPolicy {
       Time notBefore,
       /*out*/ FallBackToSearchWithinSubject& fallBacktoCommonName) override;
 };
-}  // namespace pkix
-}  // namespace mozilla
+}
+}  // namespace mozilla::pkix
 
 #endif  // mozilla_pkix_pkixtypes_h

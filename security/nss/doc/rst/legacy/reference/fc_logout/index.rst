@@ -15,7 +15,7 @@ FC_Logout
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_Logout(
         CK_SESSION_HANDLE hSession

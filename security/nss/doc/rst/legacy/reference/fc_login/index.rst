@@ -15,7 +15,7 @@ FC_Login
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_Login(
         CK_SESSION_HANDLE hSession,

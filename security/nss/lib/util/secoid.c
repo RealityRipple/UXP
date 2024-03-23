@@ -2118,7 +2118,7 @@ SECOID_Init(void)
 
         if (oid->mechanism != CKM_INVALID_MECHANISM) {
             entry = PL_HashTableAdd(oidmechhash,
-                                    (void *)(uintptr_t)oid->mechanism, (void *)oid);
+                                    (void *)oid->mechanism, (void *)oid);
             if (entry == NULL) {
                 PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
                 PORT_Assert(0); /* This function should never fail. */
@@ -2137,13 +2137,9 @@ SECOID_FindOIDByMechanism(unsigned long mechanism)
 {
     SECOidData *ret;
 
-    PR_ASSERT(oidmechhash != NULL);
-    if (oidmechhash == NULL && SECOID_Init() != SECSuccess) {
-        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-        return NULL;
-    }
+    PR_ASSERT(oidhash != NULL);
 
-    ret = PL_HashTableLookupConst(oidmechhash, (void *)(uintptr_t)mechanism);
+    ret = PL_HashTableLookupConst(oidmechhash, (void *)mechanism);
     if (ret == NULL) {
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
     }
@@ -2157,10 +2153,6 @@ SECOID_FindOID(const SECItem *oid)
     SECOidData *ret;
 
     PR_ASSERT(oidhash != NULL);
-    if (oidhash == NULL && SECOID_Init() != SECSuccess) {
-        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-        return NULL;
-    }
 
     ret = PL_HashTableLookupConst(oidhash, oid);
     if (ret == NULL) {

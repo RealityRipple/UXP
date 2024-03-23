@@ -129,15 +129,15 @@ GetSubjectFromUser(unsigned long serial)
     }
     cp = chop(buf);
     if (*cp == '\0') {
-        snprintf(common_name_buf, sizeof(common_name_buf), "%s (%lu)", DEFAULT_COMMON_NAME,
-                 serial);
+        sprintf(common_name_buf, "%s (%lu)", DEFAULT_COMMON_NAME,
+                serial);
         cp = common_name_buf;
     }
     common_name = PORT_ZAlloc(strlen(cp) + 6);
     if (!common_name) {
         out_of_memory();
     }
-    snprintf(common_name, strlen(cp) + 6, "CN=%s, ", cp);
+    sprintf(common_name, "CN=%s, ", cp);
     subjectlen += strlen(common_name);
 
 #ifdef VERBOSE_PROMPTS
@@ -157,7 +157,7 @@ GetSubjectFromUser(unsigned long serial)
         if (!org) {
             out_of_memory();
         }
-        snprintf(org, strlen(cp) + 5, "O=%s, ", cp);
+        sprintf(org, "O=%s, ", cp);
         subjectlen += strlen(org);
     }
 
@@ -178,7 +178,7 @@ GetSubjectFromUser(unsigned long serial)
         if (!orgunit) {
             out_of_memory();
         }
-        snprintf(orgunit, strlen(cp) + 6, "OU=%s, ", cp);
+        sprintf(orgunit, "OU=%s, ", cp);
         subjectlen += strlen(orgunit);
     }
 
@@ -198,7 +198,7 @@ GetSubjectFromUser(unsigned long serial)
         if (!state) {
             out_of_memory();
         }
-        snprintf(state, strlen(cp) + 6, "ST=%s, ", cp);
+        sprintf(state, "ST=%s, ", cp);
         subjectlen += strlen(state);
     }
 
@@ -221,7 +221,7 @@ GetSubjectFromUser(unsigned long serial)
         if (!country) {
             out_of_memory();
         }
-        snprintf(country, strlen(cp) + 5, "C=%s, ", cp);
+        sprintf(country, "C=%s, ", cp);
         subjectlen += strlen(country);
     }
 
@@ -241,7 +241,7 @@ GetSubjectFromUser(unsigned long serial)
         if (!uid) {
             out_of_memory();
         }
-        snprintf(uid, strlen(cp) + 7, "UID=%s, ", cp);
+        sprintf(uid, "UID=%s, ", cp);
         subjectlen += strlen(uid);
     }
 
@@ -261,7 +261,7 @@ GetSubjectFromUser(unsigned long serial)
         if (!email) {
             out_of_memory();
         }
-        snprintf(email, strlen(cp) + 5, "E=%s,", cp);
+        sprintf(email, "E=%s,", cp);
         subjectlen += strlen(email);
     }
 
@@ -272,14 +272,14 @@ GetSubjectFromUser(unsigned long serial)
         out_of_memory();
     }
 
-    snprintf(subject, subjectlen, "%s%s%s%s%s%s%s",
-             common_name ? common_name : "",
-             org ? org : "",
-             orgunit ? orgunit : "",
-             state ? state : "",
-             country ? country : "",
-             uid ? uid : "",
-             email ? email : "");
+    sprintf(subject, "%s%s%s%s%s%s%s",
+            common_name ? common_name : "",
+            org ? org : "",
+            orgunit ? orgunit : "",
+            state ? state : "",
+            country ? country : "",
+            uid ? uid : "",
+            email ? email : "");
     if ((strlen(subject) > 1) && (subject[strlen(subject) - 1] == ' ')) {
         subject[strlen(subject) - 2] = '\0';
     }
@@ -662,7 +662,7 @@ output_ca_cert(CERTCertificate *cert, CERTCertDBHandle *db)
     if (!filename)
         out_of_memory();
 
-    snprintf(filename, strlen(DEFAULT_X509_BASENAME) + 8, "%s.raw", DEFAULT_X509_BASENAME);
+    sprintf(filename, "%s.raw", DEFAULT_X509_BASENAME);
     if ((out = fopen(filename, "wb")) == NULL) {
         PR_fprintf(errorFD, "%s: Can't open %s output file\n", PROGRAM_NAME,
                    filename);
@@ -691,7 +691,7 @@ output_ca_cert(CERTCertificate *cert, CERTCertDBHandle *db)
 
     /* and the cooked */
 
-    snprintf(filename, strlen(DEFAULT_X509_BASENAME) + 8, "%s.cacert", DEFAULT_X509_BASENAME);
+    sprintf(filename, "%s.cacert", DEFAULT_X509_BASENAME);
     if ((out = fopen(filename, "wb")) == NULL) {
         PR_fprintf(errorFD, "%s: Can't open %s output file\n", PROGRAM_NAME,
                    filename);

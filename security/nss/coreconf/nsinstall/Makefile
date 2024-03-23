@@ -34,10 +34,6 @@ ifdef NATIVE_FLAGS
 OS_CFLAGS=$(NATIVE_FLAGS)
 endif
 
-ifdef NATIVE_LDFLAGS
-LDFLAGS=$(NATIVE_LDFLAGS)
-endif
-
 include $(DEPTH)/coreconf/rules.mk
 
 # Redefine MAKE_OBJDIR for just this directory

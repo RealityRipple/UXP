@@ -15,7 +15,7 @@ FC_EncryptInit
 
 .. container::
 
-   .. code::
+   .. code:: eval
 
       CK_RV FC_EncryptInit(
         CK_SESSION_HANDLE hSession,
