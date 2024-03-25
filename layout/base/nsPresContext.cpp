@@ -1145,7 +1145,7 @@ nsPresContext::CompatibilityModeChanged()
   }
 
   StyleSetHandle styleSet = mShell->StyleSet();
-  auto cache = nsLayoutStylesheetCache::For(styleSet->BackendType());
+  auto cache = nsLayoutStylesheetCache::Get();
   StyleSheet* sheet = cache->QuirkSheet();
 
   if (needsQuirkSheet) {
