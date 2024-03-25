@@ -2139,8 +2139,6 @@ nsPresContext::EnsureSafeToHandOutCSSRules()
 {
   nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
   if (!styleSet) {
-    // ServoStyleSets do not need to handle copy-on-write style sheet
-    // innards like with CSSStyleSheets.
     return;
   }
 
@@ -2481,9 +2479,6 @@ nsPresContext::HasCachedStyleData()
 
   nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
   if (!styleSet) {
-    // XXXheycam ServoStyleSets do not use the rule tree, so just assume for now
-    // that we need to restyle when e.g. dppx changes assuming we're sufficiently
-    // bootstrapped.
     return mShell->DidInitialize();
   }
 
