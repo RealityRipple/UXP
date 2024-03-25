@@ -9115,14 +9115,6 @@ nsLayoutUtils::GetCumulativeApzCallbackTransform(nsIFrame* aFrame)
   return delta;
 }
 
-/* static */ bool
-nsLayoutUtils::SupportsServoStyleBackend(nsIDocument* aDocument)
-{
-  return StyloEnabled() &&
-         aDocument->IsHTMLOrXHTML() &&
-         static_cast<nsDocument*>(aDocument)->IsContentDocument();
-}
-
 static
 bool
 LineHasNonEmptyContentWorker(nsIFrame* aFrame)
