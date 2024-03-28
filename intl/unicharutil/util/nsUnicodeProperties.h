@@ -54,6 +54,7 @@ enum EmojiPresentation {
 
 const uint32_t kVariationSelector15 = 0xFE0E; // text presentation
 const uint32_t kVariationSelector16 = 0xFE0F; // emoji presentation
+const uint32_t kCombiningEnclosingKeycap = 0x20E3; // emoji append
 
 // ICU is available, so simply forward to its API
 

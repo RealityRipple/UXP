@@ -3119,6 +3119,15 @@ gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh, uint32_t aNextCh)
             emoji == EmojiPresentation::EmojiExtended) &&
            aNextCh != kVariationSelector15)))) {
         charLang = eFontPrefLang_Emoji;
+    } else if ((aNextCh == kCombiningEnclosingKeycap ||
+         aNextCh == kVariationSelector16) &&
+       ((aCh >= 0x30 && aCh <= 0x39) ||
+        aCh == 0x2A || aCh == 0x23)) {
+        // if char is #, *, or a number between 0 and 9
+        // and followed by 0x20E3 (or 0xFE0F 0x20E3)
+        // it should be shown as a keycap.
+        // TODO: detect if the 0xFE0F is actually followed by a 0x20E3
+        charLang = eFontPrefLang_Emoji;
     } else {
         // get the pref font list if it hasn't been set up already
         uint32_t unicodeRange = FindCharUnicodeRange(aCh);
