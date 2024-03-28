@@ -215,7 +215,8 @@ gfxPlatformGtk::GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
     if (emoji != EmojiPresentation::TextOnly) {
         if (aNextCh == kVariationSelector16 ||
            (aNextCh != kVariationSelector15 &&
-            emoji == EmojiPresentation::EmojiDefault)) {
+            (emoji == EmojiPresentation::EmojiDefault ||
+             emoji == EmojiPresentation::EmojiExtended))) {
             // if char is followed by VS16, try for a color emoji glyph
             aFontList.AppendElement(kFontTwemojiMozilla);
         }

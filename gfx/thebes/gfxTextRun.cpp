@@ -3115,7 +3115,8 @@ gfxFontGroup::WhichPrefFontSupportsChar(uint32_t aCh, uint32_t aNextCh)
     EmojiPresentation emoji = GetEmojiPresentation(aCh);
     if ((emoji != EmojiPresentation::TextOnly &&
          (aNextCh == kVariationSelector16 ||
-          (emoji == EmojiPresentation::EmojiDefault &&
+          ((emoji == EmojiPresentation::EmojiDefault ||
+            emoji == EmojiPresentation::EmojiExtended) &&
            aNextCh != kVariationSelector15)))) {
         charLang = eFontPrefLang_Emoji;
     } else {

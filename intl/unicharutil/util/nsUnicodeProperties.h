@@ -48,7 +48,8 @@ enum IdentifierType {
 enum EmojiPresentation {
   TextOnly = 0,
   TextDefault = 1,
-  EmojiDefault = 2
+  EmojiDefault = 2,
+  EmojiExtended = 3
 };
 
 const uint32_t kVariationSelector15 = 0xFE0E; // text presentation
@@ -185,6 +186,9 @@ GetEmojiPresentation(uint32_t aCh)
 
   if (u_hasBinaryProperty(aCh, UCHAR_EMOJI_PRESENTATION)) {
     return EmojiDefault;
+  }
+  if (u_hasBinaryProperty(aCh, UCHAR_EXTENDED_PICTOGRAPHIC)) {
+    return EmojiExtended;
   }
   return TextDefault;
 }

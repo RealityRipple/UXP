@@ -623,7 +623,8 @@ gfxWindowsPlatform::GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
     if (emoji != EmojiPresentation::TextOnly) {
         if (aNextCh == kVariationSelector16 ||
            (aNextCh != kVariationSelector15 &&
-            emoji == EmojiPresentation::EmojiDefault)) {
+            (emoji == EmojiPresentation::EmojiDefault ||
+             emoji == EmojiPresentation::EmojiExtended))) {
             // if char is followed by VS16, try for a color emoji glyph
             // XXX: For Win8+ native, aFontList.AppendElement(kFontSegoeUIEmoji);
             aFontList.AppendElement(kFontTwemojiMozilla);
