@@ -891,19 +891,15 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
 // Note: We don't hold a reference on the shell; it has a reference to
 // us
 void
-nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
+nsPresContext::AttachShell(nsIPresShell* aShell)
 {
   MOZ_ASSERT(!mShell);
   mShell = aShell;
 
-  if (aBackendType == StyleBackendType::Servo) {
-    mRestyleManager = new ServoRestyleManager(this);
-  } else {
-    // Since RestyleManager is also the name of a method of nsPresContext,
-    // it is necessary to prefix the class with the mozilla namespace
-    // here.
-    mRestyleManager = new mozilla::RestyleManager(this);
-  }
+  // Since RestyleManager is also the name of a method of nsPresContext,
+  // it is necessary to prefix the class with the mozilla namespace
+  // here.
+  mRestyleManager = new mozilla::RestyleManager(this);
 
   // Since CounterStyleManager is also the name of a method of
   // nsPresContext, it is necessary to prefix the class with the mozilla
@@ -1149,7 +1145,7 @@ nsPresContext::CompatibilityModeChanged()
   }
 
   StyleSetHandle styleSet = mShell->StyleSet();
-  auto cache = nsLayoutStylesheetCache::For(styleSet->BackendType());
+  auto cache = nsLayoutStylesheetCache::Get();
   StyleSheet* sheet = cache->QuirkSheet();
 
   if (needsQuirkSheet) {
@@ -1888,15 +1884,8 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
 
   // MediumFeaturesChanged updates the applied rules, so it always gets called.
   if (mShell) {
-    // XXXheycam ServoStyleSets don't support responding to medium
-    // changes yet.
-    if (mShell->StyleSet()->IsGecko()) {
-      if (mShell->StyleSet()->AsGecko()->MediumFeaturesChanged()) {
-        aRestyleHint |= eRestyle_Subtree;
-      }
-    } else {
-      NS_WARNING("stylo: ServoStyleSets don't support responding to medium "
-                 "changes yet. See bug 1290228.");
+    if (mShell->StyleSet()->AsGecko()->MediumFeaturesChanged()) {
+      aRestyleHint |= eRestyle_Subtree;
     }
   }
 
@@ -2150,8 +2139,6 @@ nsPresContext::EnsureSafeToHandOutCSSRules()
 {
   nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
   if (!styleSet) {
-    // ServoStyleSets do not need to handle copy-on-write style sheet
-    // innards like with CSSStyleSheets.
     return;
   }
 
@@ -2492,9 +2479,6 @@ nsPresContext::HasCachedStyleData()
 
   nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
   if (!styleSet) {
-    // XXXheycam ServoStyleSets do not use the rule tree, so just assume for now
-    // that we need to restyle when e.g. dppx changes assuming we're sufficiently
-    // bootstrapped.
     return mShell->DidInitialize();
   }
 
