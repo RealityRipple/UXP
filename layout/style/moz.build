@@ -79,7 +79,6 @@ EXPORTS.mozilla += [
     'CSSVariableResolver.h',
     'CSSVariableValues.h',
     'DeprecatedUtils.h',
-    'HandleRefPtr.h',
     'IncrementalClearCOMRuleArray.h',
     'LayerAnimationInfo.h',
     'RuleNodeCacheConditions.h',
