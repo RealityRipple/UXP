@@ -24,6 +24,7 @@
 #include "nsDOMCSSDeclaration.h"
 #include "nsNameSpaceManager.h"
 #include "nsXMLNameSpaceMap.h"
+#include "nsCSSParser.h"
 #include "nsCSSPseudoClasses.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsTArray.h"
@@ -1607,7 +1608,7 @@ StyleRule::SetSelectorText(const nsAString& aSelectorText)
 
   // NOTE: Passing a null loader means that the parser is always in
   // standards mode and never in quirks mode.
-  nsCSSParser css(loader, sheet);
+  nsCSSParser parser(loader, sheet);
 
   // StyleRule lives inside of the Inner, it is unsafe to call WillDirty
   // if sheet does not already have a unique Inner.
@@ -1616,7 +1617,7 @@ StyleRule::SetSelectorText(const nsAString& aSelectorText)
 
   nsCSSSelectorList* selectorList = nullptr;
 
-  nsresult result = css.ParseSelectorString(
+  nsresult result = parser.ParseSelectorString(
     aSelectorText, sheet->GetSheetURI(), 0, &selectorList);
   if (NS_FAILED(result)) {
     // Ignore parsing errors and continue to use the previous value.
