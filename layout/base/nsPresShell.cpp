@@ -1391,7 +1391,7 @@ PresShell::UpdatePreferenceStyles()
 
   RemovePreferenceStyles();
 
-  mStyleSet->AppendStyleSheet(SheetType::User, newPrefSheet->AsGecko());
+  mStyleSet->AppendStyleSheet(SheetType::User, newPrefSheet->AsConcrete());
   mPrefStyleSheet = newPrefSheet;
 
   mStyleSet->EndUpdate();
@@ -1401,7 +1401,7 @@ void
 PresShell::RemovePreferenceStyles()
 {
   if (mPrefStyleSheet) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, mPrefStyleSheet->AsGecko());
+    mStyleSet->RemoveStyleSheet(SheetType::User, mPrefStyleSheet->AsConcrete());
     mPrefStyleSheet = nullptr;
   }
 }
@@ -1424,13 +1424,13 @@ PresShell::AddUserSheet(nsISupports* aSheet)
   // Iterate forwards when removing so the searches for RemoveStyleSheet are as
   // short as possible.
   for (StyleSheet* sheet : userSheets) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, sheet->AsGecko());
+    mStyleSet->RemoveStyleSheet(SheetType::User, sheet->AsConcrete());
   }
 
   // Now iterate backwards, so that the order of userSheets will be the same as
   // the order of sheets from it in the style set.
   for (StyleSheet* sheet : Reversed(userSheets)) {
-    mStyleSet->PrependStyleSheet(SheetType::User, sheet->AsGecko());
+    mStyleSet->PrependStyleSheet(SheetType::User, sheet->AsConcrete());
   }
 
   mStyleSet->EndUpdate();
@@ -1448,7 +1448,7 @@ PresShell::AddAgentSheet(nsISupports* aSheet)
     return;
   }
 
-  mStyleSet->AppendStyleSheet(SheetType::Agent, sheet->AsGecko());
+  mStyleSet->AppendStyleSheet(SheetType::Agent, sheet->AsConcrete());
   RestyleForCSSRuleChanges();
 }
 
@@ -1465,9 +1465,9 @@ PresShell::AddAuthorSheet(nsISupports* aSheet)
   StyleSheet* firstAuthorSheet =
     mDocument->GetFirstAdditionalAuthorSheet();
   if (firstAuthorSheet) {
-    mStyleSet->InsertStyleSheetBefore(SheetType::Doc, sheet->AsGecko(), firstAuthorSheet->AsGecko());
+    mStyleSet->InsertStyleSheetBefore(SheetType::Doc, sheet->AsConcrete(), firstAuthorSheet->AsConcrete());
   } else {
-    mStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsGecko());
+    mStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsConcrete());
   }
 
   RestyleForCSSRuleChanges();
@@ -1481,7 +1481,7 @@ PresShell::RemoveSheet(SheetType aType, nsISupports* aSheet)
     return;
   }
 
-  mStyleSet->RemoveStyleSheet(aType, sheet->AsGecko());
+  mStyleSet->RemoveStyleSheet(aType, sheet->AsConcrete());
   RestyleForCSSRuleChanges();
 }
 
@@ -4465,7 +4465,7 @@ PresShell::RecordStyleSheetChange(StyleSheet* aStyleSheet)
   if (mStylesHaveChanged)
     return;
 
-  Element* scopeElement = aStyleSheet->AsGecko()->GetScopeElement();
+  Element* scopeElement = aStyleSheet->AsConcrete()->GetScopeElement();
   if (scopeElement) {
     mChangedScopeStyleRoots.AppendElement(scopeElement);
     return;
@@ -8761,7 +8761,7 @@ PresShell::SetAgentStyleSheets(const nsTArray<RefPtr<StyleSheet>>& aSheets)
 {
   nsTArray<RefPtr<CSSStyleSheet>> newSheets(aSheets.Length());
   for (auto& sheet : aSheets) {
-    newSheets.AppendElement(sheet->AsGecko());
+    newSheets.AppendElement(sheet->AsConcrete());
   }
   return mStyleSet->ReplaceSheets(SheetType::Agent, newSheets);
 }
@@ -8769,13 +8769,13 @@ PresShell::SetAgentStyleSheets(const nsTArray<RefPtr<StyleSheet>>& aSheets)
 nsresult
 PresShell::AddOverrideStyleSheet(StyleSheet* aSheet)
 {
-  return mStyleSet->PrependStyleSheet(SheetType::Override, aSheet->AsGecko());
+  return mStyleSet->PrependStyleSheet(SheetType::Override, aSheet->AsConcrete());
 }
 
 nsresult
 PresShell::RemoveOverrideStyleSheet(StyleSheet* aSheet)
 {
-  return mStyleSet->RemoveStyleSheet(SheetType::Override, aSheet->AsGecko());
+  return mStyleSet->RemoveStyleSheet(SheetType::Override, aSheet->AsConcrete());
 }
 
 #ifdef MOZ_ENABLE_NPAPI
