@@ -176,8 +176,7 @@
 #include "nsPlaceholderFrame.h"
 #include "nsTransitionManager.h"
 #include "ChildIterator.h"
-#include "mozilla/RestyleManagerHandle.h"
-#include "mozilla/RestyleManagerHandleInlines.h"
+#include "mozilla/RestyleManager.h"
 #include "nsIDOMHTMLElement.h"
 #include "nsIDragSession.h"
 #include "nsIFrameInlines.h"
@@ -188,8 +187,6 @@
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/ScrollInputMethods.h"
 #include "nsStyleSet.h"
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/ImageTracker.h"
@@ -567,7 +564,7 @@ VerifyStyleTree(nsPresContext* aPresContext, nsFrameManager* aFrameManager)
 {
   if (nsFrame::GetVerifyStyleTreeEnable()) {
     nsIFrame* rootFrame = aFrameManager->GetRootFrame();
-    aPresContext->RestyleManager()->AsGecko()->DebugVerifyStyleTree(rootFrame);
+    aPresContext->RestyleManager()->DebugVerifyStyleTree(rootFrame);
   }
 }
 #define VERIFY_STYLE_TREE ::VerifyStyleTree(mPresContext, mFrameConstructor)
@@ -846,7 +843,7 @@ PresShell::~PresShell()
 
   MOZ_ASSERT(mAllocatedPointers.IsEmpty(), "Some pres arena objects were not freed");
 
-  mStyleSet->Delete();
+  delete mStyleSet;
   delete mFrameConstructor;
 
   mCurrentEventContent = nullptr;
@@ -862,7 +859,7 @@ void
 PresShell::Init(nsIDocument* aDocument,
                 nsPresContext* aPresContext,
                 nsViewManager* aViewManager,
-                StyleSetHandle aStyleSet)
+                nsStyleSet* aStyleSet)
 {
   NS_PRECONDITION(aDocument, "null ptr");
   NS_PRECONDITION(aPresContext, "null ptr");
@@ -1394,7 +1391,7 @@ PresShell::UpdatePreferenceStyles()
 
   RemovePreferenceStyles();
 
-  mStyleSet->AppendStyleSheet(SheetType::User, newPrefSheet);
+  mStyleSet->AppendStyleSheet(SheetType::User, newPrefSheet->AsConcrete());
   mPrefStyleSheet = newPrefSheet;
 
   mStyleSet->EndUpdate();
@@ -1404,7 +1401,7 @@ void
 PresShell::RemovePreferenceStyles()
 {
   if (mPrefStyleSheet) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, mPrefStyleSheet);
+    mStyleSet->RemoveStyleSheet(SheetType::User, mPrefStyleSheet->AsConcrete());
     mPrefStyleSheet = nullptr;
   }
 }
@@ -1427,13 +1424,13 @@ PresShell::AddUserSheet(nsISupports* aSheet)
   // Iterate forwards when removing so the searches for RemoveStyleSheet are as
   // short as possible.
   for (StyleSheet* sheet : userSheets) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, sheet);
+    mStyleSet->RemoveStyleSheet(SheetType::User, sheet->AsConcrete());
   }
 
   // Now iterate backwards, so that the order of userSheets will be the same as
   // the order of sheets from it in the style set.
   for (StyleSheet* sheet : Reversed(userSheets)) {
-    mStyleSet->PrependStyleSheet(SheetType::User, sheet);
+    mStyleSet->PrependStyleSheet(SheetType::User, sheet->AsConcrete());
   }
 
   mStyleSet->EndUpdate();
@@ -1451,7 +1448,7 @@ PresShell::AddAgentSheet(nsISupports* aSheet)
     return;
   }
 
-  mStyleSet->AppendStyleSheet(SheetType::Agent, sheet);
+  mStyleSet->AppendStyleSheet(SheetType::Agent, sheet->AsConcrete());
   RestyleForCSSRuleChanges();
 }
 
@@ -1468,9 +1465,9 @@ PresShell::AddAuthorSheet(nsISupports* aSheet)
   StyleSheet* firstAuthorSheet =
     mDocument->GetFirstAdditionalAuthorSheet();
   if (firstAuthorSheet) {
-    mStyleSet->InsertStyleSheetBefore(SheetType::Doc, sheet, firstAuthorSheet);
+    mStyleSet->InsertStyleSheetBefore(SheetType::Doc, sheet->AsConcrete(), firstAuthorSheet->AsConcrete());
   } else {
-    mStyleSet->AppendStyleSheet(SheetType::Doc, sheet);
+    mStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsConcrete());
   }
 
   RestyleForCSSRuleChanges();
@@ -1484,7 +1481,7 @@ PresShell::RemoveSheet(SheetType aType, nsISupports* aSheet)
     return;
   }
 
-  mStyleSet->RemoveStyleSheet(aType, sheet);
+  mStyleSet->RemoveStyleSheet(aType, sheet->AsConcrete());
   RestyleForCSSRuleChanges();
 }
 
@@ -2853,7 +2850,7 @@ PresShell::RecreateFramesFor(nsIContent* aContent)
 
   // Mark ourselves as not safe to flush while we're doing frame construction.
   ++mChangeNestCount;
-  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
+  RestyleManager* restyleManager = mPresContext->RestyleManager();
   nsresult rv = restyleManager->ProcessRestyledFrames(changeList);
   restyleManager->FlushOverflowChangedTracker();
   --mChangeNestCount;
@@ -3639,7 +3636,7 @@ void
 PresShell::DispatchSynthMouseMove(WidgetGUIEvent* aEvent,
                                   bool aFlushOnHoverChange)
 {
-  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
+  RestyleManager* restyleManager = mPresContext->RestyleManager();
   uint32_t hoverGenerationBefore =
     restyleManager->GetHoverGeneration();
   nsEventStatus status;
@@ -4162,7 +4159,7 @@ PresShell::DocumentStatesChanged(nsIDocument* aDocument,
   NS_PRECONDITION(!mIsDocumentGone, "Unexpected DocumentStatesChanged");
   NS_PRECONDITION(aDocument == mDocument, "Unexpected aDocument");
 
-  nsStyleSet* styleSet = mStyleSet->GetAsGecko();
+  nsStyleSet* styleSet = mStyleSet;
   if (!styleSet) {
     return;
   }
@@ -4444,7 +4441,7 @@ nsIPresShell::RestyleForCSSRuleChanges()
     return;
   }
 
-  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
+  RestyleManager* restyleManager = mPresContext->RestyleManager();
   if (scopeRoots.IsEmpty()) {
     // If scopeRoots is empty, we know that mStylesHaveChanged was true at
     // the beginning of this function, and that we need to restyle the whole
@@ -4468,7 +4465,7 @@ PresShell::RecordStyleSheetChange(StyleSheet* aStyleSheet)
   if (mStylesHaveChanged)
     return;
 
-  Element* scopeElement = aStyleSheet->AsGecko()->GetScopeElement();
+  Element* scopeElement = aStyleSheet->AsConcrete()->GetScopeElement();
   if (scopeElement) {
     mChangedScopeStyleRoots.AppendElement(scopeElement);
     return;
@@ -6727,7 +6724,7 @@ FlushThrottledStyles(nsIDocument *aDocument, void *aData)
   if (shell && shell->IsVisible()) {
     nsPresContext* presContext = shell->GetPresContext();
     if (presContext) {
-      presContext->RestyleManager()->AsGecko()->UpdateOnlyAnimationStyles();
+      presContext->RestyleManager()->UpdateOnlyAnimationStyles();
     }
   }
 
@@ -8762,19 +8759,23 @@ PresShell::GetAgentStyleSheets(nsTArray<RefPtr<StyleSheet>>& aSheets)
 nsresult
 PresShell::SetAgentStyleSheets(const nsTArray<RefPtr<StyleSheet>>& aSheets)
 {
-  return mStyleSet->ReplaceSheets(SheetType::Agent, aSheets);
+  nsTArray<RefPtr<CSSStyleSheet>> newSheets(aSheets.Length());
+  for (auto& sheet : aSheets) {
+    newSheets.AppendElement(sheet->AsConcrete());
+  }
+  return mStyleSet->ReplaceSheets(SheetType::Agent, newSheets);
 }
 
 nsresult
 PresShell::AddOverrideStyleSheet(StyleSheet* aSheet)
 {
-  return mStyleSet->PrependStyleSheet(SheetType::Override, aSheet);
+  return mStyleSet->PrependStyleSheet(SheetType::Override, aSheet->AsConcrete());
 }
 
 nsresult
 PresShell::RemoveOverrideStyleSheet(StyleSheet* aSheet)
 {
-  return mStyleSet->RemoveStyleSheet(SheetType::Override, aSheet);
+  return mStyleSet->RemoveStyleSheet(SheetType::Override, aSheet->AsConcrete());
 }
 
 #ifdef MOZ_ENABLE_NPAPI
@@ -9467,9 +9468,9 @@ PresShell::Observe(nsISupports* aSubject,
         {
           nsAutoScriptBlocker scriptBlocker;
           ++mChangeNestCount;
-          RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
-          restyleManager->AsGecko()->ProcessRestyledFrames(changeList);
-          restyleManager->AsGecko()->FlushOverflowChangedTracker();
+          RestyleManager* restyleManager = mPresContext->RestyleManager();
+          restyleManager->ProcessRestyledFrames(changeList);
+          restyleManager->FlushOverflowChangedTracker();
           --mChangeNestCount;
         }
       }
@@ -9948,7 +9949,7 @@ PresShell::VerifyIncrementalReflow()
 
   // Create a new presentation shell to view the document. Use the
   // exact same style information that this document has.
-  nsAutoPtr<nsStyleSet> newSet(CloneStyleSet(mStyleSet->AsGecko()));
+  nsAutoPtr<nsStyleSet> newSet(CloneStyleSet(mStyleSet));
   nsCOMPtr<nsIPresShell> sh = mDocument->CreateShell(cx, vm, newSet.get());
   NS_ENSURE_TRUE(sh, false);
   newSet.forget();
@@ -10797,7 +10798,7 @@ PresShell::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
   *aPresShellSize += mFramesToDirty.ShallowSizeOfExcludingThis(aMallocSizeOf);
   *aPresShellSize += aArenaObjectsSize->mOther;
 
-  if (nsStyleSet* styleSet = StyleSet()->GetAsGecko()) {
+  if (nsStyleSet* styleSet = StyleSet()) {
     *aStyleSetsSize += styleSet->SizeOfIncludingThis(aMallocSizeOf);
   }
 
@@ -11005,7 +11006,7 @@ nsIPresShell::HasRuleProcessorUsedByMultipleStyleSets(uint32_t aSheetType,
   }
 
   *aRetVal = false;
-  if (nsStyleSet* styleSet = mStyleSet->GetAsGecko()) {
+  if (nsStyleSet* styleSet = mStyleSet) {
     *aRetVal = styleSet->HasRuleProcessorUsedByMultipleStyleSets(type);
   }
   return NS_OK;
