@@ -15,9 +15,6 @@ DOMCI_CLASS(TreeContentView)
 DOMCI_CLASS(XULTemplateBuilder)
 DOMCI_CLASS(XULTreeBuilder)
 
-// @font-face in CSS
-DOMCI_CLASS(CSSFontFaceRule)
-
 DOMCI_CLASS(ContentFrameMessageManager)
 DOMCI_CLASS(ContentProcessMessageManager)
 DOMCI_CLASS(ChromeMessageBroadcaster)
