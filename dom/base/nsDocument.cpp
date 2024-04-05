@@ -245,8 +245,6 @@
 #include "mozilla/dom/BoxObject.h"
 #include "gfxPrefs.h"
 #include "nsISupportsPrimitives.h"
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/SVGSVGElement.h"
@@ -1152,7 +1150,7 @@ nsDOMStyleSheetSetList::EnsureFresh()
   for (size_t index = 0; index < count; index++) {
     StyleSheet* sheet = mDocument->SheetAt(index);
     NS_ASSERTION(sheet, "Null sheet in sheet list!");
-    sheet->AsGecko()->GetTitle(title);
+    sheet->AsConcrete()->GetTitle(title);
     if (!title.IsEmpty() && !mNames.Contains(title) && !Add(title)) {
       return;
     }
@@ -2073,7 +2071,7 @@ nsDocument::RemoveDocStyleSheetsFromStyleSets()
     if (sheet->IsApplicable()) {
       nsCOMPtr<nsIPresShell> shell = GetShell();
       if (shell) {
-        shell->StyleSet()->RemoveDocStyleSheet(sheet);
+        shell->StyleSet()->RemoveDocStyleSheet(sheet->AsConcrete());
       }
     }
     // XXX Tell observers?
@@ -2092,7 +2090,7 @@ nsDocument::RemoveStyleSheetsFromStyleSets(
     if (sheet->IsApplicable()) {
       nsCOMPtr<nsIPresShell> shell = GetShell();
       if (shell) {
-        shell->StyleSet()->RemoveStyleSheet(aType, sheet);
+        shell->StyleSet()->RemoveStyleSheet(aType, sheet->AsConcrete());
       }
     }
     // XXX Tell observers?
@@ -2158,18 +2156,18 @@ nsDocument::ResetStylesheetsToURI(nsIURI* aURI)
 }
 
 static void
-AppendSheetsToStyleSet(StyleSetHandle aStyleSet,
+AppendSheetsToStyleSet(nsStyleSet* aStyleSet,
                        const nsTArray<RefPtr<StyleSheet>>& aSheets,
                        SheetType aType)
 {
   for (StyleSheet* sheet : Reversed(aSheets)) {
-    aStyleSet->AppendStyleSheet(aType, sheet);
+    aStyleSet->AppendStyleSheet(aType, sheet->AsConcrete());
   }
 }
 
 
 void
-nsDocument::FillStyleSet(StyleSetHandle aStyleSet)
+nsDocument::FillStyleSet(nsStyleSet* aStyleSet)
 {
   NS_PRECONDITION(aStyleSet, "Must have a style set");
   NS_PRECONDITION(aStyleSet->SheetCount(SheetType::Doc) == 0,
@@ -2179,21 +2177,21 @@ nsDocument::FillStyleSet(StyleSetHandle aStyleSet)
 
   for (StyleSheet* sheet : Reversed(mStyleSheets)) {
     if (sheet->IsApplicable()) {
-      aStyleSet->AddDocStyleSheet(sheet, this);
+      aStyleSet->AddDocStyleSheet(sheet->AsConcrete(), this);
     }
   }
 
   nsStyleSheetService *sheetService = nsStyleSheetService::GetInstance();
   if (sheetService) {
     for (StyleSheet* sheet : *sheetService->AuthorStyleSheets()) {
-      aStyleSet->AppendStyleSheet(SheetType::Doc, sheet);
+      aStyleSet->AppendStyleSheet(SheetType::Doc, sheet->AsConcrete());
     }
   }
 
   // Iterate backwards to maintain order
   for (StyleSheet* sheet : Reversed(mOnDemandBuiltInUASheets)) {
     if (sheet->IsApplicable()) {
-      aStyleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      aStyleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
   }
 
@@ -3431,7 +3429,7 @@ nsDocument::TryChannelCharset(nsIChannel *aChannel,
 
 already_AddRefed<nsIPresShell>
 nsDocument::CreateShell(nsPresContext* aContext, nsViewManager* aViewManager,
-                        StyleSetHandle aStyleSet)
+                        nsStyleSet* aStyleSet)
 {
   // Don't add anything here.  Add it to |doCreateShell| instead.
   // This exists so that subclasses can pass other values for the 4th
@@ -3441,7 +3439,7 @@ nsDocument::CreateShell(nsPresContext* aContext, nsViewManager* aViewManager,
 
 already_AddRefed<nsIPresShell>
 nsDocument::doCreateShell(nsPresContext* aContext,
-                          nsViewManager* aViewManager, StyleSetHandle aStyleSet)
+                          nsViewManager* aViewManager, nsStyleSet* aStyleSet)
 {
   NS_ASSERTION(!mPresShell, "We have a presshell already!");
 
@@ -3809,7 +3807,7 @@ nsDocument::AddOnDemandBuiltInUASheet(StyleSheet* aSheet)
       // do not override Firefox OS/Mobile's content.css sheet. Maybe we should
       // have an insertion point to match the order of
       // nsDocumentViewer::CreateStyleSet though?
-      shell->StyleSet()->PrependStyleSheet(SheetType::Agent, aSheet);
+      shell->StyleSet()->PrependStyleSheet(SheetType::Agent, aSheet->AsConcrete());
     }
   }
 
@@ -3821,7 +3819,7 @@ nsDocument::AddStyleSheetToStyleSets(StyleSheet* aSheet)
 {
   nsCOMPtr<nsIPresShell> shell = GetShell();
   if (shell) {
-    shell->StyleSet()->AddDocStyleSheet(aSheet, this);
+    shell->StyleSet()->AddDocStyleSheet(aSheet->AsConcrete(), this);
   }
 }
 
@@ -3830,7 +3828,7 @@ nsDocument::AddStyleSheetToStyleSets(StyleSheet* aSheet)
     className##Init init;                                                     \
     init.mBubbles = true;                                                     \
     init.mCancelable = true;                                                  \
-    init.mStylesheet = aSheet->AsGecko();                                     \
+    init.mStylesheet = aSheet->AsConcrete();                                  \
     init.memberName = argName;                                                \
                                                                               \
     RefPtr<className> event =                                               \
@@ -3888,7 +3886,7 @@ nsDocument::RemoveStyleSheetFromStyleSets(StyleSheet* aSheet)
 {
   nsCOMPtr<nsIPresShell> shell = GetShell();
   if (shell) {
-    shell->StyleSet()->RemoveDocStyleSheet(aSheet);
+    shell->StyleSet()->RemoveDocStyleSheet(aSheet->AsConcrete());
   }
 }
 
@@ -4104,7 +4102,7 @@ nsDocument::AddAdditionalStyleSheet(additionalSheetType aType, StyleSheet* aShee
   nsCOMPtr<nsIPresShell> shell = GetShell();
   if (shell) {
     SheetType type = ConvertAdditionalSheetType(aType);
-    shell->StyleSet()->AppendStyleSheet(type, aSheet);
+    shell->StyleSet()->AppendStyleSheet(type, aSheet->AsConcrete());
   }
 
   // Passing false, so documet.styleSheets.length will not be affected by
@@ -4132,7 +4130,7 @@ nsDocument::RemoveAdditionalStyleSheet(additionalSheetType aType, nsIURI* aSheet
       nsCOMPtr<nsIPresShell> shell = GetShell();
       if (shell) {
         SheetType type = ConvertAdditionalSheetType(aType);
-        shell->StyleSet()->RemoveStyleSheet(type, sheetRef);
+        shell->StyleSet()->RemoveStyleSheet(type, sheetRef->AsConcrete());
       }
     }
 
@@ -5572,13 +5570,13 @@ nsIDocument::GetSelectedStyleSheetSet(nsAString& aSheetSet)
     NS_ASSERTION(sheet, "Null sheet in sheet list!");
 
     bool disabled;
-    sheet->AsGecko()->GetDisabled(&disabled);
+    sheet->AsConcrete()->GetDisabled(&disabled);
     if (disabled) {
       // Disabled sheets don't affect the currently selected set
       continue;
     }
 
-    sheet->AsGecko()->GetTitle(title);
+    sheet->AsConcrete()->GetTitle(title);
 
     if (aSheetSet.IsEmpty()) {
       aSheetSet = title;
@@ -5685,9 +5683,9 @@ nsDocument::EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
     StyleSheet* sheet = SheetAt(index);
     NS_ASSERTION(sheet, "Null sheet in sheet list!");
 
-    sheet->AsGecko()->GetTitle(title);
+    sheet->AsConcrete()->GetTitle(title);
     if (!title.IsEmpty()) {
-      sheet->AsGecko()->SetEnabled(title.Equals(aSheetSet));
+      sheet->AsConcrete()->SetEnabled(title.Equals(aSheetSet));
     }
   }
   if (aUpdateCSSLoader) {
@@ -9395,7 +9393,7 @@ nsIDocument::CreateStaticClone(nsIDocShell* aCloneContainer)
         if (sheet) {
           if (sheet->IsApplicable()) {
             RefPtr<CSSStyleSheet> clonedSheet =
-              sheet->AsGecko()->Clone(nullptr, nullptr, clonedDoc, nullptr);
+              sheet->AsConcrete()->Clone(nullptr, nullptr, clonedDoc, nullptr);
             NS_WARNING_ASSERTION(clonedSheet,
                                  "Cloning a stylesheet didn't work!");
             if (clonedSheet) {
@@ -9410,7 +9408,7 @@ nsIDocument::CreateStaticClone(nsIDocShell* aCloneContainer)
         if (sheet) {
           if (sheet->IsApplicable()) {
             RefPtr<CSSStyleSheet> clonedSheet =
-              sheet->AsGecko()->Clone(nullptr, nullptr, clonedDoc, nullptr);
+              sheet->AsConcrete()->Clone(nullptr, nullptr, clonedDoc, nullptr);
             NS_WARNING_ASSERTION(clonedSheet,
                                  "Cloning a stylesheet didn't work!");
             if (clonedSheet) {
@@ -12118,7 +12116,7 @@ nsIDocument::FlushUserFontSet()
       nsTArray<nsFontFaceRuleContainer> rules;
       nsIPresShell* shell = GetShell();
       if (shell) {
-        if (!shell->StyleSet()->AsGecko()->AppendFontFaceRules(rules)) {
+        if (!shell->StyleSet()->AppendFontFaceRules(rules)) {
           return;
         }
       }

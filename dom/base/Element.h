@@ -57,7 +57,9 @@ class nsDocument;
 class nsDOMStringMap;
 
 namespace mozilla {
-class DeclarationBlock;
+namespace css {
+  class Declaration;
+} // namespace css
 namespace dom {
   struct AnimationFilter;
   struct ScrollIntoViewOptions;
@@ -274,13 +276,13 @@ public:
   /**
    * Get the inline style declaration, if any, for this element.
    */
-  virtual DeclarationBlock* GetInlineStyleDeclaration();
+  virtual css::Declaration* GetInlineStyleDeclaration();
 
   /**
    * Set the inline style declaration for this element. This will send
    * an appropriate AttributeChanged notification if aNotify is true.
    */
-  virtual nsresult SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
+  virtual nsresult SetInlineStyleDeclaration(css::Declaration* aDeclaration,
                                              const nsAString* aSerialized,
                                              bool aNotify);
 
@@ -288,7 +290,7 @@ public:
    * Get the SMIL override style declaration for this element. If the
    * rule hasn't been created, this method simply returns null.
    */
-  virtual DeclarationBlock* GetSMILOverrideStyleDeclaration();
+  virtual css::Declaration* GetSMILOverrideStyleDeclaration();
 
   /**
    * Set the SMIL override style declaration for this element. If
@@ -296,7 +298,7 @@ public:
    * context, so that the style changes will be noticed.
    */
   virtual nsresult SetSMILOverrideStyleDeclaration(
-    DeclarationBlock* aDeclaration, bool aNotify);
+    css::Declaration* aDeclaration, bool aNotify);
 
   /**
    * Returns a new nsISMILAttr that allows the caller to animate the given
@@ -814,24 +816,9 @@ public:
   already_AddRefed<nsIHTMLCollection>
     GetElementsByClassName(const nsAString& aClassNames);
 
-  CSSPseudoElementType GetPseudoElementType() const {
-    if (!HasProperties()) {
-      return CSSPseudoElementType::NotPseudo;
-    }
-    nsresult rv = NS_OK;
-    auto raw = GetProperty(nsGkAtoms::pseudoProperty, &rv);
-    if (rv == NS_PROPTABLE_PROP_NOT_THERE) {
-      return CSSPseudoElementType::NotPseudo;
-    }
-    return CSSPseudoElementType(reinterpret_cast<uintptr_t>(raw));
-  }
+  CSSPseudoElementType GetPseudoElementType() const;
 
-  void SetPseudoElementType(CSSPseudoElementType aPseudo) {
-    static_assert(sizeof(CSSPseudoElementType) <= sizeof(uintptr_t),
-                  "Need to be able to store this in a void*");
-    MOZ_ASSERT(aPseudo != CSSPseudoElementType::NotPseudo);
-    SetProperty(nsGkAtoms::pseudoProperty, reinterpret_cast<void*>(aPseudo));
-  }
+  void SetPseudoElementType(CSSPseudoElementType aPseudo);
 
 private:
   /**

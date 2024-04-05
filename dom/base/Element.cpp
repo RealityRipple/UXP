@@ -56,7 +56,6 @@
 #include "mozilla/AnimationComparator.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ContentEvents.h"
-#include "mozilla/DeclarationBlockInlines.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
@@ -106,6 +105,7 @@
 #include "nsViewManager.h"
 #include "nsIScrollableFrame.h"
 #include "mozilla/css/StyleRule.h" /* For nsCSSSelectorList */
+#include "mozilla/css/Declaration.h"
 #include "nsCSSRuleProcessor.h"
 #include "nsRuleProcessorData.h"
 #include "nsTextNode.h"
@@ -1481,6 +1481,27 @@ Element::GetElementsByClassName(const nsAString& aClassNames,
   return NS_OK;
 }
 
+CSSPseudoElementType
+Element::GetPseudoElementType() const {
+  if (!HasProperties()) {
+    return CSSPseudoElementType::NotPseudo;
+  }
+  nsresult rv = NS_OK;
+  auto raw = GetProperty(nsGkAtoms::pseudoProperty, &rv);
+  if (rv == NS_PROPTABLE_PROP_NOT_THERE) {
+    return CSSPseudoElementType::NotPseudo;
+  }
+  return CSSPseudoElementType(reinterpret_cast<uintptr_t>(raw));
+}
+
+void
+Element::SetPseudoElementType(CSSPseudoElementType aPseudo) {
+  static_assert(sizeof(CSSPseudoElementType) <= sizeof(uintptr_t),
+                "Need to be able to store this in a void*");
+  MOZ_ASSERT(aPseudo != CSSPseudoElementType::NotPseudo);
+  SetProperty(nsGkAtoms::pseudoProperty, reinterpret_cast<void*>(aPseudo));
+}
+
 /**
  * Returns the count of descendants (inclusive of aContent) in
  * the uncomposed document that are explicitly set as editable.
@@ -1993,7 +2014,7 @@ Element::GetSMILOverrideStyle()
   return slots->mSMILOverrideStyle;
 }
 
-DeclarationBlock*
+css::Declaration*
 Element::GetSMILOverrideStyleDeclaration()
 {
   Element::nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
@@ -2001,7 +2022,7 @@ Element::GetSMILOverrideStyleDeclaration()
 }
 
 nsresult
-Element::SetSMILOverrideStyleDeclaration(DeclarationBlock* aDeclaration,
+Element::SetSMILOverrideStyleDeclaration(css::Declaration* aDeclaration,
                                          bool aNotify)
 {
   Element::nsExtendedDOMSlots* slots = ExtendedDOMSlots();
@@ -2041,14 +2062,14 @@ Element::IsInteractiveHTMLContent(bool aIgnoreTabindex) const
   return false;
 }
 
-DeclarationBlock*
+css::Declaration*
 Element::GetInlineStyleDeclaration()
 {
   return nullptr;
 }
 
 nsresult
-Element::SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
+Element::SetInlineStyleDeclaration(css::Declaration* aDeclaration,
                                    const nsAString* aSerialized,
                                    bool aNotify)
 {

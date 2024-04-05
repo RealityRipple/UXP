@@ -34,8 +34,7 @@
 #include "nsPresShell.h"
 #include "nsIPresShell.h"
 #include "nsUnicharUtils.h"
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
+#include "nsStyleSet.h"
 #include "nsViewManager.h"
 #include "nsStyleConsts.h"
 #include "nsIDOMXULElement.h"
@@ -80,8 +79,7 @@
 #include "nsAutoLayoutPhase.h"
 #include "nsStyleStructInlines.h"
 #include "nsPageContentFrame.h"
-#include "mozilla/RestyleManagerHandle.h"
-#include "mozilla/RestyleManagerHandleInlines.h"
+#include "mozilla/RestyleManager.h"
 #include "StickyScrollContainer.h"
 #include "nsFieldSetFrame.h"
 #include "nsInlineFrame.h"
@@ -449,7 +447,7 @@ AnyKidsNeedBlockParent(nsIFrame *aFrameList)
 
 // Reparent a frame into a wrapper frame that is a child of its old parent.
 static void
-ReparentFrame(RestyleManagerHandle aRestyleManager,
+ReparentFrame(RestyleManager* aRestyleManager,
               nsContainerFrame* aNewParentFrame,
               nsIFrame* aFrame)
 {
@@ -462,7 +460,7 @@ ReparentFrames(nsCSSFrameConstructor* aFrameConstructor,
                nsContainerFrame* aNewParentFrame,
                const nsFrameList& aFrameList)
 {
-  RestyleManagerHandle restyleManager = aFrameConstructor->RestyleManager();
+  RestyleManager* restyleManager = aFrameConstructor->RestyleManager();
   for (nsFrameList::Enumerator e(aFrameList); !e.AtEnd(); e.Next()) {
     ReparentFrame(restyleManager, aNewParentFrame, e.get());
   }
@@ -1816,7 +1814,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
 
   MOZ_ASSERT(aParentContent->IsElement());
 
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  nsStyleSet* styleSet = mPresShell->StyleSet();
 
   // Probe for the existence of the pseudo-element
   RefPtr<nsStyleContext> pseudoStyleContext;
@@ -1863,9 +1861,9 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
     return;
   }
 
-  if (mozilla::RestyleManager* geckoRM = RestyleManager()->GetAsGecko()) {
+  if (mozilla::RestyleManager* restyleManager = RestyleManager()) {
     RestyleManager::ReframingStyleContexts* rsc =
-      geckoRM->GetReframingStyleContexts();
+      restyleManager->GetReframingStyleContexts();
     if (rsc) {
       nsStyleContext* oldStyleContext = rsc->Get(container, aPseudoElement);
       if (oldStyleContext) {
@@ -2668,11 +2666,11 @@ nsCSSFrameConstructor::ConstructRootFrame()
 {
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
 
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  nsStyleSet* styleSet = mPresShell->StyleSet();
 
   // Set up our style rule observer.
   // XXXbz wouldn't this make more sense as part of presshell init?
-  styleSet->AsGecko()->SetBindingManager(mDocument->BindingManager());
+  styleSet->SetBindingManager(mDocument->BindingManager());
 
   // --------- BUILD VIEWPORT -----------
   RefPtr<nsStyleContext> viewportPseudoStyle =
@@ -2835,7 +2833,7 @@ nsCSSFrameConstructor::SetUpDocElementContainingBlock(nsIContent* aDocElement)
   // Start off with the viewport as parent; we'll adjust it as needed.
   nsContainerFrame* parentFrame = viewportFrame;
 
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  nsStyleSet* styleSet = mPresShell->StyleSet();
   // If paginated, make sure we don't put scrollbars in
   if (!isScrollable) {
     rootPseudoStyle = styleSet->ResolveAnonymousBoxStyle(rootPseudo,
@@ -2936,7 +2934,7 @@ nsCSSFrameConstructor::ConstructPageFrame(nsIPresShell*  aPresShell,
                                           nsContainerFrame*& aCanvasFrame)
 {
   nsStyleContext* parentStyleContext = aParentFrame->StyleContext();
-  StyleSetHandle styleSet = aPresShell->StyleSet();
+  nsStyleSet* styleSet = aPresShell->StyleSet();
 
   RefPtr<nsStyleContext> pagePseudoStyle;
   pagePseudoStyle = styleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::page,
@@ -4522,7 +4520,7 @@ nsCSSFrameConstructor::BeginBuildingScrollFrame(nsFrameConstructorState& aState,
   aNewFrame = gfxScrollFrame;
 
   // we used the style that was passed in. So resolve another one.
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  nsStyleSet* styleSet = mPresShell->StyleSet();
   RefPtr<nsStyleContext> scrolledChildStyle =
     styleSet->ResolveAnonymousBoxStyle(aScrolledPseudo, contentStyle);
 
@@ -4976,7 +4974,7 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
                                            nsFrameConstructorState* aState,
                                            Element* aOriginatingElementOrNull)
 {
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  nsStyleSet* styleSet = mPresShell->StyleSet();
   aContent->OwnerDoc()->FlushPendingLinkUpdates();
 
   RefPtr<nsStyleContext> result;
@@ -5019,9 +5017,9 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
     result = styleSet->ResolveStyleForText(aContent, aParentStyleContext);
   }
 
-  if (mozilla::RestyleManager* geckoRM = RestyleManager()->GetAsGecko()) {
+  if (mozilla::RestyleManager* restyleManager = RestyleManager()) {
     RestyleManager::ReframingStyleContexts* rsc =
-      geckoRM->GetReframingStyleContexts();
+      restyleManager->GetReframingStyleContexts();
     if (rsc) {
       nsStyleContext* oldStyleContext =
         rsc->Get(aContent, CSSPseudoElementType::NotPseudo);
@@ -5058,7 +5056,7 @@ nsCSSFrameConstructor::FlushAccumulatedBlock(nsFrameConstructorState& aState,
   nsStyleContext* parentContext =
     nsFrame::CorrectStyleParentFrame(aParentFrame,
                                      anonPseudo)->StyleContext();
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  nsStyleSet* styleSet = mPresShell->StyleSet();
   RefPtr<nsStyleContext> blockContext;
   blockContext = styleSet->
     ResolveAnonymousBoxStyle(anonPseudo, parentContext);
@@ -10971,7 +10969,7 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
   // get a proper style context for it (the one passed in is for the
   // letter frame and will have the float property set on it; the text
   // frame shouldn't have that set).
-  StyleSetHandle styleSet = mPresShell->StyleSet();
+  nsStyleSet* styleSet = mPresShell->StyleSet();
   RefPtr<nsStyleContext> textSC = styleSet->
     ResolveStyleForText(aTextContent, aStyleContext);
   aTextFrame->SetStyleContextWithoutNotification(textSC);
