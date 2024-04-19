@@ -1873,6 +1873,9 @@ pref("network.ftp.idleConnectionTimeout", 300);
 // all other values are treated like 2
 pref("network.dir.format", 2);
 
+// enables the preload service (i.e., preloading of <link rel="preload"> URLs).
+pref("network.preload", true);
+
 // enables the prefetch service (i.e., prefetching of <link rel="next"> URLs).
 pref("network.prefetch-next", true);
 
@@ -5004,7 +5007,7 @@ pref("narrate.filter-voices", true);
 pref("dom.audiochannel.mutedByDefault", false);
 
 // HTML <dialog> element
-pref("dom.dialog_element.enabled", false);
+pref("dom.dialog_element.enabled", true);
 
 // Enable <details> and <summary> tags.
 pref("dom.details_element.enabled", true);
@@ -5075,11 +5078,6 @@ pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
 
 pref("media.block-autoplay-until-in-foreground", true);
-
-#ifdef MOZ_STYLO
-// Is the Servo-backed style system enabled?
-pref("layout.css.servo.enabled", true);
-#endif
 
 // Block toplevel data: URI navigations
 // If true, all toplevel data: URI navigations will be blocked.
