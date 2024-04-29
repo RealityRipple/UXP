@@ -359,7 +359,7 @@ nsPKCS11Module::ListSlots(nsISimpleEnumerator** _retval)
   return array->Enumerate(_retval);
 }
 
-NS_IMPL_ISUPPORTS(nsPKCS11ModuleDB, nsIPKCS11ModuleDB, nsICryptoFIPSInfo)
+NS_IMPL_ISUPPORTS(nsPKCS11ModuleDB, nsIPKCS11ModuleDB)
 
 nsPKCS11ModuleDB::nsPKCS11ModuleDB()
 {
@@ -387,27 +387,6 @@ nsPKCS11ModuleDB::GetInternal(nsIPKCS11Module** _retval)
 
   UniqueSECMODModule nssMod(
     SECMOD_CreateModule(nullptr, SECMOD_INT_NAME, nullptr, SECMOD_INT_FLAGS));
-  if (!nssMod) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIPKCS11Module> module = new nsPKCS11Module(nssMod.get());
-  module.forget(_retval);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPKCS11ModuleDB::GetInternalFIPS(nsIPKCS11Module** _retval)
-{
-  NS_ENSURE_ARG_POINTER(_retval);
-
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  UniqueSECMODModule nssMod(
-    SECMOD_CreateModule(nullptr, SECMOD_FIPS_NAME, nullptr, SECMOD_FIPS_FLAGS));
   if (!nssMod) {
     return NS_ERROR_FAILURE;
   }
@@ -500,65 +479,4 @@ nsPKCS11ModuleDB::ListModules(nsISimpleEnumerator** _retval)
   }
 
   return array->Enumerate(_retval);
-}
-
-NS_IMETHODIMP
-nsPKCS11ModuleDB::GetCanToggleFIPS(bool* aCanToggleFIPS)
-{
-  NS_ENSURE_ARG_POINTER(aCanToggleFIPS);
-
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  *aCanToggleFIPS = SECMOD_CanDeleteInternalModule();
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP
-nsPKCS11ModuleDB::ToggleFIPSMode()
-{
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  // The way to toggle FIPS mode in NSS is extremely obscure. Basically, we
-  // delete the internal module, and it gets replaced with the opposite module
-  // (i.e. if it was FIPS before, then it becomes non-FIPS next).
-  // SECMOD_GetInternalModule() returns a pointer to a local copy of the
-  // internal module stashed in NSS.  We don't want to delete it since it will
-  // cause much pain in NSS.
-  SECMODModule* internal = SECMOD_GetInternalModule();
-  if (!internal) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (SECMOD_DeleteInternalModule(internal->commonName) != SECSuccess) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPKCS11ModuleDB::GetIsFIPSEnabled(bool* aIsFIPSEnabled)
-{
-  NS_ENSURE_ARG_POINTER(aIsFIPSEnabled);
-
-  nsNSSShutDownPreventionLock locker;
-  if (isAlreadyShutDown()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  *aIsFIPSEnabled = PK11_IsFIPS();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPKCS11ModuleDB::GetIsFIPSModeActive(bool* aIsFIPSModeActive)
-{
-  return GetIsFIPSEnabled(aIsFIPSModeActive);
 }
