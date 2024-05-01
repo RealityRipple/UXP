@@ -411,6 +411,7 @@ PK11_ImportPublicKey
 PK11_ImportSymKey
 PK11_InitPin
 PK11_IsDisabled
+PK11_IsFIPS
 PK11_IsFriendly
 PK11_IsHW
 PK11_IsInternal
