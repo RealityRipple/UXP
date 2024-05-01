@@ -84,30 +84,6 @@ function RefreshDeviceList()
     }
     AddModule(module.name, slotnames);
   }
-
-  // Set the text on the FIPS button.
-  SetFIPSButton();
-}
-
-function SetFIPSButton()
-{
-  var fipsButton = document.getElementById("fipsbutton");
-  var label;
-  if (secmoddb.isFIPSEnabled) {
-   label = bundle.getString("disable_fips");
-  } else {
-   label = bundle.getString("enable_fips");
-  }
-  fipsButton.setAttribute("label", label);
-
-  var can_toggle = secmoddb.canToggleFIPS;
-  if (can_toggle) {
-    fipsButton.removeAttribute("disabled");
-    fipsButton.removeAttribute("hidden");
-  } else {
-    fipsButton.setAttribute("disabled", "true");
-    fipsButton.setAttribute("hidden", "true");
-  }
 }
 
 /* Add a module to the tree.  slots is the array of slots in the module,
@@ -474,38 +450,4 @@ function showTokenInfo()
              selected_token.tokenHWVersion, "tok_hwv");
   AddInfoRow(bundle.getString("devinfo_fwversion"),
              selected_token.tokenFWVersion, "tok_fwv");
-}
-
-function toggleFIPS()
-{
-  if (!secmoddb.isFIPSEnabled) {
-    // A restriction of FIPS mode is, the password must be set
-    // In FIPS mode the password must be non-empty.
-    // This is different from what we allow in NON-Fips mode.
-
-    var tokendb = Components.classes[nsPK11TokenDB].getService(nsIPK11TokenDB);
-    var internal_token = tokendb.getInternalKeyToken(); // nsIPK11Token
-    var slot = secmoddb.findSlotByName(internal_token.tokenName);
-    switch (slot.status) {
-      case nsIPKCS11Slot.SLOT_UNINITIALIZED:
-      case nsIPKCS11Slot.SLOT_READY:
-        // Token has either no or an empty password.
-        doPrompt(bundle.getString("fips_nonempty_password_required"));
-        return;
-    }
-  }
-
-  try {
-    secmoddb.toggleFIPSMode();
-  }
-  catch (e) {
-    doPrompt(bundle.getString("unable_to_toggle_fips"));
-    return;
-  }
-
-  // Remove the existing listed modules so that a refresh doesn't display the
-  // module that just changed.
-  ClearDeviceList();
-
-  RefreshDeviceList();
 }

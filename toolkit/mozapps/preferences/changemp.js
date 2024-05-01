@@ -102,30 +102,18 @@ function setPassword()
           // This makes no sense that we arrive here,
           // we reached a case that should have been prevented by checkPasswords.
         } else {
+          token.changePassword(oldpw, pw1.value);
           if (pw1.value == "") {
-            var secmoddb = Components.classes[nsPKCS11ModuleDB].getService(nsIPKCS11ModuleDB);
-            if (secmoddb.isFIPSEnabled) {
-              // empty passwords are not allowed in FIPS mode
-              promptService.alert(window,
-                                  bundle.getString("pw_change_failed_title"),
-                                  bundle.getString("pw_change2empty_in_fips_mode"));
-              passok = 0;
-            }
+            promptService.alert(window,
+                                bundle.getString("pw_change_success_title"),
+                                bundle.getString("pw_erased_ok")
+                                + " " + bundle.getString("pw_empty_warning"));
+          } else {
+            promptService.alert(window,
+                                bundle.getString("pw_change_success_title"),
+                                bundle.getString("pw_change_ok"));
           }
-          if (passok) {
-            token.changePassword(oldpw, pw1.value);
-            if (pw1.value == "") {
-              promptService.alert(window,
-                                  bundle.getString("pw_change_success_title"),
-                                  bundle.getString("pw_erased_ok")
-                                  + " " + bundle.getString("pw_empty_warning"));
-            } else {
-              promptService.alert(window,
-                                  bundle.getString("pw_change_success_title"),
-                                  bundle.getString("pw_change_ok"));
-            }
-            success = true;
-          }
+          success = true;
         }
       } else {
         oldpwbox.focus();
