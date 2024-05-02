@@ -78,10 +78,6 @@
                 label="&devmgr.button.unload.label;"
                 accesskey="&devmgr.button.unload.accesskey;"
                 oncommand="doUnload();" disabled="true"/>
-        <button id="fipsbutton"
-                label=""
-                accesskey="&devmgr.button.fips.accesskey;"
-                oncommand="toggleFIPS();"/>
       </vbox> <!-- / Buttons for manipulating devices -->
     </row>
   </rows>

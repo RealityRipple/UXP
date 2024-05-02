@@ -9,9 +9,7 @@
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/CSSStyleSheetBinding.h"
 #include "mozilla/net/ReferrerPolicy.h"
-#include "mozilla/StyleBackendType.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/ServoUtils.h"
 
 #include "nsIDOMCSSStyleSheet.h"
 #include "nsWrapperCache.h"
@@ -24,7 +22,6 @@ class nsMediaList;
 namespace mozilla {
 
 class CSSStyleSheet;
-class ServoStyleSheet;
 struct StyleSheetInfo;
 
 namespace dom {
@@ -32,14 +29,18 @@ class CSSRuleList;
 class SRIMetadata;
 } // namespace dom
 
+namespace css {
+class Rule;
+}
+
 /**
- * Superclass for data common to CSSStyleSheet and ServoStyleSheet.
+ * Superclass for CSSStyleSheet.
  */
 class StyleSheet : public nsIDOMCSSStyleSheet
                  , public nsWrapperCache
 {
 protected:
-  StyleSheet(StyleBackendType aType, css::SheetParsingMode aParsingMode);
+  StyleSheet(css::SheetParsingMode aParsingMode);
   StyleSheet(const StyleSheet& aCopy,
              nsIDocument* aDocumentToUse,
              nsINode* aOwningNodeToUse);
@@ -66,7 +67,8 @@ public:
   bool IsComplete() const;
   void SetComplete();
 
-  MOZ_DECL_STYLO_METHODS(CSSStyleSheet, ServoStyleSheet)
+  inline CSSStyleSheet* AsConcrete();
+  inline const CSSStyleSheet* AsConcrete() const;
 
   // Whether the sheet is for an inline <style> element.
   inline bool IsInline() const;
@@ -147,7 +149,7 @@ public:
   // The XPCOM SetDisabled is fine for WebIDL.
 
   // WebIDL CSSStyleSheet API
-  virtual nsIDOMCSSRule* GetDOMOwnerRule() const = 0;
+  virtual css::Rule* GetDOMOwnerRule() const = 0;
   dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal,
                                 ErrorResult& aRv);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
@@ -190,7 +192,7 @@ public:
 
 private:
   // Get a handle to the various stylesheet bits which live on the 'inner' for
-  // gecko stylesheets and live on the StyleSheet for Servo stylesheets.
+  // gecko stylesheets.
   inline StyleSheetInfo& SheetInfo();
   inline const StyleSheetInfo& SheetInfo() const;
 
@@ -218,7 +220,6 @@ protected:
   // and/or useful in user sheets.
   css::SheetParsingMode mParsingMode;
 
-  const StyleBackendType mType;
   bool                  mDisabled;
 
   // mDocumentAssociationMode determines whether mDocument directly owns us (in

@@ -5,7 +5,6 @@
 
 /* container for a document and its presentation */
 
-#include "mozilla/ServoStyleSet.h"
 #include "nsAutoPtr.h"
 #include "nscore.h"
 #include "nsCOMPtr.h"
@@ -20,8 +19,7 @@
 #include "nsIDocument.h"
 #include "nsPresContext.h"
 #include "nsIPresShell.h"
-#include "mozilla/StyleSetHandle.h"
-#include "mozilla/StyleSetHandleInlines.h"
+#include "nsStyleSet.h"
 #include "nsIFrame.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsSubDocumentFrame.h"
@@ -679,12 +677,12 @@ nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow)
                "Someone should have destroyed the presshell!");
 
   // Create the style set...
-  StyleSetHandle styleSet = CreateStyleSet(mDocument);
+  nsStyleSet* styleSet = CreateStyleSet(mDocument);
 
   // Now make the shell for the document
   mPresShell = mDocument->CreateShell(mPresContext, mViewManager, styleSet);
   if (!mPresShell) {
-    styleSet->Delete();
+    delete styleSet;
     return NS_ERROR_FAILURE;
   }
 
@@ -2266,7 +2264,7 @@ nsDocumentViewer::RequestWindowClose(bool* aCanClose)
   return NS_OK;
 }
 
-StyleSetHandle
+nsStyleSet*
 nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 {
   // Make sure this does the same thing as PresShell::AddSheet wrt ordering.
@@ -2274,14 +2272,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   // this should eventually get expanded to allow for creating
   // different sets for different media
 
-  StyleBackendType backendType = aDocument->GetStyleBackendType();
-
-  StyleSetHandle styleSet;
-  if (backendType == StyleBackendType::Gecko) {
-    styleSet = new nsStyleSet();
-  } else {
-    styleSet = new ServoStyleSet();
-  }
+  nsStyleSet* styleSet = new nsStyleSet();
 
   styleSet->BeginUpdate();
   
@@ -2301,7 +2292,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     return styleSet;
   }
 
-  auto cache = nsLayoutStylesheetCache::For(backendType);
+  auto cache = nsLayoutStylesheetCache::Get();
 
   // Handle the user sheets.
   StyleSheet* sheet = nullptr;
@@ -2312,7 +2303,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   }
 
   if (sheet)
-    styleSet->AppendStyleSheet(SheetType::User, sheet);
+    styleSet->AppendStyleSheet(SheetType::User, sheet->AsConcrete());
 
   // Append chrome sheets (scrollbars + forms).
   bool shouldOverride = false;
@@ -2335,8 +2326,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
       nsAutoString sheets;
       elt->GetAttribute(NS_LITERAL_STRING("usechromesheets"), sheets);
       if (!sheets.IsEmpty() && baseURI) {
-        RefPtr<mozilla::css::Loader> cssLoader =
-          new mozilla::css::Loader(backendType);
+        RefPtr<mozilla::css::Loader> cssLoader = new mozilla::css::Loader();
 
         char *str = ToNewCString(sheets);
         char *newStr = str;
@@ -2349,7 +2339,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
           cssLoader->LoadSheetSync(uri, &chromeSheet);
           if (!chromeSheet) continue;
 
-          styleSet->PrependStyleSheet(SheetType::Agent, chromeSheet);
+          styleSet->PrependStyleSheet(SheetType::Agent, chromeSheet->AsConcrete());
           shouldOverride = true;
         }
         free(str);
@@ -2360,7 +2350,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   if (!shouldOverride) {
     sheet = cache->ScrollbarsSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
   }
 
@@ -2376,12 +2366,12 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 
     sheet = cache->NumberControlSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
 
     sheet = cache->FormsSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
 
     if (aDocument->LoadsFullXULStyleSheetUpFront()) {
@@ -2389,7 +2379,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
       // up-front here.
       sheet = cache->XULSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
       }
     }
 
@@ -2397,25 +2387,25 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
     if (sheet) {
       // Load the minimal XUL rules for scrollbars and a few other XUL things
       // that non-XUL (typically HTML) documents commonly use.
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
 
     sheet = cache->CounterStylesSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
 
     if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
       sheet = cache->NoScriptSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
       }
     }
 
     if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
       sheet = cache->NoFramesSheet();
       if (sheet) {
-        styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+        styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
       }
     }
 
@@ -2424,32 +2414,27 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 
     sheet = cache->HTMLSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
 
     styleSet->PrependStyleSheet(SheetType::Agent,
-                                cache->UASheet());
+                                cache->UASheet()->AsConcrete());
   } else {
     // SVG documents may have scrollbars and need the scrollbar styling.
     sheet = cache->MinimalXULSheet();
     if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
+      styleSet->PrependStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
   }
 
-  if (styleSet->IsGecko()) {
-    nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
-    if (sheetService) {
-      for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
-        styleSet->AppendStyleSheet(SheetType::Agent, sheet);
-      }
-      for (StyleSheet* sheet : Reversed(*sheetService->UserStyleSheets())) {
-        styleSet->PrependStyleSheet(SheetType::User, sheet);
-      }
+  nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
+  if (sheetService) {
+    for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
+      styleSet->AppendStyleSheet(SheetType::Agent, sheet->AsConcrete());
     }
-  } else {
-    NS_WARNING("stylo: Not yet checking nsStyleSheetService for Servo-backed "
-               "documents. See bug 1290224");
+    for (StyleSheet* sheet : Reversed(*sheetService->UserStyleSheets())) {
+      styleSet->PrependStyleSheet(SheetType::User, sheet->AsConcrete());
+    }
   }
 
   // Caller will handle calling EndUpdate, per contract.

@@ -61,7 +61,7 @@ public:
 
   virtual CSSStyleSheet* GetParentObject() override;
 
-  virtual nsIDOMCSSRule*
+  virtual css::Rule*
   IndexedGetter(uint32_t aIndex, bool& aFound) override;
   virtual uint32_t
   Length() override;
@@ -101,7 +101,7 @@ CSSRuleListImpl::Length()
   return AssertedCast<uint32_t>(mStyleSheet->StyleRuleCount());
 }
 
-nsIDOMCSSRule*    
+css::Rule*
 CSSRuleListImpl::IndexedGetter(uint32_t aIndex, bool& aFound)
 {
   aFound = false;
@@ -112,7 +112,7 @@ CSSRuleListImpl::IndexedGetter(uint32_t aIndex, bool& aFound)
     css::Rule* rule = mStyleSheet->GetStyleRuleAt(aIndex);
     if (rule) {
       aFound = true;
-      return rule->GetDOMRule();
+      return rule;
     }
   }
 
@@ -1083,7 +1083,7 @@ CSSStyleSheetInner::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 
 CSSStyleSheet::CSSStyleSheet(css::SheetParsingMode aParsingMode,
                              CORSMode aCORSMode, ReferrerPolicy aReferrerPolicy)
-  : StyleSheet(StyleBackendType::Gecko, aParsingMode),
+  : StyleSheet(aParsingMode),
     mParent(nullptr),
     mOwnerRule(nullptr),
     mDirty(false),
@@ -1099,7 +1099,7 @@ CSSStyleSheet::CSSStyleSheet(css::SheetParsingMode aParsingMode,
                              CORSMode aCORSMode,
                              ReferrerPolicy aReferrerPolicy,
                              const SRIMetadata& aIntegrity)
-  : StyleSheet(StyleBackendType::Gecko, aParsingMode),
+  : StyleSheet(aParsingMode),
     mParent(nullptr),
     mOwnerRule(nullptr),
     mDirty(false),
@@ -1238,8 +1238,10 @@ CSSStyleSheet::TraverseInner(nsCycleCollectionTraversalCallback &cb)
 
   const nsCOMArray<css::Rule>& rules = mInner->mOrderedRules;
   for (int32_t i = 0, count = rules.Count(); i < count; ++i) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mOrderedRules[i]");
-    cb.NoteXPCOMChild(rules[i]->GetExistingDOMRule());
+    if (!rules[i]->IsCCLeaf()) {
+      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mOrderedRules[i]");
+      cb.NoteXPCOMChild(rules[i]);
+    }
   }
 }
 
@@ -1646,10 +1648,10 @@ CSSStyleSheet::Media()
   return mMedia;
 }
 
-nsIDOMCSSRule*
+css::Rule*
 CSSStyleSheet::GetDOMOwnerRule() const
 {
-  return mOwnerRule ? mOwnerRule->GetDOMRule() : nullptr;
+  return mOwnerRule;
 }
 
 CSSRuleList*
@@ -1812,11 +1814,6 @@ CSSStyleSheet::DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv)
   RefPtr<css::Rule> rule = mInner->mOrderedRules.ObjectAt(aIndex);
   if (rule) {
     mInner->mOrderedRules.RemoveObjectAt(aIndex);
-    if (mDocument && mDocument->StyleSheetChangeEventsEnabled()) {
-      // Force creation of the DOM rule, so that it can be put on the
-      // StyleRuleRemoved event object.
-      rule->GetDOMRule();
-    }
     rule->SetStyleSheet(nullptr);
     DidDirty();
 
@@ -1929,10 +1926,7 @@ CSSStyleSheet::StyleSheetLoaded(StyleSheet* aSheet,
                                 bool aWasAlternate,
                                 nsresult aStatus)
 {
-  MOZ_ASSERT(aSheet->IsGecko(),
-             "why we were called back with a ServoStyleSheet?");
-
-  CSSStyleSheet* sheet = aSheet->AsGecko();
+  CSSStyleSheet* sheet = aSheet->AsConcrete();
 
   if (sheet->GetParentSheet() == nullptr) {
     return NS_OK; // ignore if sheet has been detached already (see parseSheet)
@@ -1966,7 +1960,7 @@ CSSStyleSheet::ReparseSheet(const nsAString& aInput)
     loader = mDocument->CSSLoader();
     NS_ASSERTION(loader, "Document with no CSS loader!");
   } else {
-    loader = new css::Loader(StyleBackendType::Gecko);
+    loader = new css::Loader();
   }
 
   mozAutoDocUpdate updateBatch(mDocument, UPDATE_STYLE, true);
