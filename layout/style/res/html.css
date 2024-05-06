@@ -818,7 +818,7 @@ dialog {
   border-image: initial;
   padding: 1em;
   background: white;
-  width: -moz-fit-content;
+  width: fit-content;
 }
 
 dialog:not([open]) {
