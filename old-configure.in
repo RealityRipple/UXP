@@ -2044,7 +2044,6 @@ MOZ_JETPACK=1
 MOZ_DEVTOOLS_SERVER=1
 MOZ_DEVTOOLS=
 MOZ_PLACES=1
-MOZ_SECURITY_SQLSTORE=1
 MOZ_SERVICES_SYNC=1
 MOZ_USERINFO=1
 NSS_DISABLE_DBM=1
@@ -2597,17 +2596,6 @@ if test -n "$NSS_DISABLE_DBM"; then
 fi
 
 AC_SUBST(NSS_DISABLE_DBM)
-
-
-if test -n "$NSS_DISABLE_DBM" -a -z "$MOZ_SECURITY_SQLSTORE"; then
-  AC_MSG_ERROR([DBM storage support is required if not using NSS SQL storage])
-fi
-
-if test -n "$MOZ_SECURITY_SQLSTORE"; then
-  AC_DEFINE(MOZ_SECURITY_SQLSTORE)
-fi
-
-AC_SUBST(MOZ_SECURITY_SQLSTORE)
 
 dnl =========================================================
 dnl = Don't fold mailnews related comps into libXUL
