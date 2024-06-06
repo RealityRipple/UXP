@@ -2749,24 +2749,12 @@ XREMain::XRE_mainInit(bool* aExitFlag)
 
   SetupErrorHandling(gArgv[0]);
 
-  // Set up environment for NSS database choice
-#ifndef NSS_DISABLE_DBM
-  // Allow iteration counts in DBM mode
-  SaveToEnv("NSS_ALLOW_LEGACY_DBM_ITERATION_COUNT=1");
-#endif
-
+  // Set up environment for NSS database
 #ifdef DEBUG
   // Reduce the number of rounds for debug builds for perf/test reasons.
   SaveToEnv("NSS_MAX_MP_PBE_ITERATION_COUNT=15");
 #else
-#ifdef MOZ_SECURITY_SQLSTORE
-  // We're using SQL; NSS's defaults for rounds are fine.
-#else
-  // Set default Master Password rounds to a sane value for DBM which is slower
-  // than SQL for PBKDF. The NSS hard-coded default of 10,000 is too much.
-  // See also Bug 1606992 for perf issues.
-  SaveToEnv("NSS_MAX_MP_PBE_ITERATION_COUNT=500");
-#endif
+  // We're using SQL; NSS's defaults for rounds are fine, so no tweaking required.
 #endif
 
 #ifdef CAIRO_HAS_DWRITE_FONT
