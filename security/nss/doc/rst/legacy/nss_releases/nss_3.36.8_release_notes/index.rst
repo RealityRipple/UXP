@@ -32,8 +32,6 @@ NSS 3.36.8 release notes
 `New in NSS 3.36.8 <#new_in_nss_3.36.8>`__
 ------------------------------------------
 
-.. container::
-
 .. _new_functionality:
 
 `New Functionality <#new_functionality>`__
@@ -50,21 +48,21 @@ NSS 3.36.8 release notes
 
 .. container::
 
-   -  
+   -
 
       .. container::
 
-         `1554336 <https://bugzilla.mozilla.org/show_bug.cgi?id=1554336>`__ - Optimize away unneeded
+         `1554336 <https://bugzilla.mozilla.org/show_bug.cgi?id=1554336>`__ - Optimize away unneeded
          loop in mpi.c
 
-   -  
+   -
 
       .. container::
 
          `1515342 <https://bugzilla.mozilla.org/show_bug.cgi?id=1515342>`__ - More thorough input
          checking (`CVE-2019-11729) <https://bugzilla.mozilla.org/show_bug.cgi?id=CVE-2019-11729>`__
 
-   -  
+   -
 
       .. container::
 

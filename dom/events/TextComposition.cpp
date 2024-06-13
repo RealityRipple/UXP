@@ -21,21 +21,8 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/TabParent.h"
 
-#ifdef XP_MACOSX
-// Some defiens will be conflict with OSX SDK
-#define TextRange _TextRange
-#define TextRangeArray _TextRangeArray
-#define Comment _Comment
-#endif
-
 #ifdef MOZ_ENABLE_NPAPI
 #include "nsPluginInstanceOwner.h"
-#endif
-
-#ifdef XP_MACOSX
-#undef TextRange
-#undef TextRangeArray
-#undef Comment
 #endif
 
 using namespace mozilla::widget;
