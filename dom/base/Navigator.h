@@ -220,6 +220,8 @@ public:
   
   dom::Clipboard* Clipboard();
 
+  static bool Webdriver();
+  
   void GetLanguages(nsTArray<nsString>& aLanguages);
 
   StorageManager* Storage();
