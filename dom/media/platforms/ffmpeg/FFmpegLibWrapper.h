@@ -69,12 +69,19 @@ struct FFmpegLibWrapper
   // only used in libavcodec <= 54
   AVFrame* (*avcodec_alloc_frame)();
   void (*avcodec_get_frame_defaults)(AVFrame* pic);
+
   // libavcodec v54 only
   void (*avcodec_free_frame)(AVFrame** frame);
 
-  // libavcodec v58 and later only
+  // libavcodec >= v57
+  void (*av_packet_free)(AVPacket** pkt);
+
+  // libavcodec >= v58
   int (*avcodec_send_packet)(AVCodecContext* avctx, const AVPacket* avpkt);
   int (*avcodec_receive_frame)(AVCodecContext* avctx, AVFrame* frame);
+
+  // libavcodec >= 61
+  AVPacket* (*av_packet_alloc)();
 
   // libavcodec optional
   AvRdftInitFn av_rdft_init;
