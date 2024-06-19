@@ -43,25 +43,6 @@ FFmpegLibWrapper::Link()
   uint32_t macro = (version >> 16) & 0xFFu;
   mVersion = static_cast<int>(macro);
   uint32_t micro = version & 0xFFu;
-  // A micro version >= 100 indicates that it's FFmpeg (as opposed to LibAV).
-  bool isFFMpeg = micro >= 100;
-  if (!isFFMpeg) {
-    if (macro == 57) {
-      // Due to current AVCodecContext binary incompatibility we can only
-      // support FFmpeg 57 at this stage.
-      Unlink();
-      return LinkResult::CannotUseLibAV57;
-    }
-#ifdef MOZ_FFMPEG
-    if (version < (54u << 16 | 35u << 8 | 1u)
-        && !MediaPrefs::LibavcodecAllowObsolete()) {
-      // Refuse any libavcodec version prior to 54.35.1.
-      // (Unless media.libavcodec.allow-obsolete==true)
-      Unlink();
-      return LinkResult::BlockedOldLibAVVersion;
-    }
-#endif
-  }
 
   enum {
     AV_FUNC_AVUTIL_MASK = 1 << 8,
@@ -93,13 +74,7 @@ FFmpegLibWrapper::Link()
 	default:
       FFMPEG_LOG("Unknown avcodec version: %d", macro);
       Unlink();
-      return isFFMpeg
-             ? ((macro > 57)
-                ? LinkResult::UnknownFutureFFMpegVersion
-                : LinkResult::UnknownOlderFFMpegVersion)
-             // All LibAV versions<54.35.1 are blocked, therefore we must be
-             // dealing with a later one.
-             : LinkResult::UnknownFutureLibAVVersion;
+      return LinkResult::UnknownFFMpegVersion;
   }
 
 #define AV_FUNC_OPTION(func, ver)                                              \
@@ -115,8 +90,7 @@ FFmpegLibWrapper::Link()
   AV_FUNC_OPTION(func, ver)                                                    \
   if ((ver) & version && !func) {                                              \
     Unlink();                                                                  \
-    return isFFMpeg ? LinkResult::MissingFFMpegFunction                        \
-                    : LinkResult::MissingLibAVFunction;                        \
+    return LinkResult::MissingFFMpegFunction;                                  \
   }
 
   AV_FUNC(av_lockmgr_register, AV_FUNC_58)

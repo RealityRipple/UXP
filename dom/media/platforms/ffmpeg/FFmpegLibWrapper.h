@@ -30,13 +30,8 @@ struct FFmpegLibWrapper
     Success,
     NoProvidedLib,
     NoAVCodecVersion,
-    CannotUseLibAV57,
-    BlockedOldLibAVVersion,
-    UnknownFutureLibAVVersion,
-    UnknownFutureFFMpegVersion,
-    UnknownOlderFFMpegVersion,
+	UnknownFFMpegVersion,
     MissingFFMpegFunction,
-    MissingLibAVFunction,
   };
   // Examine mAVCodecLib and mAVUtilLib, and attempt to resolve all symbols.
   // Upon failure, the entire object will be reset and any attached libraries
