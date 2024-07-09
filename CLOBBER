@@ -22,4 +22,4 @@
 # changes to stick? As of bug 928195, this shouldn't be necessary! Please
 # don't change CLOBBER for WebIDL changes any more.
 
-Switching to C++17 requires CLOBBER to pick up compiler conf. (Issue #2281)
+Clobber for NSS update
