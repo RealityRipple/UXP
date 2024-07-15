@@ -494,15 +494,15 @@ MacOSFontEntry::GetFontTable(uint32_t aTag)
 
 #ifdef DEBUG_X
         uint32_t j = 12;
-        uint8_t *table = (reinterpret_cast<uint8_t *>(
-                mFontTableDir.Elements()));
+        uint8_t *table = (reinterpret_cast<uint8_t *>(mFontTableDir.Elements()));
         fprintf(stderr, "fast fetch ");
 #endif
         uint32_t i;
-        uint32_t *wtable = (reinterpret_cast<uint32_t *>(
-                mFontTableDir.Elements()));
+        uint32_t *wtable = (reinterpret_cast<uint32_t *>(mFontTableDir.Elements()));
+        uint32_t count = mFontTableDirSize / 4;
+        uint32_t length = mFontTableDir.Length();
 
-        for (i=3; i<(mFontTableDirSize/4); i+=4) { // Skip header
+        for (i=3; i<count && i<length; i+=4) { // Skip header
 #ifdef DEBUG_X
                 char tag[5] = { table[j], table[j+1], table[j+2], table[j+3],
                         '\0' };
