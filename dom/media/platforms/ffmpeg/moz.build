@@ -8,13 +8,10 @@ EXPORTS += [
 ]
 
 DIRS += [
-    'libav53',
-    'libav54',
-    'libav55',
-    'ffmpeg57',
     'ffmpeg58',
     'ffmpeg59',
     'ffmpeg60',
+	'ffmpeg61',
 ]
 
 UNIFIED_SOURCES += [

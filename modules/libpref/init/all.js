@@ -399,7 +399,6 @@ pref("media.ffmpeg.enabled", false);
 #else
 pref("media.ffmpeg.enabled", true);
 #endif
-pref("media.libavcodec.allow-obsolete", false);
 #endif
 #if defined(MOZ_FFVPX)
 pref("media.ffvpx.enabled", true);
@@ -830,9 +829,6 @@ pref("canvas.filters.enabled", true);
 // Add support for canvas path objects
 pref("canvas.path.enabled", true);
 pref("canvas.capturestream.enabled", true);
-
-// Disable the ImageBitmap-extensions for now.
-pref("canvas.imagebitmap_extensions.enabled", false);
 
 // We want the ability to forcibly disable platform a11y, because
 // some non-a11y-related components attempt to bring it up.  See bug
@@ -1583,6 +1579,8 @@ pref("network.http.altsvc.enabled", true);
 pref("network.http.altsvc.oe", false);
 // Send upgrade-insecure-requests HTTP header?
 pref("network.http.upgrade-insecure-requests", false);
+// Send Sec-Fetch-* headers?
+pref("network.http.secfetch.enabled", true);
 
 pref("network.http.diagnostics", false);
 
@@ -2642,6 +2640,9 @@ pref("layout.css.control-characters.visible", false);
 
 // Is support for ResizeObservers enabled?
 pref("layout.css.resizeobserver.enabled", true);
+
+// Is support for cascade layers enabled?
+pref("layout.css.cascade-layers.enabled", true);
 
 // pref for which side vertical scrollbars should be on
 // 0 = end-side in UI direction
@@ -5079,6 +5080,9 @@ pref("media.seekToNextFrame.enabled", true);
 
 // return the maximum number of cores that navigator.hardwareConcurrency returns
 pref("dom.maxHardwareConcurrency", 16);
+
+// Exposes the navigator.webdriver attribute.
+pref("dom.webdriver.enabled", true);
 
 // Shutdown the async osfile worker if it's no longer needed.
 pref("osfile.reset_worker_delay", 30000);
