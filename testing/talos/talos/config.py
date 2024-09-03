@@ -172,7 +172,8 @@ DEFAULTS = dict(
         'devtools.chrome.enabled': False,
         'devtools.debugger.remote-enabled': False,
         'devtools.theme': "light",
-        'devtools.timeline.enabled': False
+        'devtools.timeline.enabled': False,
+        'media.libavcodec.allow-obsolete': True
     }
 )
 

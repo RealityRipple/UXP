@@ -72,10 +72,35 @@ FFmpegRuntimeLinker::Init()
             sLinkStatusLibraryName = lib;
           }
           break;
-	    case FFmpegLibWrapper::LinkResult::UnknownFFMpegVersion:
+        case FFmpegLibWrapper::LinkResult::CannotUseLibAV57:
+          if (sLinkStatus > LinkStatus_UNUSABLE_LIBAV57) {
+            sLinkStatus = LinkStatus_UNUSABLE_LIBAV57;
+            sLinkStatusLibraryName = lib;
+          }
+          break;
+        case FFmpegLibWrapper::LinkResult::BlockedOldLibAVVersion:
+          if (sLinkStatus > LinkStatus_OBSOLETE_LIBAV) {
+            sLinkStatus = LinkStatus_OBSOLETE_LIBAV;
+            sLinkStatusLibraryName = lib;
+          }
+          break;
+        case FFmpegLibWrapper::LinkResult::UnknownFutureLibAVVersion:
+        case FFmpegLibWrapper::LinkResult::MissingLibAVFunction:
+          if (sLinkStatus > LinkStatus_INVALID_LIBAV_CANDIDATE) {
+            sLinkStatus = LinkStatus_INVALID_LIBAV_CANDIDATE;
+            sLinkStatusLibraryName = lib;
+          }
+          break;
+        case FFmpegLibWrapper::LinkResult::UnknownFutureFFMpegVersion:
         case FFmpegLibWrapper::LinkResult::MissingFFMpegFunction:
           if (sLinkStatus > LinkStatus_INVALID_FFMPEG_CANDIDATE) {
             sLinkStatus = LinkStatus_INVALID_FFMPEG_CANDIDATE;
+            sLinkStatusLibraryName = lib;
+          }
+          break;
+        case FFmpegLibWrapper::LinkResult::UnknownOlderFFMpegVersion:
+          if (sLinkStatus > LinkStatus_OBSOLETE_FFMPEG) {
+            sLinkStatus = LinkStatus_OBSOLETE_FFMPEG;
             sLinkStatusLibraryName = lib;
           }
           break;
@@ -119,6 +144,14 @@ FFmpegRuntimeLinker::LinkStatusString()
       return "Libavcodec linking succeeded";
     case LinkStatus_INVALID_FFMPEG_CANDIDATE:
       return "Invalid FFMpeg libavcodec candidate";
+    case LinkStatus_UNUSABLE_LIBAV57:
+      return "Unusable LibAV's libavcodec 57";
+    case LinkStatus_INVALID_LIBAV_CANDIDATE:
+      return "Invalid LibAV libavcodec candidate";
+    case LinkStatus_OBSOLETE_FFMPEG:
+      return "Obsolete FFMpeg libavcodec candidate";
+    case LinkStatus_OBSOLETE_LIBAV:
+      return "Obsolete LibAV libavcodec candidate";
     case LinkStatus_INVALID_CANDIDATE:
       return "Invalid libavcodec candidate";
     case LinkStatus_NOT_FOUND:
