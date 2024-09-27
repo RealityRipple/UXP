@@ -684,7 +684,7 @@ TrackBuffersManager::SegmentParserLoop()
           MSE_DEBUG("Re-creating demuxer, new start (%" PRId64
                     ") is smaller than last parsed end time (%" PRId64 ")",
                     start,
-                    mLastParsedEndTime);
+                    mLastParsedEndTime.value());
           mFrameEndTimeBeforeRecreateDemuxer = Some(end);
           ResetDemuxingState();
           return;
@@ -798,7 +798,7 @@ TrackBuffersManager::CreateDemuxerforMIMEType()
       MSE_DEBUG(
           "CreateDemuxerFromMimeType: "
           "mFrameEndTimeBeforeRecreateDemuxer=%" PRId64,
-          mFrameEndTimeBeforeRecreateDemuxer);
+          mFrameEndTimeBeforeRecreateDemuxer.value());
     }
     mInputDemuxer = new WebMDemuxer(mCurrentInputBuffer, true /* IsMediaSource*/,
                                     mFrameEndTimeBeforeRecreateDemuxer);
