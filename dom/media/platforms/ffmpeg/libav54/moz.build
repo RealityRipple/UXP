@@ -3,23 +3,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-EXPORTS += [
-    'FFmpegRuntimeLinker.h',
-]
-
-DIRS += [
-    'libav53',
-    'libav54',
-    'libav55',
-    'ffmpeg57',
-    'ffmpeg58',
-    'ffmpeg59',
-    'ffmpeg60',
-	'ffmpeg61',
-]
-
 UNIFIED_SOURCES += [
-    'FFmpegRuntimeLinker.cpp',
+    '../FFmpegAudioDecoder.cpp',
+    '../FFmpegDataDecoder.cpp',
+    '../FFmpegDecoderModule.cpp',
+    '../FFmpegVideoDecoder.cpp',
+]
+LOCAL_INCLUDES += [
+    '..',
+    'include',
 ]
 
 FINAL_LIBRARY = 'xul'
+
+if CONFIG['CLANG_CXX']:
+  CXXFLAGS += [
+    '-Wno-unknown-attributes',
+  ]
