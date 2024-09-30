@@ -15,8 +15,6 @@
 
 #include "FFmpegVideoDecoder.h"
 #include "FFmpegLog.h"
-#include "FFmpegUtils.h"
-
 #include "mozilla/PodOperations.h"
 #include "prsystem.h" // for PR_GetNumberOfProcessors
 
@@ -233,29 +231,19 @@ FFmpegVideoDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
                                         uint8_t* aData, int aSize,
                                         bool* aGotFrame)
 {
-  AVPacket* packet;
+  AVPacket packet;
+  mLib->av_init_packet(&packet);
 
-#if LIBAVCODEC_VERSION_MAJOR >= 61
-  packet = mLib->av_packet_alloc();
-  auto raii = MakeScopeExit([&]() {
-    mLib->av_packet_free(&packet);
-  });
-#else
-  AVPacket packet_mem;
-  packet = &packet_mem;
-  mLib->av_init_packet(packet);
-#endif
-
-  packet->data = aData;
-  packet->size = aSize;
-  packet->dts = mLastInputDts = aSample->mTimecode;
-  packet->pts = aSample->mTime;
-  packet->flags = aSample->mKeyframe ? AV_PKT_FLAG_KEY : 0;
-  packet->pos = aSample->mOffset;
+  packet.data = aData;
+  packet.size = aSize;
+  packet.dts = mLastInputDts = aSample->mTimecode;
+  packet.pts = aSample->mTime;
+  packet.flags = aSample->mKeyframe ? AV_PKT_FLAG_KEY : 0;
+  packet.pos = aSample->mOffset;
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-  packet->duration = aSample->mDuration;
-  int res = mLib->avcodec_send_packet(mCodecContext, packet);
+  packet.duration = aSample->mDuration;
+  int res = mLib->avcodec_send_packet(mCodecContext, &packet);
   if (res < 0) {
     // In theory, avcodec_send_packet could sent -EAGAIN should its internal
     // buffers be full. In practice this can't happen as we only feed one frame
@@ -286,7 +274,7 @@ FFmpegVideoDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
                          RESULT_DETAIL("avcodec_receive_frame error: %d", res));
     }
     MediaResult rv = CreateImage(mFrame->pkt_pos, GetFramePts(mFrame),
-                                 Duration(mFrame));
+                                 mFrame->pkt_duration);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -312,12 +300,12 @@ FFmpegVideoDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
 
   int decoded;
   int bytesConsumed =
-    mLib->avcodec_decode_video2(mCodecContext, mFrame, &decoded, packet);
+    mLib->avcodec_decode_video2(mCodecContext, mFrame, &decoded, &packet);
 
   FFMPEG_LOG("DoDecodeFrame:decode_video: rv=%d decoded=%d "
              "(Input: pts(%lld) dts(%lld) Output: pts(%lld) "
              "opaque(%lld) pts(%lld) pkt_dts(%lld))",
-             bytesConsumed, decoded, packet->pts, packet->dts, mFrame->pts,
+             bytesConsumed, decoded, packet.pts, packet.dts, mFrame->pts,
              mFrame->reordered_opaque, mFrame->pts, mFrame->pkt_dts);
 
   if (bytesConsumed < 0) {
@@ -360,8 +348,8 @@ MediaResult
 FFmpegVideoDecoder<LIBAV_VER>::CreateImage(int64_t aOffset, int64_t aPts,
                                            int64_t aDuration)
 {
-  FFMPEG_LOG("Got one frame output with pts=%lld dts=%lld duration=%lld",
-              aPts, mFrame->pkt_dts, aDuration);
+  FFMPEG_LOG("Got one frame output with pts=%lld dts=%lld duration=%lld opaque=%lld",
+              aPts, mFrame->pkt_dts, aDuration, mCodecContext->reordered_opaque);
 
   VideoData::YCbCrBuffer b;
   b.mPlanes[0].mData = mFrame->data[0];
