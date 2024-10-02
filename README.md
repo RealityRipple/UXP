@@ -19,6 +19,13 @@ If you are interested in the development and building side of things, some
 information will be available on the [Pale Moon developer site](http://developer.palemoon.org).
 You are also always welcome to get in touch with our community on the [Pale Moon forum](https://forum.palemoon.org/).
 
+### Code search
+
+While our repo has basic code searching capabilities (via `git grep`), you are strongly
+encouraged to instead use the dedicated code search and cross-referencing site:
+[https://xref.palemoon.org/](https://xref.palemoon.org/)
+This repo and a copy of the front-end are amalgamated in the `goanna-central` index.
+
 ### A note about trademarks and branding
 
 Although this repository is primarily licensed under Mozilla Public License v2.0, the
