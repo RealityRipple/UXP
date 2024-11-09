@@ -198,6 +198,7 @@
     macro(includes, includes, "includes") \
     macro(incumbentGlobal, incumbentGlobal, "incumbentGlobal") \
     macro(index, index, "index") \
+    macro(indices, indices, "indices") \
     macro(infinity, infinity, "infinity") \
     macro(Infinity, Infinity, "Infinity") \
     macro(InitializeCollator, InitializeCollator, "InitializeCollator") \
