@@ -21015,9 +21015,9 @@ FactoryOp::CheckPermission(ContentParent* aContentParent,
     if (State::Initial == mState) {
       QuotaManager::GetInfoForChrome(&mSuffix, &mGroup, &mOrigin);
 
-      MOZ_ASSERT(!QuotaManager::IsFirstPromptRequired(persistenceType, mOrigin));
+      MOZ_ASSERT(QuotaManager::IsOriginInternal(mOrigin));
 
-      mEnforcingQuota = QuotaManager::IsQuotaEnforced(persistenceType);
+      mEnforcingQuota = false;
     }
 
     *aPermission = PermissionRequestBase::kPermissionAllowed;
@@ -21046,10 +21046,14 @@ FactoryOp::CheckPermission(ContentParent* aContentParent,
 
   PermissionRequestBase::PermissionValue permission;
 
-  if (QuotaManager::IsFirstPromptRequired(persistenceType, origin)) {
-    rv = PermissionRequestBase::GetCurrentPermission(principal, &permission);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+  if (persistenceType == PERSISTENCE_TYPE_PERSISTENT) {
+    if (QuotaManager::IsOriginInternal(origin)) {
+      permission = PermissionRequestBase::kPermissionAllowed;
+    } else {
+      rv = PermissionRequestBase::GetCurrentPermission(principal, &permission);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
   } else {
     permission = PermissionRequestBase::kPermissionAllowed;
@@ -21061,7 +21065,7 @@ FactoryOp::CheckPermission(ContentParent* aContentParent,
     mGroup = group;
     mOrigin = origin;
 
-    mEnforcingQuota = QuotaManager::IsQuotaEnforced(persistenceType);
+    mEnforcingQuota = persistenceType != PERSISTENCE_TYPE_PERSISTENT;
   }
 
   *aPermission = permission;
