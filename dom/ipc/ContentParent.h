@@ -140,10 +140,10 @@ public:
    * associated.
    */
   static TabParent*
-  CreateBrowserOrApp(const TabContext& aContext,
-                     Element* aFrameElement,
-                     ContentParent* aOpenerContentParent,
-                     bool aFreshProcess = false);
+  CreateBrowser(const TabContext& aContext,
+                Element* aFrameElement,
+                ContentParent* aOpenerContentParent,
+                bool aFreshProcess = false);
 
   static void GetAll(nsTArray<ContentParent*>& aArray);
 
@@ -231,7 +231,6 @@ public:
                                       const hal::ProcessPriority& aPriority,
                                       const TabId& aOpenerTabId,
                                       ContentParentId* aCpId,
-                                      bool* aIsForApp,
                                       bool* aIsForBrowser,
                                       TabId* aTabId) override;
 
@@ -323,8 +322,6 @@ public:
 
   bool IsAlive() const;
 
-  virtual bool IsForApp() const override;
-
   virtual bool IsForBrowser() const override
   {
     return mIsForBrowser;
@@ -356,8 +353,6 @@ public:
   void KillHard(const char* aWhy);
 
   ContentParentId ChildID() const override { return mChildID; }
-
-  const nsString& AppManifestURL() const { return mAppManifestURL; }
 
   bool IsPreallocated() const;
 
@@ -546,23 +541,13 @@ protected:
   void OnCompositorUnexpectedShutdown() override;
 
 private:
-  static nsDataHashtable<nsStringHashKey, ContentParent*> *sAppContentParents;
-  static nsTArray<ContentParent*>* sNonAppContentParents;
+  static nsTArray<ContentParent*>* sBrowserContentParents;
   static nsTArray<ContentParent*>* sLargeAllocationContentParents;
   static nsTArray<ContentParent*>* sPrivateContent;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
 
   static void JoinProcessesIOThread(const nsTArray<ContentParent*>* aProcesses,
                                     Monitor* aMonitor, bool* aDone);
-
-  // Take the preallocated process and transform it into a "real" app process,
-  // for the specified manifest URL.  If there is no preallocated process (or
-  // if it's dead), create a new one and set aTookPreAllocated to false.
-  static already_AddRefed<ContentParent>
-  GetNewOrPreallocatedAppProcess(mozIApplication* aApp,
-                                 hal::ProcessPriority aInitialPriority,
-                                 ContentParent* aOpener,
-                                 /*out*/ bool* aTookPreAllocated = nullptr);
 
   static hal::ProcessPriority GetInitialProcessPriority(Element* aFrameElement);
 
@@ -579,16 +564,14 @@ private:
       const IPCTabContext& context,
       const uint32_t& chromeFlags,
       const ContentParentId& aCpId,
-      const bool& aIsForApp,
       const bool& aIsForBrowser) override;
   using PContentParent::SendPTestShellConstructor;
 
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
-  // No more than one of !!aApp, aIsForBrowser, and aIsForPreallocated may be
+  // No more than one of aIsForBrowser, and aIsForPreallocated may be
   // true.
-  ContentParent(mozIApplication* aApp,
-                ContentParent* aOpener,
+  ContentParent(ContentParent* aOpener,
                 bool aIsForBrowser,
                 bool aIsForPreallocated);
 
@@ -610,7 +593,7 @@ private:
 
   // Some information could be sent to content very early, it
   // should be send from this function. This function should only be
-  // called after the process has been transformed to app or browser.
+  // called after the process has been transformed to browser.
   void ForwardKnownInfo();
 
   // Set the child process's priority and then check whether the child is
@@ -618,11 +601,6 @@ private:
   // otherwise.  If you pass a FOREGROUND* priority here, it's (hopefully)
   // unlikely that the process will be killed after this point.
   bool SetPriorityAndCheckIsAlive(hal::ProcessPriority aPriority);
-
-  // Transform a pre-allocated app process into a "real" app
-  // process, for the specified manifest URL.
-  void TransformPreallocatedIntoApp(ContentParent* aOpener,
-                                    const nsAString& aAppManifestURL);
 
   // Transform a pre-allocated app process into a browser process. If this
   // returns false, the child process has died.
@@ -688,7 +666,6 @@ private:
                                  ProcessId aOtherProcess) override;
 
   virtual bool RecvGetProcessAttributes(ContentParentId* aCpId,
-                                        bool* aIsForApp,
                                         bool* aIsForBrowser) override;
 
   virtual bool
@@ -713,7 +690,6 @@ private:
                                               const IPCTabContext& aContext,
                                               const uint32_t& aChromeFlags,
                                               const ContentParentId& aCpId,
-                                              const bool& aIsForApp,
                                               const bool& aIsForBrowser) override;
 
   virtual bool DeallocPBrowserParent(PBrowserParent* frame) override;
@@ -1049,16 +1025,7 @@ private:
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
 
-  nsString mAppManifestURL;
-
   nsCString mKillHardAnnotation;
-
-  /**
-   * We cache mAppName instead of looking it up using mAppManifestURL when we
-   * need it because it turns out that getting an app from the apps service is
-   * expensive.
-   */
-  nsString mAppName;
 
   // After we initiate shutdown, we also start a timer to ensure
   // that even content processes that are 100% blocked (say from
@@ -1075,12 +1042,13 @@ private:
   // through.
   bool mIsAlive;
 
-  // True only the if process is already a browser or app or has
+  // True only the if process is already a browser or has
   // been transformed into one.
   bool mMetamorphosed;
 
   bool mSendPermissionUpdates;
   bool mIsForBrowser;
+  bool mIsPreallocated;
 
   // These variables track whether we've called Close() and KillHard() on our
   // channel.

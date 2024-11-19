@@ -49,7 +49,6 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/FileUtils.h"
 #include "nsIAppsService.h"
-#include "mozIApplication.h"
 #include "mozIApplicationClearPrivateDataParams.h"
 #include "nsIConsoleService.h"
 #include "nsVariant.h"
