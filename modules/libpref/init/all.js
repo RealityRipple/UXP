@@ -4871,9 +4871,6 @@ pref("layout.accessiblecaret.hide_carets_for_mouse_input", true);
 // Wakelock is disabled by default.
 pref("dom.wakelock.enabled", false);
 
-// disable mozsample size for now
-pref("image.mozsamplesize.enabled", false);
-
 pref("beacon.enabled", true);
 
 // Camera prefs
