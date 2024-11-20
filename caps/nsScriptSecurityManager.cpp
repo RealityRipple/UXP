@@ -9,7 +9,6 @@
 
 #include "xpcpublic.h"
 #include "XPCWrapper.h"
-#include "nsIAppsService.h"
 #include "nsIInputStreamChannel.h"
 #include "nsILoadContext.h"
 #include "nsIServiceManager.h"
@@ -55,7 +54,6 @@
 #include "nsIChromeRegistry.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
-#include "mozIApplication.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ContentParent.h"
@@ -238,12 +236,6 @@ uint32_t
 nsScriptSecurityManager::SecurityHashURI(nsIURI* aURI)
 {
     return NS_SecurityHashURI(aURI);
-}
-
-uint16_t
-nsScriptSecurityManager::AppStatusForPrincipal(nsIPrincipal *aPrin)
-{
-    return nsIPrincipal::APP_STATUS_NOT_INSTALLED;
 }
 
 /*
