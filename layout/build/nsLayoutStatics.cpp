@@ -275,8 +275,6 @@ nsLayoutStatics::Initialize()
 #ifdef MOZ_PERMISSIONS
   nsPermissionManager::ClearOriginDataObserverInit();
 #endif
-  nsCookieService::AppClearDataObserverInit();
-  nsApplicationCacheService::AppClearDataObserverInit();
 
   HTMLVideoElement::Init();
 
