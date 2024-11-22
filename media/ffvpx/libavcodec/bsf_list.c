@@ -1,4 +1,4 @@
-#include "config_components.h"
+#include "config_common.h"
 
 static const FFBitStreamFilter * const bitstream_filters[] = {
     &ff_null_bsf,
