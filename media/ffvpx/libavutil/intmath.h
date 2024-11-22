@@ -28,9 +28,8 @@
 
 #if ARCH_ARM
 #   include "arm/intmath.h"
-#elif ARCH_RISCV
-#   include "riscv/intmath.h"
-#elif ARCH_X86
+#endif
+#if ARCH_X86
 #   include "x86/intmath.h"
 #endif
 
