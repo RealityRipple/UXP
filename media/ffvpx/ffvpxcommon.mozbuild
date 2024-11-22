@@ -47,15 +47,9 @@ if CONFIG['GNU_CC']:
     ]
     if CONFIG['CLANG_CXX']:
         CFLAGS += [
-            '-Wno-absolute-value',
-            '-Wno-incompatible-pointer-types',
+            '-Wno-incompatible-pointer-types-discards-qualifiers',
             '-Wno-string-conversion',
             '-Wno-visibility',
-        ]
-    if CONFIG['CLANG_CL']:
-        CFLAGS += [
-            '-Wno-inconsistent-dllimport',
-            '-Wno-macro-redefined',
         ]
     else:
         CFLAGS += [
