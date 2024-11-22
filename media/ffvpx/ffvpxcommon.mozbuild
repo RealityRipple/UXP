@@ -95,3 +95,18 @@ DEFINES['HAVE_AV_CONFIG_H'] = True
 if CONFIG['MOZ_DEBUG']:
     # Enable all assertions in debug builds.
     DEFINES['ASSERT_LEVEL'] = 2
+
+# clang-cl's <intrin.h> doesn't work the same as MSVC's.  For details, see:
+#
+# http://lists.llvm.org/pipermail/cfe-dev/2016-September/050943.html
+#
+# As a temporary workaround while upstream decides how to address this,
+# we enable modules to make <intrin.h> more MSVC-compatible.
+if CONFIG['CLANG_CL']:
+    CFLAGS += [
+        '-Xclang',
+        '-fmodules',
+        '-Xclang',
+        '-fmodules-cache-path=' + TOPOBJDIR + '/media/ffpvx',
+        '-fbuiltin-module-map',
+    ]
