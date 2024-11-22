@@ -19,7 +19,7 @@
  */
 
 #include <stdint.h>
-#include "libavutil/macros.h"
+#include "libavutil/avutil.h"
 
 #undef FUNC
 #undef FSUF
