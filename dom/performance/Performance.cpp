@@ -491,6 +491,11 @@ Performance::Measure(JSContext* aCx,
                      const Optional<nsAString>& aEndMark,
                      ErrorResult& aRv)
 {
+  if (!GetParentObject()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
+  }
+
   // Clear the buffer if it is full and throw an error informing the web dev.
   if (mUserEntries.Length() >= mResourceTimingBufferSize) {
     aRv.Throw(NS_ERROR_DOM_UT_QUOTA_ERR);
