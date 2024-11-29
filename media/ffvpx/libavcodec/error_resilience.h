@@ -24,7 +24,7 @@
 
 #include "avcodec.h"
 #include "me_cmp.h"
-#include "threadframe.h"
+#include "thread.h"
 
 ///< current MB is the first after a resync marker
 #define VP_START               1
@@ -52,8 +52,7 @@ typedef struct ERPicture {
 
 typedef struct ERContext {
     AVCodecContext *avctx;
-
-    me_cmp_func sad;
+    MECmpContext mecc;
     int mecc_inited;
 
     int *mb_index2xy;
@@ -75,13 +74,14 @@ typedef struct ERContext {
     ERPicture last_pic;
     ERPicture next_pic;
 
-    int8_t *ref_index[2];
-    int16_t (*motion_val_base[2])[2];
+    AVBufferRef *ref_index_buf[2];
+    AVBufferRef *motion_val_buf[2];
 
     uint16_t pp_time;
     uint16_t pb_time;
     int quarter_sample;
     int partitioned_frame;
+    int ref_count;
 
     void (*decode_mb)(void *opaque, int ref, int mv_dir, int mv_type,
                       int (*mv)[2][4][2],

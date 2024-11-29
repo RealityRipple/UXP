@@ -19,7 +19,7 @@ SOURCES += [
 ]
 LOCAL_INCLUDES += [
     '..',
-    '../ffmpeg60/include',
+    '../ffmpeg58/include',
 ]
 
 if CONFIG['GNU_CXX']:

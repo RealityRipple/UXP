@@ -22,9 +22,9 @@
  */
 
 #define ROUNDED_DIV_MVx2(a, b) \
-    (VP9mv) { .x = ROUNDED_DIV(a.x + b.x, 2), .y = ROUNDED_DIV(a.y + b.y, 2) }
+    (VP56mv) { .x = ROUNDED_DIV(a.x + b.x, 2), .y = ROUNDED_DIV(a.y + b.y, 2) }
 #define ROUNDED_DIV_MVx4(a, b, c, d) \
-    (VP9mv) { .x = ROUNDED_DIV(a.x + b.x + c.x + d.x, 4), \
+    (VP56mv) { .x = ROUNDED_DIV(a.x + b.x + c.x + d.x, 4), \
                .y = ROUNDED_DIV(a.y + b.y + c.y + d.y, 4) }
 
 static void FN(inter_pred)(VP9TileData *td)
@@ -33,11 +33,11 @@ static void FN(inter_pred)(VP9TileData *td)
         { 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4 },
         { 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4 },
     };
-    const VP9Context *s = td->s;
+    VP9Context *s = td->s;
     VP9Block *b = td->b;
     int row = td->row, col = td->col;
-    const ThreadFrame *tref1 = &s->s.refs[s->s.h.refidx[b->ref[0]]], *tref2;
-    const AVFrame *ref1 = tref1->f, *ref2;
+    ThreadFrame *tref1 = &s->s.refs[s->s.h.refidx[b->ref[0]]], *tref2;
+    AVFrame *ref1 = tref1->f, *ref2;
     int w1 = ref1->width, h1 = ref1->height, w2, h2;
     ptrdiff_t ls_y = td->y_stride, ls_uv = td->uv_stride;
     int bytesperpixel = BYTES_PER_PIXEL;
@@ -51,7 +51,7 @@ static void FN(inter_pred)(VP9TileData *td)
 
     // y inter pred
     if (b->bs > BS_8x8) {
-        VP9mv uvmv;
+        VP56mv uvmv;
 
 #if SCALED == 0
         if (b->bs == BS_8x4) {

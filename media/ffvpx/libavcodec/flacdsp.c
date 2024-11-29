@@ -19,7 +19,6 @@
  */
 
 #include "libavutil/attributes.h"
-#include "libavutil/internal.h"
 #include "libavutil/samplefmt.h"
 #include "flacdsp.h"
 #include "config.h"
@@ -27,6 +26,7 @@
 #define SAMPLE_SIZE 16
 #define PLANAR 0
 #include "flacdsp_template.c"
+#include "flacdsp_lpc_template.c"
 
 #undef  PLANAR
 #define PLANAR 1
@@ -37,6 +37,7 @@
 #define SAMPLE_SIZE 32
 #define PLANAR 0
 #include "flacdsp_template.c"
+#include "flacdsp_lpc_template.c"
 
 #undef  PLANAR
 #define PLANAR 1
@@ -84,10 +85,13 @@ static void flac_lpc_32_c(int32_t *decoded, const int coeffs[32],
 
 }
 
-av_cold void ff_flacdsp_init(FLACDSPContext *c, enum AVSampleFormat fmt, int channels)
+av_cold void ff_flacdsp_init(FLACDSPContext *c, enum AVSampleFormat fmt, int channels,
+                             int bps)
 {
     c->lpc16        = flac_lpc_16_c;
     c->lpc32        = flac_lpc_32_c;
+    c->lpc16_encode = flac_lpc_encode_c_16;
+    c->lpc32_encode = flac_lpc_encode_c_32;
 
     switch (fmt) {
     case AV_SAMPLE_FMT_S32:
@@ -119,9 +123,8 @@ av_cold void ff_flacdsp_init(FLACDSPContext *c, enum AVSampleFormat fmt, int cha
         break;
     }
 
-#if ARCH_ARM
-    ff_flacdsp_init_arm(c, fmt, channels);
-#elif ARCH_X86
-    ff_flacdsp_init_x86(c, fmt, channels);
-#endif
+    if (ARCH_ARM)
+        ff_flacdsp_init_arm(c, fmt, channels, bps);
+    if (ARCH_X86)
+        ff_flacdsp_init_x86(c, fmt, channels, bps);
 }

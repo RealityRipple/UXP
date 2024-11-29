@@ -193,7 +193,6 @@
 #include "nsSandboxFlags.h"
 #include "nsXULAppAPI.h"
 #include "nsDOMNavigationTiming.h"
-#include "nsIAppsService.h"
 #include "nsDSURIContentListener.h"
 #include "nsDocShellLoadTypes.h"
 #include "nsDocShellTransferableHooks.h"
@@ -2564,7 +2563,7 @@ nsDocShell::GetFullscreenAllowed(bool* aFullscreenAllowed)
 NS_IMETHODIMP
 nsDocShell::SetFullscreenAllowed(bool aFullscreenAllowed)
 {
-  if (!nsIDocShell::GetIsMozBrowserOrApp()) {
+  if (!nsIDocShell::GetIsMozBrowser()) {
     // Only allow setting of fullscreenAllowed on content/process boundaries.
     // At non-boundaries the fullscreenAllowed attribute is calculated based on
     // whether all enclosing frames have the "mozFullscreenAllowed" attribute
@@ -3396,7 +3395,7 @@ nsDocShell::GetSameTypeParent(nsIDocShellTreeItem** aParent)
   NS_ENSURE_ARG_POINTER(aParent);
   *aParent = nullptr;
 
-  if (nsIDocShell::GetIsMozBrowserOrApp()) {
+  if (nsIDocShell::GetIsMozBrowser()) {
     return NS_OK;
   }
 
@@ -3413,7 +3412,7 @@ nsDocShell::GetSameTypeParent(nsIDocShellTreeItem** aParent)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetSameTypeParentIgnoreBrowserAndAppBoundaries(nsIDocShell** aParent)
+nsDocShell::GetSameTypeParentIgnoreBrowserBoundaries(nsIDocShell** aParent)
 {
   NS_ENSURE_ARG_POINTER(aParent);
   *aParent = nullptr;
@@ -3467,18 +3466,18 @@ nsDocShell::GetSameTypeRootTreeItem(nsIDocShellTreeItem** aRootTreeItem)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetSameTypeRootTreeItemIgnoreBrowserAndAppBoundaries(nsIDocShell ** aRootTreeItem)
+nsDocShell::GetSameTypeRootTreeItemIgnoreBrowserBoundaries(nsIDocShell ** aRootTreeItem)
 {
     NS_ENSURE_ARG_POINTER(aRootTreeItem);
     *aRootTreeItem = static_cast<nsIDocShell *>(this);
 
     nsCOMPtr<nsIDocShell> parent;
-    NS_ENSURE_SUCCESS(GetSameTypeParentIgnoreBrowserAndAppBoundaries(getter_AddRefs(parent)),
+    NS_ENSURE_SUCCESS(GetSameTypeParentIgnoreBrowserBoundaries(getter_AddRefs(parent)),
                       NS_ERROR_FAILURE);
     while (parent) {
       *aRootTreeItem = parent;
       NS_ENSURE_SUCCESS((*aRootTreeItem)->
-        GetSameTypeParentIgnoreBrowserAndAppBoundaries(getter_AddRefs(parent)),
+        GetSameTypeParentIgnoreBrowserBoundaries(getter_AddRefs(parent)),
         NS_ERROR_FAILURE);
     }
     NS_ADDREF(*aRootTreeItem);
@@ -3532,12 +3531,6 @@ nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
     return false;
   }
 
-  if (targetDS->GetIsInIsolatedMozBrowserElement() !=
-        accessingDS->GetIsInIsolatedMozBrowserElement() ||
-      targetDS->GetAppId() != accessingDS->GetAppId()) {
-    return false;
-  }
-
   nsCOMPtr<nsIDocShellTreeItem> accessingRoot;
   aAccessingItem->GetSameTypeRootTreeItem(getter_AddRefs(accessingRoot));
   nsCOMPtr<nsIDocShell> accessingRootDS = do_QueryInterface(accessingRoot);
@@ -3558,7 +3551,7 @@ nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
   if (OriginAttributes::IsFirstPartyEnabled()) {
     if (accessingDS == accessingRootDS &&
         aAccessingItem->ItemType() == nsIDocShellTreeItem::typeContent &&
-        !accessingDS->GetIsMozBrowserOrApp()) {
+        !accessingDS->GetIsMozBrowser()) {
 
       nsCOMPtr<nsIDocument> accessingDoc = aAccessingItem->GetDocument();
 
@@ -3572,7 +3565,7 @@ nsDocShell::CanAccessItem(nsIDocShellTreeItem* aTargetItem,
 
     if (targetDS == targetRootDS &&
         aTargetItem->ItemType() == nsIDocShellTreeItem::typeContent &&
-        !targetDS->GetIsMozBrowserOrApp()) {
+        !targetDS->GetIsMozBrowser()) {
 
       nsCOMPtr<nsIDocument> targetDoc = aAccessingItem->GetDocument();
 
@@ -3769,7 +3762,7 @@ nsDocShell::DoFindItemWithName(const nsAString& aName,
 
     // If we have a same-type parent, respecting browser and app boundaries.
     // NOTE: Could use GetSameTypeParent if the issues described in bug 1310344 are fixed.
-    if (!GetIsMozBrowserOrApp() && parentAsTreeItem->ItemType() == mItemType) {
+    if (!GetIsMozBrowser() && parentAsTreeItem->ItemType() == mItemType) {
       return parentAsTreeItem->FindItemWithName(
         aName,
         static_cast<nsIDocShellTreeItem*>(this),
@@ -5282,16 +5275,6 @@ nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
   errorPageUrl.AppendLiteral("&f=");
   errorPageUrl.AppendASCII(frameType.get());
 
-  // Append the manifest URL if the error comes from an app.
-  nsString manifestURL;
-  nsresult rv = GetAppManifestURL(manifestURL);
-  if (manifestURL.Length() > 0) {
-    nsCString manifestParam;
-    SAFE_ESCAPE(manifestParam, NS_ConvertUTF16toUTF8(manifestURL), url_Path);
-    errorPageUrl.AppendLiteral("&m=");
-    errorPageUrl.AppendASCII(manifestParam.get());
-  }
-
   nsCOMPtr<nsICaptivePortalService> cps = do_GetService(NS_CAPTIVEPORTAL_CID);
   int32_t cpsState;
   if (cps && NS_SUCCEEDED(cps->GetState(&cpsState)) &&
@@ -5305,7 +5288,7 @@ nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
   errorPageUrl.AppendASCII(escapedDescription.get());
 
   nsCOMPtr<nsIURI> errorPageURI;
-  rv = NS_NewURI(getter_AddRefs(errorPageURI), errorPageUrl);
+  nsresult rv = NS_NewURI(getter_AddRefs(errorPageURI), errorPageUrl);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return InternalLoad(errorPageURI, nullptr, false, false,
@@ -6190,9 +6173,7 @@ nsDocShell::SetIsActive(bool aIsActive)
     mScriptGlobal->SetIsBackground(!aIsActive);
     if (nsCOMPtr<nsIDocument> doc = mScriptGlobal->GetExtantDoc()) {
       // Update orientation when the top-level browsing context becomes active.
-      // We make an exception for apps because they currently rely on
-      // orientation locks persisting across browsing contexts.
-      if (aIsActive && !GetIsApp()) {
+      if (aIsActive) {
         nsCOMPtr<nsIDocShellTreeItem> parent;
         GetSameTypeParent(getter_AddRefs(parent));
         if (!parent) {
@@ -6229,7 +6210,7 @@ nsDocShell::SetIsActive(bool aIsActive)
       continue;
     }
 
-    if (!docshell->GetIsMozBrowserOrApp()) {
+    if (!docshell->GetIsMozBrowser()) {
       docshell->SetIsActive(aIsActive);
     }
   }
@@ -10565,9 +10546,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   // lock the orientation of the document to the document's default
   // orientation. We don't explicitly check for a top-level browsing context
   // here because orientation is only set on top-level browsing contexts.
-  // We make an exception for apps because they currently rely on
-  // orientation locks persisting across browsing contexts.
-  if (OrientationLock() != eScreenOrientation_None && !GetIsApp()) {
+  if (OrientationLock() != eScreenOrientation_None) {
 #ifdef DEBUG
     nsCOMPtr<nsIDocShellTreeItem> parent;
     GetSameTypeParent(getter_AddRefs(parent));
@@ -10950,7 +10929,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   NeckoOriginAttributes neckoAttrs;
   bool isTopLevelDoc = aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT &&
                        mItemType == typeContent &&
-                       !GetIsMozBrowserOrApp();
+                       !GetIsMozBrowser();
   neckoAttrs.InheritFromDocShellToNecko(GetOriginAttributes(), isTopLevelDoc, aURI);
   rv = loadInfo->SetOriginAttributes(neckoAttrs);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -14387,16 +14366,9 @@ nsDocShell::GetFrameType(uint32_t* aFrameType)
 }
 
 /* [infallible] */ NS_IMETHODIMP
-nsDocShell::GetIsApp(bool* aIsApp)
+nsDocShell::GetIsMozBrowser(bool* aIsMozBrowser)
 {
-  *aIsApp = (mFrameType == FRAME_TYPE_APP);
-  return NS_OK;
-}
-
-/* [infallible] */ NS_IMETHODIMP
-nsDocShell::GetIsMozBrowserOrApp(bool* aIsMozBrowserOrApp)
-{
-  *aIsMozBrowserOrApp = (mFrameType != FRAME_TYPE_REGULAR);
+  *aIsMozBrowser = (mFrameType == FRAME_TYPE_BROWSER);
   return NS_OK;
 }
 
@@ -14419,30 +14391,9 @@ nsDocShell::GetInheritedFrameType()
 }
 
 /* [infallible] */ NS_IMETHODIMP
-nsDocShell::GetIsIsolatedMozBrowserElement(bool* aIsIsolatedMozBrowserElement)
+nsDocShell::GetIsInMozBrowser(bool* aIsInMozBrowser)
 {
-  bool result = mFrameType == FRAME_TYPE_BROWSER &&
-                mOriginAttributes.mInIsolatedMozBrowser;
-  *aIsIsolatedMozBrowserElement = result;
-  return NS_OK;
-}
-
-/* [infallible] */ NS_IMETHODIMP
-nsDocShell::GetIsInIsolatedMozBrowserElement(bool* aIsInIsolatedMozBrowserElement)
-{
-  MOZ_ASSERT(!mOriginAttributes.mInIsolatedMozBrowser ||
-             (GetInheritedFrameType() == FRAME_TYPE_BROWSER),
-             "Isolated mozbrowser should only be true inside browser frames");
-  bool result = (GetInheritedFrameType() == FRAME_TYPE_BROWSER) &&
-                mOriginAttributes.mInIsolatedMozBrowser;
-  *aIsInIsolatedMozBrowserElement = result;
-  return NS_OK;
-}
-
-/* [infallible] */ NS_IMETHODIMP
-nsDocShell::GetIsInMozBrowserOrApp(bool* aIsInMozBrowserOrApp)
-{
-  *aIsInMozBrowserOrApp = (GetInheritedFrameType() != FRAME_TYPE_REGULAR);
+  *aIsInMozBrowser = (GetInheritedFrameType() == FRAME_TYPE_BROWSER);
   return NS_OK;
 }
 
@@ -14458,25 +14409,6 @@ nsDocShell::GetIsTopLevelContentDocShell(bool* aIsTopLevelContentDocShell)
   }
 
   return NS_OK;
-}
-
-/* [infallible] */ NS_IMETHODIMP
-nsDocShell::GetAppId(uint32_t* aAppId)
-{
-  if (mOriginAttributes.mAppId != nsIScriptSecurityManager::UNKNOWN_APP_ID) {
-    *aAppId = mOriginAttributes.mAppId;
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIDocShell> parent;
-  GetSameTypeParentIgnoreBrowserAndAppBoundaries(getter_AddRefs(parent));
-
-  if (!parent) {
-    *aAppId = nsIScriptSecurityManager::NO_APP_ID;
-    return NS_OK;
-  }
-
-  return parent->GetAppId(aAppId);
 }
 
 // Implements nsILoadContext.originAttributes
@@ -14585,23 +14517,6 @@ nsDocShell::SetOriginAttributes(JS::Handle<JS::Value> aOriginAttributes,
   }
 
   return SetOriginAttributes(attrs);
-}
-
-NS_IMETHODIMP
-nsDocShell::GetAppManifestURL(nsAString& aAppManifestURL)
-{
-  uint32_t appId = nsIDocShell::GetAppId();
-  if (appId != nsIScriptSecurityManager::NO_APP_ID &&
-      appId != nsIScriptSecurityManager::UNKNOWN_APP_ID) {
-    nsCOMPtr<nsIAppsService> appsService =
-      do_GetService(APPS_SERVICE_CONTRACTID);
-    NS_ASSERTION(appsService, "No AppsService available");
-    appsService->GetManifestURLByLocalId(appId, aAppManifestURL);
-  } else {
-    aAppManifestURL.SetLength(0);
-  }
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP

@@ -6616,7 +6616,7 @@ nsContentUtils::IsUserFocusIgnored(nsINode* aNode)
     nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(aNode);
     if (browserFrame &&
         aNode->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::ignoreuserfocus) &&
-        browserFrame->GetReallyIsBrowserOrApp()) {
+        browserFrame->GetReallyIsBrowser()) {
       return true;
     }
     nsPIDOMWindowOuter* win = aNode->OwnerDoc()->GetWindow();
@@ -8868,10 +8868,8 @@ nsContentUtils::SetFetchReferrerURIWithPolicy(nsIPrincipal* aPrincipal,
     referrerURI = principalURI;
   }
 
-  net::ReferrerPolicy referrerPolicy = aReferrerPolicy;
-  if (referrerPolicy == net::RP_Default) {
-    referrerPolicy = aDoc->GetReferrerPolicy();
-  }
+  net::ReferrerPolicy referrerPolicy = (aReferrerPolicy != net::RP_Unset) ?
+                                       aReferrerPolicy : net::RP_Default;
   return aChannel->SetReferrerWithPolicy(referrerURI, referrerPolicy);
 }
 
