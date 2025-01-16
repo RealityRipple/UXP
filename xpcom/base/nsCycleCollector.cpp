@@ -2085,7 +2085,7 @@ private:
 
 public:
   // nsCycleCollectionNoteRootCallback methods.
-  NS_IMETHOD_(void) NoteXPCOMRoot(nsISupports* aRoot);
+  NS_IMETHOD_(void) NoteXPCOMRoot(nsISupports* aRoot, nsCycleCollectionParticipant* aParticipant);
   NS_IMETHOD_(void) NoteJSRoot(JSObject* aRoot);
   NS_IMETHOD_(void) NoteNativeRoot(void* aRoot,
                                    nsCycleCollectionParticipant* aParticipant);
@@ -2278,16 +2278,17 @@ CCGraphBuilder::BuildGraph(SliceBudget& aBudget)
 }
 
 NS_IMETHODIMP_(void)
-CCGraphBuilder::NoteXPCOMRoot(nsISupports* aRoot)
+CCGraphBuilder::NoteXPCOMRoot(nsISupports* aRoot, nsCycleCollectionParticipant* aParticipant)
 {
-  aRoot = CanonicalizeXPCOMParticipant(aRoot);
-  NS_ASSERTION(aRoot,
-               "Don't add objects that don't participate in collection!");
+  MOZ_ASSERT(aRoot == CanonicalizeXPCOMParticipant(aRoot));
 
+#ifdef DEBUG
   nsXPCOMCycleCollectionParticipant* cp;
   ToParticipant(aRoot, &cp);
+  MOZ_ASSERT(aParticipant == cp);
+#endif
 
-  NoteRoot(aRoot, cp);
+  NoteRoot(aRoot, aParticipant);
 }
 
 NS_IMETHODIMP_(void)
