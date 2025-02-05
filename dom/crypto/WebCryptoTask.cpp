@@ -402,8 +402,9 @@ WebCryptoTask::FailWithError(nsresult aRv)
   MOZ_ASSERT(IsOnOriginalThread());
 
   if (aRv == NS_ERROR_DOM_TYPE_MISMATCH_ERR) {
-    mResultPromise->MaybeRejectWithTypeError(
-        "The operation could not be performed.");
+    ErrorResult rv;
+    rv.ThrowTypeError<MSG_DOM_OPERATION_FAILED>();
+    mResultPromise->MaybeReject(rv);
   } else {
     // Blindly convert nsresult to DOMException
     // Individual tasks must ensure they pass the right values
