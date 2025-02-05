@@ -1544,7 +1544,8 @@ public:
     }
 
     // Check that we have valid key data.
-    if (mKeyData.Length() == 0) {
+    // Zero-length key is allowed for PBKDF2 since it will be padded.
+    if (mKeyData.Length() == 0 && !mAlgName.EqualsLiteral(WEBCRYPTO_ALG_PBKDF2)) {
       return NS_ERROR_DOM_DATA_ERR;
     }
 
@@ -2741,12 +2742,6 @@ public:
   {
     CHECK_KEY_ALGORITHM(aKey.Algorithm(), WEBCRYPTO_ALG_PBKDF2);
 
-    // Check that we got a symmetric key
-    if (mSymKey.Length() == 0) {
-      mEarlyRv = NS_ERROR_DOM_INVALID_ACCESS_ERR;
-      return;
-    }
-
     RootedDictionary<Pbkdf2Params> params(aCx);
     mEarlyRv = Coerce(aCx, params, aAlgorithm);
     if (NS_FAILED(mEarlyRv)) {
@@ -2754,9 +2749,9 @@ public:
       return;
     }
 
-    // length must be a multiple of 8 bigger than zero.
+    // Length must be a multiple of 8 bigger than zero.
     if (aLength == 0 || aLength % 8) {
-      mEarlyRv = NS_ERROR_DOM_DATA_ERR;
+      mEarlyRv = NS_ERROR_DOM_OPERATION_ERR;
       return;
     }
 
