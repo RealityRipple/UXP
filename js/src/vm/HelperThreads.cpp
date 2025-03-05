@@ -34,6 +34,8 @@ using mozilla::DebugOnly;
 using mozilla::Unused;
 using mozilla::TimeDuration;
 
+using JS::CompileOptions;
+using JS::ReadOnlyCompileOptions;
 using JS::SourceBufferHolder;
 
 namespace js {

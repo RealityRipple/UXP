@@ -70,6 +70,7 @@
 #include "jit/Ion.h"
 #include "jit/JitcodeMap.h"
 #include "jit/OptimizationTracking.h"
+#include "js/CompileOptions.h"
 #include "js/Debug.h"
 #include "js/Equality.h"  // JS::SameValue
 #include "js/GCAPI.h"
@@ -110,6 +111,8 @@
 using namespace js;
 using namespace js::cli;
 using namespace js::shell;
+
+using JS::CompileOptions;
 
 using mozilla::ArrayLength;
 using mozilla::Atomic;
