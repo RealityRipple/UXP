@@ -249,7 +249,7 @@ nsPreflightCache::CacheEntry::CheckRequest(const nsCString& aMethod,
     }
   }
 
-  const struct CheckHeaderToken {
+  struct CheckHeaderToken {
     bool Equals(const TokenTime& e, const nsCString& header) const {
       return e.token.Equals(header, comparator);
     }
