@@ -16,8 +16,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_HWACCEL_H
-#define AVCODEC_HWACCEL_H
+#ifndef AVCODEC_HWCONFIG_H
+#define AVCODEC_HWCONFIG_H
 
 #include "avcodec.h"
 #include "hwaccels.h"
@@ -78,7 +78,23 @@ typedef struct AVCodecHWConfigInternal {
     HW_CONFIG_HWACCEL(1, 1, 1, VIDEOTOOLBOX, VIDEOTOOLBOX, ff_ ## codec ## _videotoolbox_hwaccel)
 #define HWACCEL_D3D11VA(codec) \
     HW_CONFIG_HWACCEL(0, 0, 1, D3D11VA_VLD,  NONE,         ff_ ## codec ## _d3d11va_hwaccel)
-#define HWACCEL_XVMC(codec) \
-    HW_CONFIG_HWACCEL(0, 0, 1, XVMC,         NONE,         ff_ ## codec ## _xvmc_hwaccel)
 
-#endif /* AVCODEC_HWACCEL_H */
+#define HW_CONFIG_ENCODER(device, frames, ad_hoc, format, device_type_) \
+    &(const AVCodecHWConfigInternal) { \
+        .public          = { \
+            .pix_fmt     = AV_PIX_FMT_ ## format, \
+            .methods     = (device ? AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX : 0) | \
+                           (frames ? AV_CODEC_HW_CONFIG_METHOD_HW_FRAMES_CTX : 0) | \
+                           (ad_hoc ? AV_CODEC_HW_CONFIG_METHOD_AD_HOC        : 0),  \
+            .device_type = AV_HWDEVICE_TYPE_ ## device_type_, \
+        }, \
+        .hwaccel         = NULL, \
+    }
+
+#define HW_CONFIG_ENCODER_DEVICE(format, device_type_) \
+    HW_CONFIG_ENCODER(1, 0, 0, format, device_type_)
+
+#define HW_CONFIG_ENCODER_FRAMES(format, device_type_) \
+    HW_CONFIG_ENCODER(0, 1, 0, format, device_type_)
+
+#endif /* AVCODEC_HWCONFIG_H */
