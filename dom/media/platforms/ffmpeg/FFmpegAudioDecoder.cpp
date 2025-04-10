@@ -45,9 +45,7 @@ FFmpegAudioDecoder<LIBAV_VER>::InitCodecContext()
   // isn't implemented.
   mCodecContext->thread_count = 1;
   // FFmpeg takes this as a suggestion for what format to use for audio samples.
-  // LibAV 0.8 produces rubbish float interleaved samples, request 16 bits audio.
-  mCodecContext->request_sample_fmt =
-    (mLib->mVersion == 53) ? AV_SAMPLE_FMT_S16 : AV_SAMPLE_FMT_FLT;
+  mCodecContext->request_sample_fmt = AV_SAMPLE_FMT_FLT;
 }
 
 static AlignedAudioBuffer
@@ -138,7 +136,7 @@ FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample)
   while (packet.size > 0) {
     int decoded = false;
     int bytesConsumed = -1;
-#if LIBAVCODEC_VERSION_MAJOR < 59
+#if LIBAVCODEC_VERSION_MAJOR == 58
 	bytesConsumed =
       mLib->avcodec_decode_audio4(mCodecContext, mFrame, &decoded, &packet);
 

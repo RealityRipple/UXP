@@ -29,24 +29,11 @@ static const char* sLibs[] = {
   "libavcodec.60.dylib",
   "libavcodec.59.dylib",
   "libavcodec.58.dylib",
-  "libavcodec.57.dylib",
-  "libavcodec.56.dylib",
-  "libavcodec.55.dylib",
-  "libavcodec.54.dylib",
-  "libavcodec.53.dylib",
 #else
   "libavcodec.so.60",
   "libavcodec.so.59",
   "libavcodec.so.58",
-  "libavcodec-ffmpeg.so.59",
   "libavcodec-ffmpeg.so.58",
-  "libavcodec-ffmpeg.so.57",
-  "libavcodec-ffmpeg.so.56",
-  "libavcodec.so.57",
-  "libavcodec.so.56",
-  "libavcodec.so.55",
-  "libavcodec.so.54",
-  "libavcodec.so.53",
 #endif
 };
 
@@ -136,11 +123,6 @@ FFmpegRuntimeLinker::CreateDecoderModule()
   }
   RefPtr<PlatformDecoderModule> module;
   switch (sLibAV.mVersion) {
-    case 53: module = FFmpegDecoderModule<53>::Create(&sLibAV); break;
-    case 54: module = FFmpegDecoderModule<54>::Create(&sLibAV); break;
-    case 55:
-    case 56: module = FFmpegDecoderModule<55>::Create(&sLibAV); break;
-    case 57: module = FFmpegDecoderModule<57>::Create(&sLibAV); break;
     case 58: module = FFmpegDecoderModule<58>::Create(&sLibAV); break;
     case 59: module = FFmpegDecoderModule<59>::Create(&sLibAV); break;
     case 60: module = FFmpegDecoderModule<60>::Create(&sLibAV); break;
