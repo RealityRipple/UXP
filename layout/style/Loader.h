@@ -452,7 +452,8 @@ public:
 private:
   friend class SheetLoadData;
 
-  nsresult CheckContentPolicy(nsIPrincipal* aSourcePrincipal,
+  nsresult CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
+                              nsIPrincipal* aTriggeringPrincipal,
                               nsIURI* aTargetURI,
                               nsISupports* aContext,
                               bool aIsPreload);

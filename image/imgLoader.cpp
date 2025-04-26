@@ -567,7 +567,8 @@ ShouldLoadCachedImage(imgRequest* aImgRequest,
   int16_t decision = nsIContentPolicy::REJECT_REQUEST;
   rv = NS_CheckContentLoadPolicy(aPolicyType,
                                  contentLocation,
-                                 aLoadingPrincipal,
+                                 aLoadingPrincipal, // loading principal
+                                 aLoadingPrincipal, // triggering principal
                                  aLoadingContext,
                                  EmptyCString(), //mime guess
                                  nullptr, //aExtra

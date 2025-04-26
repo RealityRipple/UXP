@@ -9880,6 +9880,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     int16_t shouldLoad = nsIContentPolicy::ACCEPT;
     rv = NS_CheckContentLoadPolicy(contentType,
                                    aURI,
+                                   // This is a top-level load, so the loading
+                                   // principal is null.
+                                   nullptr,
                                    aTriggeringPrincipal,
                                    requestingContext,
                                    EmptyCString(),  // mime guess
