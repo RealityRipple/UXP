@@ -3328,6 +3328,12 @@ case "$OS_ARCH:$CPU_ARCH" in
   *:x86_64)
       MOZ_LIBAV_FFT=1
   ;;
+  *:aarch64)
+      MOZ_LIBAV_FFT=1
+  ;;
+  *:arm)
+      MOZ_LIBAV_FFT=1
+  ;;
 esac
 
 dnl Detect if we can use yasm to compile libav's assembly
@@ -3338,6 +3344,9 @@ if test -n "$MOZ_LIBAV_FFT" -a -n "$COMPILE_ENVIRONMENT"; then
   case "$OS_ARCH:$CPU_ARCH" in
   Darwin:x86_64)
     LIBAV_FFT_ASFLAGS="-D__x86_64__ -DPIC -DMACHO"
+  ;;
+  Darwin:aarch64)
+    LIBAV_FFT_ASFLAGS="-D__aarch64__ -DPIC -DMACHO"
   ;;
   WINNT:x86)
     LIBAV_FFT_ASFLAGS="-DPIC -DWIN32"
@@ -3350,13 +3359,23 @@ if test -n "$MOZ_LIBAV_FFT" -a -n "$COMPILE_ENVIRONMENT"; then
       LIBAV_FFT_ASFLAGS="-D__x86_64__ -DPIC -DELF"
     fi
   ;;
+  *:aarch64)
+    if $CC -E -dM -</dev/null | grep -q __ELF__; then
+      LIBAV_FFT_ASFLAGS="-D__aarch64__ -DPIC -DELF"
+    fi
+  ;;
+  *:arm*)
+    if $CC -E -dM -</dev/null | grep -q __ELF__; then
+      LIBAV_FFT_ASFLAGS="-D__arm__ -DPIC -DELF -march=armv7-a -mfpu=neon"
+    fi
+  ;;
   *)
     AC_MSG_ERROR([libav's FFT routines are only available for 32-bit windows or 64-bit x86 based platforms.])
   ;;
   esac
 fi
 
-if test -n "$LIBAV_FFT_ASFLAGS"; then
+if test -n "$LIBAV_FFT_ASFLAGS" -a "${CPU_ARCH}" = "x86" -a "${CPU_ARCH}" = "x86_64"; then
   dnl If we're on an x86 or x64 system which supports libav-fft's asm routines
   dnl check for Yasm, and error out if it doesn't exist or we have too old of a
   dnl version.
@@ -3393,6 +3412,12 @@ case "$OS_ARCH:$CPU_ARCH" in
       MOZ_FFVPX=1
   ;;
   *:x86_64)
+      MOZ_FFVPX=1
+  ;;
+  *:aarch64)
+      MOZ_FFVPX=1
+  ;;
+  *:arm*)
       MOZ_FFVPX=1
   ;;
 esac

@@ -6,7 +6,13 @@
 # Due to duplicate file names, we compile libavcodec/x86 in its own
 # moz.build file.
 if CONFIG['FFVPX_ASFLAGS']:
-    DIRS += ['x86']
+    if CONFIG['CPU_ARCH'].startswith('x86'):
+        DIRS += ['x86']
+    elif CONFIG['CPU_ARCH'].startswith('arm'):
+        DIRS += ['arm']
+
+if CONFIG['CPU_ARCH'] == 'aarch64':
+    DIRS += ['aarch64']
 
 SharedLibrary('mozavcodec')
 SOURCES += [
@@ -21,7 +27,6 @@ SOURCES += [
     'codec_desc.c',
     'codec_par.c',
     'decode.c',
-    'dummy_funcs.c',
     'encode.c',
     'flac.c',
     'flac_parser.c',
