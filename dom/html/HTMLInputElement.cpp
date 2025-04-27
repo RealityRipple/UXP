@@ -1285,7 +1285,9 @@ HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
 nsresult
 HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
                                const nsAttrValue* aValue,
-                               const nsAttrValue* aOldValue, bool aNotify)
+                               const nsAttrValue* aOldValue, 
+                               nsIPrincipal* aSubjectPrincipal,
+                               bool aNotify)
 {
   if (aNameSpaceID == kNameSpaceID_None) {
     //
@@ -1436,6 +1438,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
 
   return nsGenericHTMLFormElementWithState::AfterSetAttr(aNameSpaceID, aName,
                                                          aValue, aOldValue,
+                                                         aSubjectPrincipal,
                                                          aNotify);
 }
 
