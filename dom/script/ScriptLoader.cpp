@@ -869,6 +869,8 @@ ScriptLoader::StartFetchingModuleAndDependencies(ModuleLoadRequest* aParent,
   RefPtr<ModuleLoadRequest> childRequest =
       ModuleLoadRequest::CreateStaticImport(aURI, aParent);
 
+  childRequest->mTriggeringPrincipal = aParent->mTriggeringPrincipal;
+
   aParent->mImports.AppendElement(childRequest);
 
   RefPtr<GenericPromise> ready = childRequest->mReady.Ensure(__func__);
@@ -1329,14 +1331,16 @@ ScriptLoader::StartLoad(ScriptLoadRequest *aRequest, const nsAString &aType,
   securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
 
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv = NS_NewChannel(getter_AddRefs(channel),
-                              aRequest->mURI,
-                              context,
-                              securityFlags,
-                              contentPolicyType,
-                              loadGroup,
-                              prompter,
-                              nsIRequest::LOAD_NORMAL);
+  nsresult rv = NS_NewChannelWithTriggeringPrincipal(
+      getter_AddRefs(channel),
+      aRequest->mURI,
+      context,
+      aRequest->mTriggeringPrincipal,
+      securityFlags,
+      contentPolicyType,
+      loadGroup,
+      prompter,
+      nsIRequest::LOAD_NORMAL);
 
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1637,10 +1641,14 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
         }
       }
 
-      nsCOMPtr<nsIPrincipal> principal = scriptContent->NodePrincipal();
+      nsCOMPtr<nsIPrincipal> principal = aElement->GetScriptURITriggeringPrincipal();
+      if (!principal) {
+        principal = scriptContent->NodePrincipal();
+      }
 
       request = CreateLoadRequest(scriptKind, scriptURI, aElement, principal,
                                   ourCORSMode, sriMetadata, referrerPolicy);
+      request->mTriggeringPrincipal = Move(principal);
       request->mIsInline = false;
       request->SetScriptMode(aElement->GetScriptDeferred(),
                              aElement->GetScriptAsync());
@@ -1763,6 +1771,7 @@ ScriptLoader::ProcessScriptElement(nsIScriptElement *aElement)
                               SRIMetadata(), // SRI doesn't apply
                               referrerPolicy);
   request->mIsInline = true;
+  request->mTriggeringPrincipal = mDocument->NodePrincipal();
   request->mLineNo = aElement->GetScriptLineNumber();
 
   // Only the 'async' attribute is heeded on an inline module script and
@@ -3066,6 +3075,7 @@ ScriptLoader::PreloadURI(nsIURI *aURI,
                       mDocument->NodePrincipal(),
                       Element::StringToCORSMode(aCrossOrigin), sriMetadata,
                       aReferrerPolicy);
+  request->mTriggeringPrincipal = mDocument->NodePrincipal();
   request->mIsInline = false;
   request->SetScriptMode(aDefer, aAsync);
   request->SetIsPreloadRequest();
