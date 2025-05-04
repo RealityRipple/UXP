@@ -86,7 +86,7 @@ protected:
   }
 
   // nsStyleLinkElement overrides
-  already_AddRefed<nsIURI> GetStyleSheetURL(bool* aIsInline) override;
+  already_AddRefed<nsIURI> GetStyleSheetURL(bool* aIsInline, nsIPrincipal** aTriggeringPrincipal) override;
 
   void GetStyleSheetInfo(nsAString& aTitle,
                          nsAString& aType,

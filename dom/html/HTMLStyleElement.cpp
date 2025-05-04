@@ -214,9 +214,10 @@ HTMLStyleElement::SetInnerHTML(const nsAString& aInnerHTML,
 }
 
 already_AddRefed<nsIURI>
-HTMLStyleElement::GetStyleSheetURL(bool* aIsInline)
+HTMLStyleElement::GetStyleSheetURL(bool* aIsInline, nsIPrincipal** aTriggeringPrincipal)
 {
   *aIsInline = true;
+  *aTriggeringPrincipal = nullptr;
   return nullptr;
 }
 
