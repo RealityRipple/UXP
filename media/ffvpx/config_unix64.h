@@ -10,7 +10,7 @@
 #define OS_NAME linux
 #define av_restrict restrict
 #define EXTERN_PREFIX ""
-#define EXTERN_ASM 
+#define EXTERN_ASM
 #define BUILDSUF ""
 #define SLIBSUF ".so"
 #define HAVE_MMX2 HAVE_MMXEXT
@@ -336,6 +336,7 @@
 #define HAVE_WGLGETPROCADDRESS 0
 #define HAVE_BCRYPT 0
 #define HAVE_VAAPI_DRM 0
+#define HAVE_VAAPI_WIN32 0
 #define HAVE_VAAPI_X11 0
 #define HAVE_VDPAU_X11 0
 #define HAVE_PTHREADS 1

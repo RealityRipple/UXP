@@ -10,12 +10,6 @@ SOURCES += [
     'mpegaudiodsp_init_arm.c',
 ]
 
-if CONFIG['MOZ_LIBAV_FFT']:
-    SOURCES += [
-        'fft_init_arm.c',
-        'fft_neon.S',
-    ]
-
 FINAL_LIBRARY = 'mozavcodec'
 
 include('/media/ffvpx/ffvpxcommon.mozbuild')
