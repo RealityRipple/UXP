@@ -32,12 +32,6 @@ SOURCES += [
     'vp9mc_neon.S',
 ]
 
-if CONFIG['MOZ_LIBAV_FFT']:
-    SOURCES += [
-        'fft_init_aarch64.c',
-        'fft_neon.S',
-    ]
-
 FINAL_LIBRARY = 'mozavcodec'
 
 include('/media/ffvpx/ffvpxcommon.mozbuild')

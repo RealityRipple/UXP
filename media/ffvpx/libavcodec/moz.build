@@ -19,9 +19,7 @@ SOURCES += [
     'allcodecs.c',
     'avcodec.c',
     'avpacket.c',
-    'avpicture.c',
     'bitstream.c',
-    'bitstream_filter.c',
     'bitstream_filters.c',
     'bsf.c',
     'codec_desc.c',
@@ -49,6 +47,7 @@ SOURCES += [
     'pthread_slice.c',
     'qsv_api.c',
     'raw.c',
+    'refstruct.c',
     'reverse.c',
     'utils.c',
     'version.c',
@@ -57,6 +56,7 @@ SOURCES += [
     'vorbis_parser.c',
     'vp8.c',
     'vp8_parser.c',
+    'vp8data.c',
     'vp8dsp.c',
     'vp9.c',
     'vp9_parser.c',
@@ -78,8 +78,6 @@ SOURCES += [
 if CONFIG['MOZ_LIBAV_FFT']:
     SOURCES += [
         'avfft.c',
-        'fft_float.c',
-        'rdft.c',
     ]
 
 SYMBOLS_FILE = 'avcodec.symbols'

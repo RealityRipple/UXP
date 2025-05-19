@@ -23,7 +23,6 @@ SOURCES += [
     'bprint.c',
     'buffer.c',
     'channel_layout.c',
-    'color_utils.c',
     'cpu.c',
     'crc.c',
     'dict.c',
@@ -53,6 +52,10 @@ SOURCES += [
     'threadmessage.c',
     'time.c',
     'timecode.c',
+    'tx.c',
+    'tx_double.c',
+    'tx_float.c',
+    'tx_int32.c',
     'utils.c',
     'video_enc_params.c',
 ]
