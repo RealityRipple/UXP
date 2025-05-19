@@ -103,9 +103,6 @@ FFmpegLibWrapper::Link()
   AV_FUNC(av_parser_parse2, AV_FUNC_AVCODEC_ALL)
   AV_FUNC(avcodec_send_packet, AV_FUNC_AVCODEC_ALL)
   AV_FUNC(avcodec_receive_frame, AV_FUNC_AVCODEC_ALL)
-  AV_FUNC_OPTION(av_rdft_init, AV_FUNC_AVCODEC_ALL)
-  AV_FUNC_OPTION(av_rdft_calc, AV_FUNC_AVCODEC_ALL)
-  AV_FUNC_OPTION(av_rdft_end, AV_FUNC_AVCODEC_ALL)
   AV_FUNC(av_log_set_level, AV_FUNC_AVUTIL_ALL)
   AV_FUNC(av_malloc, AV_FUNC_AVUTIL_ALL)
   AV_FUNC(av_freep, AV_FUNC_AVUTIL_ALL)
@@ -114,6 +111,8 @@ FFmpegLibWrapper::Link()
   AV_FUNC(av_frame_unref, AV_FUNC_AVUTIL_ALL)
   AV_FUNC_OPTION(av_frame_get_colorspace, AV_FUNC_AVUTIL_58)
   AV_FUNC_OPTION(av_frame_get_color_range, AV_FUNC_AVUTIL_58)
+  AV_FUNC_OPTION(av_tx_init, AV_FUNC_AVUTIL_ALL)
+  AV_FUNC_OPTION(av_tx_uninit, AV_FUNC_AVUTIL_ALL)
 #undef AV_FUNC
 #undef AV_FUNC_OPTION
 

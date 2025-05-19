@@ -8,8 +8,8 @@
 
 #include "AlignedTArray.h"
 #include "AudioNodeEngine.h"
-#include "FFmpegRDFTTypes.h"
 #include "FFVPXRuntimeLinker.h"
+#include "ffvpx/tx.h"
 
 namespace mozilla {
 
@@ -29,14 +29,12 @@ public:
   static void MainThreadInit()
   {
     FFVPXRuntimeLinker::Init();
-    if (!sRDFTFuncs.init) {
-      FFVPXRuntimeLinker::GetRDFTFuncs(&sRDFTFuncs);
+    if (!sFFTFuncs.init) {
+      FFVPXRuntimeLinker::GetFFTFuncs(&sFFTFuncs);
     }
   }
 
   explicit FFTBlock(uint32_t aFFTSize)
-    : mAvRDFT(nullptr)
-    , mAvIRDFT(nullptr)
   {
     MOZ_COUNT_CTOR(FFTBlock);
     SetFFTSize(aFFTSize);
@@ -61,10 +59,12 @@ public:
     }
 
     PodCopy(mOutputBuffer.Elements()->f, aData, mFFTSize);
-    sRDFTFuncs.calc(mAvRDFT, mOutputBuffer.Elements()->f);
-    // Recover packed Nyquist.
-    mOutputBuffer[mFFTSize / 2].r = mOutputBuffer[0].i;
-    mOutputBuffer[0].i = 0.0f;
+    // In place transform
+    mFn(mTxCtx, mOutputBuffer.Elements()->f, mOutputBuffer.Elements()->f,
+        2 * sizeof(float));
+#ifdef DEBUG
+    mInversePerformed = false;
+#endif
   }
   // Inverse-transform internal data and store the resulting FFTSize()
   // points in aDataOut.
@@ -83,17 +83,19 @@ public:
       return;
     };
 
-    // Even though this function doesn't scale, the libav forward transform
-    // gives a value that needs scaling by 2 in order for things to turn out
-    // similar to how we expect from kissfft/openmax.
-    AudioBufferCopyWithScale(mOutputBuffer.Elements()->f, 2.0f,
-                             aDataOut, mFFTSize);
-    aDataOut[1] = 2.0f * mOutputBuffer[mFFTSize/2].r; // Packed Nyquist
-    sRDFTFuncs.calc(mAvIRDFT, aDataOut);
+    // When performing an inverse transform, tx overwrites the input. This
+    // asserts that forward / inverse transforms are interleaved to avoid having
+    // to keep the input around.
+    MOZ_ASSERT(!mInversePerformed);
+    mIFn(mITxCtx, aDataOut, mOutputBuffer.Elements()->f, 2 * sizeof(float));
+#ifdef DEBUG
+    mInversePerformed = true;
+#endif
   }
 
   void Multiply(const FFTBlock& aFrame)
   {
+	MOZ_ASSERT(!mInversePerformed);
     uint32_t halfSize = mFFTSize / 2;
     // DFTs are not packed.
     MOZ_ASSERT(mOutputBuffer[0].i == 0);
@@ -144,6 +146,7 @@ public:
   }
   float& RealData(uint32_t aIndex)
   {
+    MOZ_ASSERT(!mInversePerformed);
     return mOutputBuffer[aIndex].r;
   }
   float ImagData(uint32_t aIndex) const
@@ -152,14 +155,23 @@ public:
   }
   float& ImagData(uint32_t aIndex)
   {
+    MOZ_ASSERT(!mInversePerformed);
     return mOutputBuffer[aIndex].i;
   }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
     size_t amount = 0;
-    amount += aMallocSizeOf(mAvRDFT);
-    amount += aMallocSizeOf(mAvIRDFT);
+
+    // malloc_usable_size can't be used here because the pointer isn't
+    // necessarily from malloc. This value has been manually checked.
+    if (mTxCtx) {
+	  amount += 711;
+	}
+	if (mTxCtx) {
+	  amount += 711;
+	}
+
     amount += mOutputBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
     return amount;
   }
@@ -169,51 +181,63 @@ public:
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-private:
   FFTBlock(const FFTBlock& other) = delete;
   void operator=(const FFTBlock& other) = delete;
 
+private:
   bool EnsureFFT()
   {
-    if (!mAvRDFT) {
-      if (!sRDFTFuncs.init) {
-        return false;
-      }
-      mAvRDFT = sRDFTFuncs.init(log((double)mFFTSize)/M_LN2, DFT_R2C);
+    if (!mTxCtx) {
+      float scale = 1.0f;
+      int rv = sFFTFuncs.init(&mTxCtx, &mFn, AV_TX_FLOAT_RDFT, 0 /* forward */,
+                              AssertedCast<int>(mFFTSize), &scale, 0);
+      MOZ_ASSERT(!rv, "av_tx_init: invalid parameters (forward)");
+      return !rv;
     }
     return true;
   }
 
   bool EnsureIFFT()
   {
-    if (!mAvIRDFT) {
-      if (!sRDFTFuncs.init) {
-        return false;
-      }
-      mAvIRDFT = sRDFTFuncs.init(log((double)mFFTSize)/M_LN2, IDFT_C2R);
+    if (!mITxCtx) {
+      float scale = 0.5f;
+      int rv =
+          sFFTFuncs.init(&mITxCtx, &mIFn, AV_TX_FLOAT_RDFT, 1 /* inverse */,
+                         AssertedCast<int>(mFFTSize), &scale, 0);
+      MOZ_ASSERT(!rv, "av_tx_init: invalid parameters (inverse)");
+      return !rv;
     }
     return true;
   }
 
   void Clear()
   {
-    if (mAvRDFT) {
-      sRDFTFuncs.end(mAvRDFT);
-      mAvRDFT = nullptr;
+    if (mTxCtx) {
+      sFFTFuncs.uninit(&mTxCtx);
+      mTxCtx = nullptr;
+      mFn = nullptr;
     }
-    if (mAvIRDFT) {
-      sRDFTFuncs.end(mAvIRDFT);
-      mAvIRDFT = nullptr;
+    if (mITxCtx) {
+      sFFTFuncs.uninit(&mITxCtx);
+      mITxCtx = nullptr;
+      mIFn = nullptr;
     }
   }
   void AddConstantGroupDelay(double sampleFrameDelay);
   void InterpolateFrequencyComponents(const FFTBlock& block0,
                                       const FFTBlock& block1, double interp);
-  RDFTContext *mAvRDFT;
-  RDFTContext *mAvIRDFT;
-  static FFmpegRDFTFuncs sRDFTFuncs;
+  static FFmpegFFTFuncs sFFTFuncs;
+  // Context and function pointer for forward transform
+  AVTXContext* mTxCtx{};
+  av_tx_fn mFn{};
+  // Context and function pointer for inverse transform
+  AVTXContext* mITxCtx{};
+  av_tx_fn mIFn{};
   AlignedTArray<ComplexU> mOutputBuffer;
   uint32_t mFFTSize{};
+#ifdef DEBUG
+  bool mInversePerformed = false;
+endif
 };
 
 } // namespace mozilla

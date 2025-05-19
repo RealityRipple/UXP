@@ -28,14 +28,15 @@
  */
 
 #include "FFTBlock.h"
+#include "FFVPXRuntimeLinker.h"
 
 #include <complex>
 
 namespace mozilla {
 
-typedef std::complex<double> Complex;
+FFmpegFFTFuncs FFTBlock::sFFTFuncs = {};
 
-FFmpegRDFTFuncs FFTBlock::sRDFTFuncs;
+using Complex = std::complex<double>;
 
 FFTBlock* FFTBlock::CreateInterpolatedBlock(const FFTBlock& block0, const FFTBlock& block1, double interp)
 {
@@ -47,7 +48,7 @@ FFTBlock* FFTBlock::CreateInterpolatedBlock(const FFTBlock& block0, const FFTBlo
     int fftSize = newBlock->FFTSize();
     AlignedTArray<float> buffer(fftSize);
     newBlock->GetInverseWithoutScaling(buffer.Elements());
-    AudioBufferInPlaceScale(buffer.Elements(), 1.0f / fftSize, fftSize / 2);
+    AudioBufferInPlaceScale(buffer.Elements(), 1.0f / AssertedCast<float>(fftSize), fftSize / 2);
     PodZero(buffer.Elements() + fftSize / 2, fftSize / 2);
 
     // Put back into frequency domain.

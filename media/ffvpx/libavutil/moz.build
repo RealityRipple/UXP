@@ -60,6 +60,10 @@ SOURCES += [
     'video_enc_params.c',
 ]
 
+EXPORTS.ffvpx = [
+    "tx.h"
+]
+
 SYMBOLS_FILE =  'avutil.symbols'
 NO_VISIBILITY_FLAGS = True
 
