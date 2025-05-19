@@ -35,9 +35,7 @@ namespace mozilla {
 
 typedef std::complex<double> Complex;
 
-#ifdef MOZ_LIBAV_FFT
 FFmpegRDFTFuncs FFTBlock::sRDFTFuncs;
-#endif
 
 FFTBlock* FFTBlock::CreateInterpolatedBlock(const FFTBlock& block0, const FFTBlock& block1, double interp)
 {
