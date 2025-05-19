@@ -75,7 +75,7 @@ public:
   // Inverse-transform internal frequency data and store the resulting
   // FFTSize() points in |aDataOut|.  If frequency data has not already been
   // scaled, then the output will need scaling by 1/FFTSize().
-  void GetInverse(float* aDataOut)
+  void GetInverseWithoutScaling(float* aDataOut)
   {
     if (!EnsureIFFT()) {
       std::fill_n(aDataOut, mFFTSize, 0.0f);
@@ -247,7 +247,7 @@ private:
   float mInverseScaling;
 #ifdef DEBUG
   bool mInversePerformed = false;
-endif
+#endif
 };
 
 } // namespace mozilla
