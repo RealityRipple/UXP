@@ -75,10 +75,13 @@ constexpr uint64_t safe_integer_unsigned() {
   return std::pow(2, std::numeric_limits<T>::digits);
 }
 
+#ifdef __GNUC__
 // This is working around https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81676,
 // fixed in gcc-10
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif
+
 template <typename In, typename Out>
 bool IsInBounds(In aIn) {
   constexpr bool inSigned = std::is_signed_v<In>;
@@ -161,7 +164,10 @@ bool IsInBounds(In aIn) {
   }
   return true;
 }
+
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 } // namespace detail
 
