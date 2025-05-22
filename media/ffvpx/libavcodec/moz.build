@@ -25,7 +25,6 @@ SOURCES += [
     'codec_desc.c',
     'codec_par.c',
     'decode.c',
-    'dummy_funcs.c',
     'encode.c',
     'flac.c',
     'flac_parser.c',
@@ -75,6 +74,14 @@ SOURCES += [
     'vpx_rac.c',
     'xiph.c'
 ]
+
+# When building debug, there's a linker symbol inclusion issue, requiring us to
+# include dummy function definitions to have symbols exposed.
+# See discussion in UXP issue #2725
+if CONFIG['MOZ_DEBUG']:
+    SOURCES += [
+        'dummy_funcs.c',
+    ]
 
 if CONFIG['MOZ_LIBAV_FFT']:
     SOURCES += [
