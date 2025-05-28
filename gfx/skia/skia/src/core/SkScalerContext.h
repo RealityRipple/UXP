@@ -76,7 +76,7 @@ struct SkScalerContextRec {
         if (0 <= c && c <= SK_Scalar1) {
           fContrast = SkScalarRoundToInt(c * ((1 << 8) - 1));
         } else {
-          fContrast = 0.5f;
+          fContrast = SkScalarRoundToInt(0.5f * ((1 << 8) - 1));
         }
     }
 
