@@ -65,17 +65,10 @@ public:
     mInversePerformed = false;
 #endif
   }
-  // Inverse-transform internal data and store the resulting FFTSize()
-  // points in aDataOut.
-  void GetInverse(float* aDataOut)
-  {
-    GetInverseWithoutScaling(aDataOut);
-    AudioBufferInPlaceScale(aDataOut, 1.0f / mFFTSize, mFFTSize);
-  }
   // Inverse-transform internal frequency data and store the resulting
   // FFTSize() points in |aDataOut|.  If frequency data has not already been
   // scaled, then the output will need scaling by 1/FFTSize().
-  void GetInverseWithoutScaling(float* aDataOut)
+  void GetInverse(float* aDataOut)
   {
     if (!EnsureIFFT()) {
       std::fill_n(aDataOut, mFFTSize, 0.0f);
