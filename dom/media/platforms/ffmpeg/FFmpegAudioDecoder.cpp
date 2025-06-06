@@ -230,9 +230,13 @@ FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample)
           RESULT_DETAIL("Invalid count of accumulated audio samples"));
       }
     }
-    packet.data += bytesConsumed;
-    packet.size -= bytesConsumed;
-    samplePosition += bytesConsumed;
+    // The packet wasn't sent to ffmpeg, another attempt will happen next
+    // iteration.
+    if (bytesConsumed != -1) {
+	  packet.data += bytesConsumed;
+	  packet.size -= bytesConsumed;
+	  samplePosition += bytesConsumed;
+    }
   }
   return NS_OK;
 }
@@ -249,9 +253,11 @@ FFmpegAudioDecoder<LIBAV_VER>::GetCodecId(const nsACString& aMimeType)
 {
   if (aMimeType.EqualsLiteral("audio/mpeg")) {
     return AV_CODEC_ID_MP3;
-  } else if (aMimeType.EqualsLiteral("audio/flac")) {
+  }
+  if (aMimeType.EqualsLiteral("audio/flac")) {
     return AV_CODEC_ID_FLAC;
-  } else if (aMimeType.EqualsLiteral("audio/mp4a-latm")) {
+  }
+  if (aMimeType.EqualsLiteral("audio/mp4a-latm")) {
     return AV_CODEC_ID_AAC;
   }
 
