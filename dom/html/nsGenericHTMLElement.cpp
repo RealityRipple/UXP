@@ -581,17 +581,16 @@ nsGenericHTMLElement::FindAncestorForm(HTMLFormElement* aCurrentForm)
 }
 
 bool
-nsGenericHTMLElement::CheckHandleEventForAnchorsPreconditions(
-                        EventChainVisitor& aVisitor)
+nsGenericHTMLElement::CheckHandleEventForAnchorsPreconditions(EventChainVisitor& aVisitor)
 {
   NS_PRECONDITION(nsCOMPtr<Link>(do_QueryObject(this)),
                   "should be called only when |this| implements |Link|");
 
   if (!aVisitor.mPresContext) {
-    // We need a pres context to do link stuff. Some events (e.g. mutation
-    // events) don't have one.
-    // XXX: ideally, shouldn't we be able to do what we need without one?
-    return false; 
+    // When not in the composed document DOM, only <a> should navigate away per
+    // the exception in https://html.spec.whatwg.org/#cannot-navigate
+    // Thanks, Google, for another ugly one. :|
+    return IsInComposedDoc() || IsHTMLElement(nsGkAtoms::a); 
   }
 
   //Need to check if we hit an imagemap area and if so see if we're handling
