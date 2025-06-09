@@ -955,7 +955,6 @@ NS_INTERFACE_MAP_BEGIN(nsDocShell)
   NS_INTERFACE_MAP_ENTRY(nsIAuthPromptProvider)
   NS_INTERFACE_MAP_ENTRY(nsILoadContext)
   NS_INTERFACE_MAP_ENTRY(nsIWebShellServices)
-  NS_INTERFACE_MAP_ENTRY(nsILinkHandler)
   NS_INTERFACE_MAP_ENTRY(nsIClipboardCommands)
   NS_INTERFACE_MAP_ENTRY(nsIDOMStorageManager)
   NS_INTERFACE_MAP_ENTRY(nsINetworkInterceptController)
@@ -13965,7 +13964,7 @@ OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler,
 {
 }
 
-NS_IMETHODIMP
+nsresult
 nsDocShell::OnLinkClick(nsIContent* aContent,
                         nsIURI* aURI,
                         const char16_t* aTargetSpec,
@@ -14017,7 +14016,7 @@ nsDocShell::OnLinkClick(nsIContent* aContent,
   return NS_DispatchToCurrentThread(ev);
 }
 
-NS_IMETHODIMP
+nsresult
 nsDocShell::OnLinkClickSync(nsIContent* aContent,
                             nsIURI* aURI,
                             const char16_t* aTargetSpec,
@@ -14183,7 +14182,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
   return rv;
 }
 
-NS_IMETHODIMP
+nsresult
 nsDocShell::OnOverLink(nsIContent* aContent,
                        nsIURI* aURI,
                        const char16_t* aTargetSpec)
@@ -14236,7 +14235,7 @@ nsDocShell::OnOverLink(nsIContent* aContent,
   return rv;
 }
 
-NS_IMETHODIMP
+nsresult
 nsDocShell::OnLeaveLink()
 {
   nsCOMPtr<nsIWebBrowserChrome> browserChrome(do_GetInterface(mTreeOwner));
