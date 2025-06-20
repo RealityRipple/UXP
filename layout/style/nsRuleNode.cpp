@@ -945,7 +945,9 @@ static bool SetCoord(const nsCSSValue& aValue, nsStyleCoord& aCoord,
   } else if ((((aMask & SETCOORD_INHERIT) != 0) &&
             aValue.GetUnit() == eCSSUnit_Inherit) ||
            (((aMask & SETCOORD_UNSET_INHERIT) != 0) &&
-            aValue.GetUnit() == eCSSUnit_Unset)) {
+            aValue.GetUnit() == eCSSUnit_Unset) ||
+           (((aMask & SETCOORD_UNSET_INHERIT) != 0) &&
+            aValue.GetUnit() == eCSSUnit_Revert)) {
     aCoord = aParentCoord;  // just inherit value from parent
     aConditions.SetUncacheable();
   } else if (((aMask & SETCOORD_NORMAL) != 0) &&
@@ -963,6 +965,8 @@ static bool SetCoord(const nsCSSValue& aValue, nsStyleCoord& aCoord,
                                 aConditions);
   } else if (aValue.GetUnit() == eCSSUnit_Initial ||
            (aValue.GetUnit() == eCSSUnit_Unset &&
+            ((aMask & SETCOORD_UNSET_INITIAL) != 0)) ||
+           (aValue.GetUnit() == eCSSUnit_Revert &&
             ((aMask & SETCOORD_UNSET_INITIAL) != 0))) {
     if ((aMask & SETCOORD_INITIAL_AUTO) != 0) {
       aCoord.SetAutoValue();
@@ -1161,10 +1165,12 @@ SetComplexColor(const nsCSSValue& aValue,
     return;
   }
   if (unit == eCSSUnit_Initial ||
-      (UnsetTo == eUnsetInitial && unit == eCSSUnit_Unset)) {
+      (UnsetTo == eUnsetInitial && unit == eCSSUnit_Unset) ||
+      (UnsetTo == eUnsetInitial && unit == eCSSUnit_Revert)) {
     aResult = aInitialColor;
   } else if (unit == eCSSUnit_Inherit ||
-             (UnsetTo == eUnsetInherit && unit == eCSSUnit_Unset)) {
+             (UnsetTo == eUnsetInherit && unit == eCSSUnit_Unset) ||
+             (UnsetTo == eUnsetInherit && unit == eCSSUnit_Revert)) {
     aConditions.SetUncacheable();
     aResult = aParentColor;
   } else if (unit == eCSSUnit_EnumColor &&
@@ -1369,6 +1375,7 @@ static void SetStyleImage(nsStyleContext* aStyleContext,
       break;
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
     case eCSSUnit_None:
       break;
     case eCSSUnit_URL:
@@ -1556,6 +1563,7 @@ SetValue(const nsCSSValue& aValue, FieldT& aField,
     return;
 
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     if (aMask & SETVAL_UNSET_INHERIT) {
       aConditions.SetUncacheable();
       aField = aParentValue;
@@ -1606,7 +1614,7 @@ SetFactor(const nsCSSValue& aValue, float& aField, RuleNodeCacheConditions& aCon
       if (aField < 0.0f) {
         aField = 0.0f;
       }
-    } 
+    }
     if (aFlags & SETFCT_OPACITY) {
       if (aField < 0.0f) {
         aField = 0.0f;
@@ -1634,6 +1642,7 @@ SetFactor(const nsCSSValue& aValue, float& aField, RuleNodeCacheConditions& aCon
     break;
 
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     if (aFlags & SETFCT_UNSET_INHERIT) {
       aConditions.SetUncacheable();
       aField = aParentValue;
@@ -1936,12 +1945,14 @@ typedef nsRuleNode::RuleDetail
  * @param aSpecifiedCount to be incremented by one if the value is specified
  * @param aInheritedCount to be incremented by one if the value is set to inherit
  * @param aUnsetCount to be incremented by one if the value is set to unset
+ * @param aRevertCount to be incremented by one if the value is set to revert
  */
 inline void
 ExamineCSSValue(const nsCSSValue& aValue,
                 uint32_t& aSpecifiedCount,
                 uint32_t& aInheritedCount,
-                uint32_t& aUnsetCount)
+                uint32_t& aUnsetCount,
+                uint32_t& aRevertCount)
 {
   if (aValue.GetUnit() != eCSSUnit_Null) {
     ++aSpecifiedCount;
@@ -1949,6 +1960,8 @@ ExamineCSSValue(const nsCSSValue& aValue,
       ++aInheritedCount;
     } else if (aValue.GetUnit() == eCSSUnit_Unset) {
       ++aUnsetCount;
+    } else if (aValue.GetUnit() == eCSSUnit_Revert) {
+      ++aRevertCount;
     }
   }
 }
@@ -2238,7 +2251,8 @@ nsRuleNode::CheckSpecifiedProperties(const nsStyleStructID aSID,
            specified = 0,  // number that were specified for this node
            inherited = 0,  // number that were 'inherit' (and not
                            //   eCSSUnit_Inherit) for this node
-           unset = 0;      // number that were 'unset'
+           unset = 0,      // number that were 'unset'
+           revert = 0;     // number that were 'revert'
 
   // See comment in nsRuleData.h above mValueOffsets.
   MOZ_ASSERT(aRuleData->mValueOffsets[aSID] == 0,
@@ -2247,7 +2261,7 @@ nsRuleNode::CheckSpecifiedProperties(const nsStyleStructID aSID,
               *values_end = values + nsCSSProps::PropertyCountInStruct(aSID);
        values != values_end; ++values) {
     ++total;
-    ExamineCSSValue(*values, specified, inherited, unset);
+    ExamineCSSValue(*values, specified, inherited, unset, revert);
   }
 
   if (!nsCachedStyleData::IsReset(aSID)) {
@@ -3538,7 +3552,8 @@ nsRuleNode::SetFontSize(nsPresContext* aPresContext,
     // this becomes our cascading size
     *aSize = aSystemFont.size;
   } else if (eCSSUnit_Inherit == sizeValue->GetUnit() ||
-           eCSSUnit_Unset == sizeValue->GetUnit()) {
+             eCSSUnit_Unset == sizeValue->GetUnit() ||
+             eCSSUnit_Revert == sizeValue->GetUnit()) {
     aConditions.SetUncacheable();
     // We apply scriptlevel change for this case, because the default is
     // to inherit and we don't want explicit "inherit" to differ from the
@@ -3749,7 +3764,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
     aFont->mFont.systemFont = true;
     aFont->mGenericID = kGenericFont_NONE;
   } else if (eCSSUnit_Inherit == familyValue->GetUnit() ||
-           eCSSUnit_Unset == familyValue->GetUnit()) {
+             eCSSUnit_Unset == familyValue->GetUnit() ||
+             eCSSUnit_Revert == familyValue->GetUnit()) {
     aConditions.SetUncacheable();
     aFont->mFont.fontlist = aParentFont->mFont.fontlist;
     aFont->mFont.systemFont = aParentFont->mFont.systemFont;
@@ -3838,12 +3854,13 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
         break;
       }
     }
-  } else
+  } else {
     SetValue(*weightValue, aFont->mFont.weight, aConditions,
              SETVAL_INTEGER | SETVAL_UNSET_INHERIT,
              aParentFont->mFont.weight,
              defaultVariableFont->weight,
              Unused, Unused, Unused, systemFont.weight);
+  }
 
   // font-stretch: enum, inherit, initial, -moz-system-font
   SetValue(*aRuleData->ValueForFontStretch(),
@@ -3892,7 +3909,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
                                       (aParentFont->mMathDisplay ==
                                        NS_MATHML_DISPLAYSTYLE_INLINE ? 1 : 0));
   } else if (eCSSUnit_Inherit == scriptLevelValue->GetUnit() ||
-           eCSSUnit_Unset == scriptLevelValue->GetUnit()) {
+             eCSSUnit_Unset == scriptLevelValue->GetUnit() ||
+             eCSSUnit_Revert == scriptLevelValue->GetUnit()) {
     aConditions.SetUncacheable();
     aFont->mScriptLevel = aParentFont->mScriptLevel;
   } else if (eCSSUnit_Initial == scriptLevelValue->GetUnit()) {
@@ -3924,6 +3942,7 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
   switch (variantAlternatesValue->GetUnit()) {
   case eCSSUnit_Inherit:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aFont->mFont.CopyAlternates(aParentFont->mFont);
     aConditions.SetUncacheable();
     break;
@@ -4019,6 +4038,7 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
 
   case eCSSUnit_Inherit:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aConditions.SetUncacheable();
     aFont->mFont.fontFeatureSettings = aParentFont->mFont.fontFeatureSettings;
     break;
@@ -4042,7 +4062,8 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
   const nsCSSValue* languageOverrideValue =
     aRuleData->ValueForFontLanguageOverride();
   if (eCSSUnit_Inherit == languageOverrideValue->GetUnit() ||
-      eCSSUnit_Unset == languageOverrideValue->GetUnit()) {
+      eCSSUnit_Unset == languageOverrideValue->GetUnit() ||
+      eCSSUnit_Revert == languageOverrideValue->GetUnit()) {
     aConditions.SetUncacheable();
     aFont->mFont.languageOverride = aParentFont->mFont.languageOverride;
   } else if (eCSSUnit_Normal == languageOverrideValue->GetUnit() ||
@@ -4059,8 +4080,9 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
   switch (minFontSizeRatio->GetUnit()) {
     case eCSSUnit_Null:
       break;
-    case eCSSUnit_Unset:
     case eCSSUnit_Inherit:
+    case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       aFont->mMinFontSizeRatio = aParentFont->mMinFontSizeRatio;
       aConditions.SetUncacheable();
       break;
@@ -4905,7 +4927,8 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
         NS_NOTYETIMPLEMENTED("align string");
       }
     } else if (eCSSUnit_Inherit == textAlignValue->GetUnit() ||
-               eCSSUnit_Unset == textAlignValue->GetUnit()) {
+               eCSSUnit_Unset == textAlignValue->GetUnit() ||
+               eCSSUnit_Revert == textAlignValue->GetUnit()) {
       text->mTextAlignTrue = parentText->mTextAlignTrue;
     }
     SetValue(*textAlignValue, text->mTextAlign, conditions,
@@ -4928,7 +4951,8 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
       }
     }
   } else if (eCSSUnit_Inherit == textAlignLastValue->GetUnit() ||
-             eCSSUnit_Unset == textAlignLastValue->GetUnit()) {
+             eCSSUnit_Unset == textAlignLastValue->GetUnit() ||
+             eCSSUnit_Revert == textAlignLastValue->GetUnit()) {
     text->mTextAlignLastTrue = parentText->mTextAlignLastTrue;
   }
   SetValue(*textAlignLastValue, text->mTextAlignLast,
@@ -5048,7 +5072,8 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
       break;
     }
     case eCSSUnit_Inherit:
-    case eCSSUnit_Unset: {
+    case eCSSUnit_Unset:
+    case eCSSUnit_Revert: {
       conditions.SetUncacheable();
       text->mTextEmphasisStyle = parentText->mTextEmphasisStyle;
       text->mTextEmphasisStyleString = parentText->mTextEmphasisStyleString;
@@ -5164,7 +5189,8 @@ nsRuleNode::ComputeTextResetData(void* aStartStruct,
     conditions.SetUncacheable();
     text->mTextDecorationLine = parentText->mTextDecorationLine;
   } else if (eCSSUnit_Initial == decorationLineValue->GetUnit() ||
-             eCSSUnit_Unset == decorationLineValue->GetUnit()) {
+             eCSSUnit_Unset == decorationLineValue->GetUnit() ||
+             eCSSUnit_Revert == decorationLineValue->GetUnit()) {
     text->mTextDecorationLine = NS_STYLE_TEXT_DECORATION_LINE_NONE;
   }
 
@@ -5184,7 +5210,8 @@ nsRuleNode::ComputeTextResetData(void* aStartStruct,
     text->mTextDecorationStyle = parentText->mTextDecorationStyle;
     conditions.SetUncacheable();
   } else if (eCSSUnit_Initial == decorationStyleValue->GetUnit() ||
-             eCSSUnit_Unset == decorationStyleValue->GetUnit()) {
+             eCSSUnit_Unset == decorationStyleValue->GetUnit() ||
+             eCSSUnit_Revert == decorationStyleValue->GetUnit()) {
     text->mTextDecorationStyle = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
   }
 
@@ -5192,7 +5219,8 @@ nsRuleNode::ComputeTextResetData(void* aStartStruct,
   const nsCSSValue* textOverflowValue =
     aRuleData->ValueForTextOverflow();
   if (eCSSUnit_Initial == textOverflowValue->GetUnit() ||
-      eCSSUnit_Unset == textOverflowValue->GetUnit()) {
+      eCSSUnit_Unset == textOverflowValue->GetUnit() ||
+      eCSSUnit_Revert == textOverflowValue->GetUnit()) {
     text->mTextOverflow = nsStyleTextOverflow();
   } else if (eCSSUnit_Inherit == textOverflowValue->GetUnit()) {
     conditions.SetUncacheable();
@@ -5261,6 +5289,7 @@ nsRuleNode::ComputeTextResetData(void* aStartStruct,
     text->mInitialLetterSize = parentText->mInitialLetterSize;
   } else if (initialLetterValue->GetUnit() == eCSSUnit_Initial ||
              initialLetterValue->GetUnit() == eCSSUnit_Unset ||
+             initialLetterValue->GetUnit() == eCSSUnit_Revert ||
              initialLetterValue->GetUnit() == eCSSUnit_Normal) {
     // Use invalid values in initial-letter property to mean normal. So we can
     // determine whether it is normal by checking mInitialLetterSink == 0.
@@ -5308,7 +5337,8 @@ nsRuleNode::ComputeUserInterfaceData(void* aStartStruct,
     ui->mCursorImages.Clear();
 
     if (cursorUnit == eCSSUnit_Inherit ||
-        cursorUnit == eCSSUnit_Unset) {
+        cursorUnit == eCSSUnit_Unset ||
+        cursorUnit == eCSSUnit_Revert) {
       conditions.SetUncacheable();
       ui->mCursor = parentUI->mCursor;
       ui->mCursorImages = parentUI->mCursorImages;
@@ -5690,7 +5720,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       transition->SetDelay(parentDisplay->mTransitions[i].GetDelay());
     } else if (delay.unit == eCSSUnit_Initial ||
-               delay.unit == eCSSUnit_Unset) {
+               delay.unit == eCSSUnit_Unset ||
+               delay.unit == eCSSUnit_Revert) {
       transition->SetDelay(0.0);
     } else if (delay.list) {
       switch (delay.list->mValue.GetUnit()) {
@@ -5717,7 +5748,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       transition->SetDuration(parentDisplay->mTransitions[i].GetDuration());
     } else if (duration.unit == eCSSUnit_Initial ||
-               duration.unit == eCSSUnit_Unset) {
+               duration.unit == eCSSUnit_Unset ||
+               duration.unit == eCSSUnit_Revert) {
       transition->SetDuration(0.0);
     } else if (duration.list) {
       switch (duration.list->mValue.GetUnit()) {
@@ -5743,7 +5775,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       transition->CopyPropertyFrom(parentDisplay->mTransitions[i]);
     } else if (property.unit == eCSSUnit_Initial ||
-               property.unit == eCSSUnit_Unset) {
+               property.unit == eCSSUnit_Unset ||
+               property.unit == eCSSUnit_Revert) {
       transition->SetProperty(eCSSPropertyExtra_all_properties);
     } else if (property.unit == eCSSUnit_None) {
       transition->SetProperty(eCSSPropertyExtra_no_properties);
@@ -5782,7 +5815,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       transition->SetTimingFunction(
         parentDisplay->mTransitions[i].GetTimingFunction());
     } else if (timingFunction.unit == eCSSUnit_Initial ||
-               timingFunction.unit == eCSSUnit_Unset) {
+               timingFunction.unit == eCSSUnit_Unset ||
+               timingFunction.unit == eCSSUnit_Revert) {
       transition->SetTimingFunction(
         nsTimingFunction(NS_STYLE_TRANSITION_TIMING_FUNCTION_EASE));
     } else if (timingFunction.list) {
@@ -5852,7 +5886,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       animation->SetDelay(parentDisplay->mAnimations[i].GetDelay());
     } else if (animDelay.unit == eCSSUnit_Initial ||
-               animDelay.unit == eCSSUnit_Unset) {
+               animDelay.unit == eCSSUnit_Unset ||
+               animDelay.unit == eCSSUnit_Revert) {
       animation->SetDelay(0.0);
     } else if (animDelay.list) {
       switch (animDelay.list->mValue.GetUnit()) {
@@ -5879,7 +5914,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       animation->SetDuration(parentDisplay->mAnimations[i].GetDuration());
     } else if (animDuration.unit == eCSSUnit_Initial ||
-               animDuration.unit == eCSSUnit_Unset) {
+               animDuration.unit == eCSSUnit_Unset ||
+               animDuration.unit == eCSSUnit_Revert) {
       animation->SetDuration(0.0);
     } else if (animDuration.list) {
       switch (animDuration.list->mValue.GetUnit()) {
@@ -5905,7 +5941,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       animation->SetName(parentDisplay->mAnimations[i].GetName());
     } else if (animName.unit == eCSSUnit_Initial ||
-               animName.unit == eCSSUnit_Unset) {
+               animName.unit == eCSSUnit_Unset ||
+               animName.unit == eCSSUnit_Revert) {
       animation->SetName(EmptyString());
     } else if (animName.list) {
       switch (animName.list->mValue.GetUnit()) {
@@ -5937,7 +5974,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       animation->SetTimingFunction(
         parentDisplay->mAnimations[i].GetTimingFunction());
     } else if (animTimingFunction.unit == eCSSUnit_Initial ||
-               animTimingFunction.unit == eCSSUnit_Unset) {
+               animTimingFunction.unit == eCSSUnit_Unset ||
+               animTimingFunction.unit == eCSSUnit_Revert) {
       animation->SetTimingFunction(
         nsTimingFunction(NS_STYLE_TRANSITION_TIMING_FUNCTION_EASE));
     } else if (animTimingFunction.list) {
@@ -5956,7 +5994,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       animation->SetDirection(parentDisplay->mAnimations[i].GetDirection());
     } else if (animDirection.unit == eCSSUnit_Initial ||
-               animDirection.unit == eCSSUnit_Unset) {
+               animDirection.unit == eCSSUnit_Unset ||
+               animDirection.unit == eCSSUnit_Revert) {
       animation->SetDirection(dom::PlaybackDirection::Normal);
     } else if (animDirection.list) {
       MOZ_ASSERT(animDirection.list->mValue.GetUnit() == eCSSUnit_Enumerated,
@@ -5976,7 +6015,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       animation->SetFillMode(parentDisplay->mAnimations[i].GetFillMode());
     } else if (animFillMode.unit == eCSSUnit_Initial ||
-               animFillMode.unit == eCSSUnit_Unset) {
+               animFillMode.unit == eCSSUnit_Unset ||
+               animFillMode.unit == eCSSUnit_Revert) {
       animation->SetFillMode(dom::FillMode::None);
     } else if (animFillMode.list) {
       MOZ_ASSERT(animFillMode.list->mValue.GetUnit() == eCSSUnit_Enumerated,
@@ -5997,7 +6037,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       animation->SetPlayState(parentDisplay->mAnimations[i].GetPlayState());
     } else if (animPlayState.unit == eCSSUnit_Initial ||
-               animPlayState.unit == eCSSUnit_Unset) {
+               animPlayState.unit == eCSSUnit_Unset ||
+               animPlayState.unit == eCSSUnit_Revert) {
       animation->SetPlayState(NS_STYLE_ANIMATION_PLAY_STATE_RUNNING);
     } else if (animPlayState.list) {
       MOZ_ASSERT(animPlayState.list->mValue.GetUnit() == eCSSUnit_Enumerated,
@@ -6017,7 +6058,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                  "should have made conditions.Cacheable() false above");
       animation->SetIterationCount(parentDisplay->mAnimations[i].GetIterationCount());
     } else if (animIterationCount.unit == eCSSUnit_Initial ||
-               animIterationCount.unit == eCSSUnit_Unset) {
+               animIterationCount.unit == eCSSUnit_Unset ||
+               animIterationCount.unit == eCSSUnit_Revert) {
       animation->SetIterationCount(1.0f);
     } else if (animIterationCount.list) {
       switch (animIterationCount.list->mValue.GetUnit()) {
@@ -6088,6 +6130,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       break;
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
     case eCSSUnit_None:
       display->mScrollSnapPointsX.SetNoneValue();
       break;
@@ -6123,6 +6166,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       break;
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
     case eCSSUnit_None:
       display->mScrollSnapPointsY.SetNoneValue();
       break;
@@ -6158,6 +6202,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       break;
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       display->mScrollSnapDestination.SetInitialZeroValues();
       break;
     case eCSSUnit_Inherit:
@@ -6177,8 +6222,9 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       break;
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
     case eCSSUnit_None:
-      // Unset and Initial is none, indicated by an empty array
+      // Initial, Unset, and Revert are none, indicated by an empty array
       display->mScrollSnapCoordinate.Clear();
       break;
     case eCSSUnit_Inherit:
@@ -6192,7 +6238,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
         NS_ASSERTION(item->mValue.GetUnit() != eCSSUnit_Null &&
                      item->mValue.GetUnit() != eCSSUnit_Inherit &&
                      item->mValue.GetUnit() != eCSSUnit_Initial &&
-                     item->mValue.GetUnit() != eCSSUnit_Unset,
+                     item->mValue.GetUnit() != eCSSUnit_Unset &&
+                     item->mValue.GetUnit() != eCSSUnit_Revert,
                      "unexpected unit");
         Position* pos = display->mScrollSnapCoordinate.AppendElement();
         ComputePositionValue(aContext, item->mValue, *pos, conditions);
@@ -6240,8 +6287,9 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       display->mBinding = nullptr;
     }
   } else if (eCSSUnit_None == bindingValue->GetUnit() ||
-           eCSSUnit_Initial == bindingValue->GetUnit() ||
-           eCSSUnit_Unset == bindingValue->GetUnit()) {
+             eCSSUnit_Initial == bindingValue->GetUnit() ||
+             eCSSUnit_Unset == bindingValue->GetUnit() ||
+             eCSSUnit_Revert == bindingValue->GetUnit()) {
     display->mBinding = nullptr;
   } else if (eCSSUnit_Inherit == bindingValue->GetUnit()) {
     conditions.SetUncacheable();
@@ -6281,7 +6329,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       (NS_STYLE_PAGE_BREAK_AVOID != breakBeforeValue->GetIntValue() &&
        NS_STYLE_PAGE_BREAK_AUTO  != breakBeforeValue->GetIntValue());
   } else if (eCSSUnit_Initial == breakBeforeValue->GetUnit() ||
-           eCSSUnit_Unset == breakBeforeValue->GetUnit()) {
+             eCSSUnit_Unset == breakBeforeValue->GetUnit() ||
+             eCSSUnit_Revert == breakBeforeValue->GetUnit()) {
     display->mBreakBefore = false;
   } else if (eCSSUnit_Inherit == breakBeforeValue->GetUnit()) {
     conditions.SetUncacheable();
@@ -6294,7 +6343,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       (NS_STYLE_PAGE_BREAK_AVOID != breakAfterValue->GetIntValue() &&
        NS_STYLE_PAGE_BREAK_AUTO  != breakAfterValue->GetIntValue());
   } else if (eCSSUnit_Initial == breakAfterValue->GetUnit() ||
-           eCSSUnit_Unset == breakAfterValue->GetUnit()) {
+             eCSSUnit_Unset == breakAfterValue->GetUnit() ||
+             eCSSUnit_Revert == breakAfterValue->GetUnit()) {
     display->mBreakAfter = false;
   } else if (eCSSUnit_Inherit == breakAfterValue->GetUnit()) {
     conditions.SetUncacheable();
@@ -6496,6 +6546,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
   case eCSSUnit_None:
     display->mSpecifiedTransform = nullptr;
     break;
@@ -6580,6 +6631,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
   case eCSSUnit_Auto:
     display->mWillChange.Clear();
     display->mWillChangeBitField = 0;
@@ -6596,7 +6648,8 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
                 SETCOORD_LPH | SETCOORD_ENUMERATED | SETCOORD_STORE_CALC,
                 aContext, mPresContext, conditions)) {
     if (eCSSUnit_Initial == verticalAlignValue->GetUnit() ||
-        eCSSUnit_Unset == verticalAlignValue->GetUnit()) {
+        eCSSUnit_Unset == verticalAlignValue->GetUnit() ||
+        eCSSUnit_Revert == verticalAlignValue->GetUnit()) {
       display->mVerticalAlign.SetIntValue(NS_STYLE_VERTICAL_ALIGN_BASELINE,
                                           eStyleUnit_Enumerated);
     }
@@ -6707,6 +6760,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
     case eCSSUnit_None:
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       display->mShapeOutside = StyleShapeOutside();
       break;
     case eCSSUnit_Inherit:
@@ -6785,7 +6839,8 @@ nsRuleNode::ComputeVisibilityData(void* aStartStruct,
   // image-orientation: enum, inherit, initial
   const nsCSSValue* orientation = aRuleData->ValueForImageOrientation();
   if (orientation->GetUnit() == eCSSUnit_Inherit ||
-      orientation->GetUnit() == eCSSUnit_Unset) {
+      orientation->GetUnit() == eCSSUnit_Unset ||
+      orientation->GetUnit() == eCSSUnit_Revert) {
     conditions.SetUncacheable();
     visibility->mImageOrientation = parentVisibility->mImageOrientation;
   } else if (orientation->GetUnit() == eCSSUnit_Initial) {
@@ -6845,7 +6900,8 @@ nsRuleNode::ComputeColorData(void* aStartStruct,
   const nsCSSValue* colorValue = aRuleData->ValueForColor();
   if ((colorValue->GetUnit() == eCSSUnit_EnumColor &&
        colorValue->GetIntValue() == NS_COLOR_CURRENTCOLOR) ||
-      colorValue->GetUnit() == eCSSUnit_Unset) {
+       colorValue->GetUnit() == eCSSUnit_Unset ||
+       colorValue->GetUnit() == eCSSUnit_Revert) {
     color->mColor = parentColor->mColor;
     conditions.SetUncacheable();
   } else if (colorValue->GetUnit() == eCSSUnit_Initial) {
@@ -7154,7 +7210,8 @@ struct BackgroundItemComputer<nsCSSValuePairList, nsStyleImageLayers::Size>
           const nsCSSValue &widthValue = aSpecifiedValue->mXValue;
           MOZ_ASSERT(widthValue.GetUnit() != eCSSUnit_Inherit &&
                      widthValue.GetUnit() != eCSSUnit_Initial &&
-                     widthValue.GetUnit() != eCSSUnit_Unset,
+                     widthValue.GetUnit() != eCSSUnit_Unset &&
+                     widthValue.GetUnit() != eCSSUnit_Revert,
                      "initial/inherit/unset should already have been handled");
           MOZ_ASSERT(widthValue.GetUnit() == eCSSUnit_Enumerated &&
                      (widthValue.GetIntValue() == NS_STYLE_IMAGELAYER_SIZE_CONTAIN ||
@@ -7230,6 +7287,7 @@ SetImageLayerList(nsStyleContext* aStyleContext,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aRebuild = true;
     aItemCount = 1;
     aLayers[0].*aResultLocation = aInitialValue;
@@ -7244,7 +7302,8 @@ SetImageLayerList(nsStyleContext* aStyleContext,
       NS_ASSERTION(item->mValue.GetUnit() != eCSSUnit_Null &&
                    item->mValue.GetUnit() != eCSSUnit_Inherit &&
                    item->mValue.GetUnit() != eCSSUnit_Initial &&
-                   item->mValue.GetUnit() != eCSSUnit_Unset,
+                   item->mValue.GetUnit() != eCSSUnit_Unset &&
+                   item->mValue.GetUnit() != eCSSUnit_Revert,
                    "unexpected unit");
       ++aItemCount;
       aLayers.EnsureLengthAtLeast(aItemCount);
@@ -7301,6 +7360,7 @@ SetImageLayerPositionCoordList(
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aRebuild = true;
     aItemCount = 1;
     aLayers[0].mPosition.*aResultLocation = aInitialValue;
@@ -7315,7 +7375,8 @@ SetImageLayerPositionCoordList(
       NS_ASSERTION(item->mValue.GetUnit() != eCSSUnit_Null &&
                    item->mValue.GetUnit() != eCSSUnit_Inherit &&
                    item->mValue.GetUnit() != eCSSUnit_Initial &&
-                   item->mValue.GetUnit() != eCSSUnit_Unset,
+                   item->mValue.GetUnit() != eCSSUnit_Unset &&
+                   item->mValue.GetUnit() != eCSSUnit_Revert,
                    "unexpected unit");
       ++aItemCount;
       aLayers.EnsureLengthAtLeast(aItemCount);
@@ -7368,6 +7429,7 @@ SetImageLayerPairList(nsStyleContext* aStyleContext,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aRebuild = true;
     aItemCount = 1;
     aLayers[0].*aResultLocation = aInitialValue;
@@ -7382,9 +7444,11 @@ SetImageLayerPairList(nsStyleContext* aStyleContext,
       NS_ASSERTION(item->mXValue.GetUnit() != eCSSUnit_Inherit &&
                    item->mXValue.GetUnit() != eCSSUnit_Initial &&
                    item->mXValue.GetUnit() != eCSSUnit_Unset &&
+                   item->mXValue.GetUnit() != eCSSUnit_Revert &&
                    item->mYValue.GetUnit() != eCSSUnit_Inherit &&
                    item->mYValue.GetUnit() != eCSSUnit_Initial &&
-                   item->mYValue.GetUnit() != eCSSUnit_Unset,
+                   item->mYValue.GetUnit() != eCSSUnit_Unset &&
+                   item->mYValue.GetUnit() != eCSSUnit_Revert,
                    "unexpected unit");
       ++aItemCount;
       aLayers.EnsureLengthAtLeast(aItemCount);
@@ -7492,7 +7556,8 @@ nsRuleNode::ComputeBackgroundData(void* aStartStruct,
   // background-color: color, string, inherit
   const nsCSSValue* backColorValue = aRuleData->ValueForBackgroundColor();
   if (eCSSUnit_Initial == backColorValue->GetUnit() ||
-      eCSSUnit_Unset == backColorValue->GetUnit()) {
+      eCSSUnit_Unset == backColorValue->GetUnit() ||
+      eCSSUnit_Revert == backColorValue->GetUnit()) {
     bg->mBackgroundColor = NS_RGBA(0, 0, 0, 0);
   } else if (!SetColor(*backColorValue, parentBG->mBackgroundColor,
                        mPresContext, aContext, bg->mBackgroundColor,
@@ -7646,6 +7711,7 @@ SetBorderImageRect(const nsCSSValue& aValue,
   case eCSSUnit_Inherit:
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aRect.SetAllSidesTo(aValue);
     break;
   default:
@@ -7667,6 +7733,7 @@ SetBorderImagePair(const nsCSSValue& aValue,
   case eCSSUnit_Inherit:
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aPair.SetBothValuesTo(aValue);
     break;
   default:
@@ -7701,6 +7768,7 @@ SetBorderImageSlice(const nsCSSValue& aValue,
   case eCSSUnit_Inherit:
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     aSlice = aValue;
     aFill = aValue;
     break;
@@ -7760,7 +7828,8 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
         border->SetBorderWidth(side,
                                parentBorder->GetComputedBorder().Side(side));
       } else if (eCSSUnit_Initial == value.GetUnit() ||
-               eCSSUnit_Unset == value.GetUnit()) {
+                 eCSSUnit_Unset == value.GetUnit() ||
+                 eCSSUnit_Revert == value.GetUnit()) {
         border->SetBorderWidth(side,
           (mPresContext->GetBorderWidthTable())[NS_STYLE_BORDER_WIDTH_MEDIUM]);
       } else {
@@ -7782,7 +7851,8 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
       if (eCSSUnit_Enumerated == unit) {
         border->SetBorderStyle(side, value.GetIntValue());
       } else if (eCSSUnit_Initial == unit ||
-               eCSSUnit_Unset == unit) {
+                 eCSSUnit_Unset == unit ||
+                 eCSSUnit_Revert == unit) {
         border->SetBorderStyle(side, NS_STYLE_BORDER_STYLE_NONE);
       } else if (eCSSUnit_Inherit == unit) {
         conditions.SetUncacheable();
@@ -7810,6 +7880,7 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
 
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
     case eCSSUnit_None:
       border->ClearBorderColors(side);
       break;
@@ -8025,7 +8096,8 @@ nsRuleNode::ComputeOutlineData(void* aStartStruct,
   // outline-width: length, enum, inherit
   const nsCSSValue* outlineWidthValue = aRuleData->ValueForOutlineWidth();
   if (eCSSUnit_Initial == outlineWidthValue->GetUnit() ||
-      eCSSUnit_Unset == outlineWidthValue->GetUnit()) {
+      eCSSUnit_Unset == outlineWidthValue->GetUnit() ||
+      eCSSUnit_Revert == outlineWidthValue->GetUnit()) {
     outline->mOutlineWidth =
       nsStyleCoord(NS_STYLE_BORDER_WIDTH_MEDIUM, eStyleUnit_Enumerated);
   } else {
@@ -8088,7 +8160,8 @@ nsRuleNode::ComputeOutlineData(void* aStartStruct,
   if (eCSSUnit_Enumerated == unit) {
     outline->mOutlineStyle = outlineStyleValue->GetIntValue();
   } else if (eCSSUnit_Initial == unit ||
-             eCSSUnit_Unset == unit) {
+             eCSSUnit_Unset == unit ||
+             eCSSUnit_Revert == unit) {
     outline->mOutlineStyle = NS_STYLE_BORDER_STYLE_NONE;
   } else if (eCSSUnit_Inherit == unit) {
     conditions.SetUncacheable();
@@ -8116,6 +8189,7 @@ nsRuleNode::ComputeListData(void* aStartStruct,
     break;
   case eCSSUnit_Inherit:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     conditions.SetUncacheable();
     list->SetQuotesInherit(parentList);
     break;
@@ -8153,8 +8227,9 @@ nsRuleNode::ComputeListData(void* aStartStruct,
   // list-style-type: string, none, inherit, initial
   const nsCSSValue* typeValue = aRuleData->ValueForListStyleType();
   switch (typeValue->GetUnit()) {
+    case eCSSUnit_Inherit:
     case eCSSUnit_Unset:
-    case eCSSUnit_Inherit: {
+    case eCSSUnit_Revert: {
       conditions.SetUncacheable();
       list->SetCounterStyle(parentList->GetCounterStyle());
       break;
@@ -8219,7 +8294,8 @@ nsRuleNode::ComputeListData(void* aStartStruct,
            eCSSUnit_Initial == imageValue->GetUnit()) {
     list->mListStyleImage = nullptr;
   } else if (eCSSUnit_Inherit == imageValue->GetUnit() ||
-           eCSSUnit_Unset == imageValue->GetUnit()) {
+             eCSSUnit_Unset == imageValue->GetUnit() ||
+             eCSSUnit_Revert == imageValue->GetUnit()) {
     conditions.SetUncacheable();
     list->mListStyleImage = parentList->mListStyleImage;
   }
@@ -8236,6 +8312,7 @@ nsRuleNode::ComputeListData(void* aStartStruct,
   switch (imageRegionValue->GetUnit()) {
   case eCSSUnit_Inherit:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     conditions.SetUncacheable();
     list->mImageRegion = parentList->mImageRegion;
     break;
@@ -8306,7 +8383,9 @@ SetGridTrackBreadth(const nsCSSValue& aValue,
     // For fit-content().
     aResult.SetNoneValue();
   } else {
-    MOZ_ASSERT(unit != eCSSUnit_Inherit && unit != eCSSUnit_Unset,
+    MOZ_ASSERT(unit != eCSSUnit_Inherit &&
+               unit != eCSSUnit_Unset &&
+               unit != eCSSUnit_Revert,
                "Unexpected value that would use dummyParentCoord");
     const nsStyleCoord dummyParentCoord;
     DebugOnly<bool> stored =
@@ -8374,6 +8453,7 @@ SetGridAutoColumnsRows(const nsCSSValue& aValue,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     // The initial value is 'auto',
     // which computes to 'minmax(auto, auto)'.
     // (Explicitly-specified 'auto' values are handled in SetGridTrackSize.)
@@ -8430,6 +8510,7 @@ SetGridTrackList(const nsCSSValue& aValue,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
   case eCSSUnit_None:
     aResult.mIsSubgrid = false;
     aResult.mLineNameLists.Clear();
@@ -8550,6 +8631,7 @@ SetGridTemplateAreas(const nsCSSValue& aValue,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
   case eCSSUnit_None:
     *aResult = nullptr;
     break;
@@ -8577,6 +8659,7 @@ SetGridLine(const nsCSSValue& aValue,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
   case eCSSUnit_Auto:
     aResult.SetAuto();
     break;
@@ -8833,6 +8916,7 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
       break;
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       pos->mObjectPosition.SetInitialPercentValues(0.5f);
       break;
     default:
@@ -8851,6 +8935,7 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
       break;
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       pos->mGridAutoFlow = NS_STYLE_GRID_AUTO_FLOW_ROW;
       break;
     default:
@@ -9061,6 +9146,7 @@ nsRuleNode::ComputeContentData(void* aStartStruct,
   case eCSSUnit_None:
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     // "normal", "none", "initial" and "unset" all mean no content
     content->AllocateContents(0);
     break;
@@ -9159,6 +9245,7 @@ nsRuleNode::ComputeContentData(void* aStartStruct,
   case eCSSUnit_None:
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     content->AllocateCounterIncrements(0);
     break;
 
@@ -9208,6 +9295,7 @@ nsRuleNode::ComputeContentData(void* aStartStruct,
   case eCSSUnit_None:
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     content->AllocateCounterResets(0);
     break;
 
@@ -9314,7 +9402,8 @@ nsRuleNode::ComputeXULData(void* aStartStruct,
     conditions.SetUncacheable();
     xul->mStretchStack = parentXUL->mStretchStack;
   } else if (eCSSUnit_Initial == stackSizingValue->GetUnit() ||
-             eCSSUnit_Unset == stackSizingValue->GetUnit()) {
+             eCSSUnit_Unset == stackSizingValue->GetUnit() ||
+             eCSSUnit_Revert == stackSizingValue->GetUnit()) {
     xul->mStretchStack = true;
   } else if (eCSSUnit_Enumerated == stackSizingValue->GetUnit()) {
     xul->mStretchStack = stackSizingValue->GetIntValue() ==
@@ -9346,7 +9435,8 @@ nsRuleNode::ComputeColumnData(void* aStartStruct,
   const nsCSSValue* columnCountValue = aRuleData->ValueForColumnCount();
   if (eCSSUnit_Auto == columnCountValue->GetUnit() ||
       eCSSUnit_Initial == columnCountValue->GetUnit() ||
-      eCSSUnit_Unset == columnCountValue->GetUnit()) {
+      eCSSUnit_Unset == columnCountValue->GetUnit() ||
+      eCSSUnit_Revert == columnCountValue->GetUnit()) {
     column->mColumnCount = NS_STYLE_COLUMN_COUNT_AUTO;
   } else if (eCSSUnit_Integer == columnCountValue->GetUnit()) {
     column->mColumnCount = columnCountValue->GetIntValue();
@@ -9361,7 +9451,8 @@ nsRuleNode::ComputeColumnData(void* aStartStruct,
   // column-rule-width: length, enum, inherit
   const nsCSSValue& widthValue = *aRuleData->ValueForColumnRuleWidth();
   if (eCSSUnit_Initial == widthValue.GetUnit() ||
-      eCSSUnit_Unset == widthValue.GetUnit()) {
+      eCSSUnit_Unset == widthValue.GetUnit() ||
+      eCSSUnit_Revert == widthValue.GetUnit()) {
     column->SetColumnRuleWidth(
         (mPresContext->GetBorderWidthTable())[NS_STYLE_BORDER_WIDTH_MEDIUM]);
   } else if (eCSSUnit_Enumerated == widthValue.GetUnit()) {
@@ -9395,7 +9486,8 @@ nsRuleNode::ComputeColumnData(void* aStartStruct,
   if (eCSSUnit_Enumerated == styleValue.GetUnit()) {
     column->mColumnRuleStyle = styleValue.GetIntValue();
   } else if (eCSSUnit_Initial == styleValue.GetUnit() ||
-           eCSSUnit_Unset == styleValue.GetUnit()) {
+             eCSSUnit_Unset == styleValue.GetUnit() ||
+             eCSSUnit_Revert == styleValue.GetUnit()) {
     column->mColumnRuleStyle = NS_STYLE_BORDER_STYLE_NONE;
   } else if (eCSSUnit_Inherit == styleValue.GetUnit()) {
     conditions.SetUncacheable();
@@ -9434,7 +9526,8 @@ SetSVGPaint(const nsCSSValue& aValue, const nsStyleSVGPaint& parentPaint,
   nscolor color;
 
   if (aValue.GetUnit() == eCSSUnit_Inherit ||
-      aValue.GetUnit() == eCSSUnit_Unset) {
+      aValue.GetUnit() == eCSSUnit_Unset ||
+      aValue.GetUnit() == eCSSUnit_Revert) {
     aResult = parentPaint;
     aConditions.SetUncacheable();
   } else if (aValue.GetUnit() == eCSSUnit_None) {
@@ -9506,7 +9599,8 @@ SetSVGOpacity(const nsCSSValue& aValue,
     // Fall back on fully opaque
     aOpacityField = 1.0f;
   } else if (eCSSUnit_Inherit == aValue.GetUnit() ||
-             eCSSUnit_Unset == aValue.GetUnit()) {
+             eCSSUnit_Unset == aValue.GetUnit() ||
+             eCSSUnit_Revert == aValue.GetUnit()) {
     aConditions.SetUncacheable();
     aOpacityField = aParentOpacity;
     aOpacityTypeField = aParentOpacityType;
@@ -9576,7 +9670,8 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
              eCSSUnit_Initial == markerEndValue->GetUnit()) {
     svg->mMarkerEnd = nullptr;
   } else if (eCSSUnit_Inherit == markerEndValue->GetUnit() ||
-             eCSSUnit_Unset == markerEndValue->GetUnit()) {
+             eCSSUnit_Unset == markerEndValue->GetUnit() ||
+             eCSSUnit_Revert == markerEndValue->GetUnit()) {
     conditions.SetUncacheable();
     svg->mMarkerEnd = parentSVG->mMarkerEnd;
   }
@@ -9589,7 +9684,8 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
              eCSSUnit_Initial == markerMidValue->GetUnit()) {
     svg->mMarkerMid = nullptr;
   } else if (eCSSUnit_Inherit == markerMidValue->GetUnit() ||
-             eCSSUnit_Unset == markerMidValue->GetUnit()) {
+             eCSSUnit_Unset == markerMidValue->GetUnit() ||
+             eCSSUnit_Revert == markerMidValue->GetUnit()) {
     conditions.SetUncacheable();
     svg->mMarkerMid = parentSVG->mMarkerMid;
   }
@@ -9601,6 +9697,8 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
   } else if (eCSSUnit_None == markerStartValue->GetUnit() ||
              eCSSUnit_Initial == markerStartValue->GetUnit()) {
     svg->mMarkerStart = nullptr;
+  } else if (eCSSUnit_Inherit == markerStartValue->GetUnit()) {
+
   } else if (eCSSUnit_Inherit == markerStartValue->GetUnit() ||
              eCSSUnit_Unset == markerStartValue->GetUnit()) {
     conditions.SetUncacheable();
@@ -9622,6 +9720,7 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
 
     case eCSSUnit_Inherit:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       conditions.SetUncacheable();
       svg->mPaintOrder = parentSVG->mPaintOrder;
       break;
@@ -9654,6 +9753,7 @@ nsRuleNode::ComputeSVGData(void* aStartStruct,
 
   case eCSSUnit_Inherit:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
     conditions.SetUncacheable();
     svg->SetStrokeDasharrayFromObject(parentSVG->StrokeDasharrayFromObject());
     svg->mStrokeDasharray = parentSVG->mStrokeDasharray;
@@ -10053,7 +10153,8 @@ nsRuleNode::ComputeSVGResetData(void* aStartStruct,
   // stop-color:
   const nsCSSValue* stopColorValue = aRuleData->ValueForStopColor();
   if (eCSSUnit_Initial == stopColorValue->GetUnit() ||
-      eCSSUnit_Unset == stopColorValue->GetUnit()) {
+      eCSSUnit_Unset == stopColorValue->GetUnit() ||
+      eCSSUnit_Revert == stopColorValue->GetUnit()) {
     svgReset->mStopColor = NS_RGB(0, 0, 0);
   } else {
     SetColor(*stopColorValue, parentSVGReset->mStopColor,
@@ -10063,7 +10164,8 @@ nsRuleNode::ComputeSVGResetData(void* aStartStruct,
   // flood-color:
   const nsCSSValue* floodColorValue = aRuleData->ValueForFloodColor();
   if (eCSSUnit_Initial == floodColorValue->GetUnit() ||
-      eCSSUnit_Unset == floodColorValue->GetUnit()) {
+      eCSSUnit_Unset == floodColorValue->GetUnit() ||
+      eCSSUnit_Revert == floodColorValue->GetUnit()) {
     svgReset->mFloodColor = NS_RGB(0, 0, 0);
   } else {
     SetColor(*floodColorValue, parentSVGReset->mFloodColor,
@@ -10073,7 +10175,8 @@ nsRuleNode::ComputeSVGResetData(void* aStartStruct,
   // lighting-color:
   const nsCSSValue* lightingColorValue = aRuleData->ValueForLightingColor();
   if (eCSSUnit_Initial == lightingColorValue->GetUnit() ||
-      eCSSUnit_Unset == lightingColorValue->GetUnit()) {
+      eCSSUnit_Unset == lightingColorValue->GetUnit() ||
+      eCSSUnit_Revert == lightingColorValue->GetUnit()) {
     svgReset->mLightingColor = NS_RGB(255, 255, 255);
   } else {
     SetColor(*lightingColorValue, parentSVGReset->mLightingColor,
@@ -10089,6 +10192,7 @@ nsRuleNode::ComputeSVGResetData(void* aStartStruct,
     case eCSSUnit_None:
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       svgReset->mClipPath = StyleClipPath();
       break;
     case eCSSUnit_Inherit:
@@ -10297,6 +10401,7 @@ nsRuleNode::ComputeEffectsData(void* aStartStruct,
     case eCSSUnit_None:
     case eCSSUnit_Initial:
     case eCSSUnit_Unset:
+    case eCSSUnit_Revert:
       effects->mFilters.Clear();
       break;
     case eCSSUnit_Inherit:
@@ -10333,6 +10438,7 @@ nsRuleNode::ComputeEffectsData(void* aStartStruct,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
   case eCSSUnit_None:
     effects->mBoxShadow = nullptr;
     break;
@@ -10363,6 +10469,7 @@ nsRuleNode::ComputeEffectsData(void* aStartStruct,
 
   case eCSSUnit_Initial:
   case eCSSUnit_Unset:
+  case eCSSUnit_Revert:
   case eCSSUnit_Auto:
     effects->mClipFlags = NS_STYLE_CLIP_AUTO;
     effects->mClip.SetRect(0,0,0,0);
@@ -10674,10 +10781,12 @@ nsRuleNode::HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
           for (uint32_t i = 0; i < nValues; ++i) {
             nsCSSUnit unit = values[i]->GetUnit();
             if (unit != eCSSUnit_Null &&
+                unit != eCSSUnit_Revert &&
                 unit != eCSSUnit_Dummy &&
                 unit != eCSSUnit_DummyInherit) {
               if (unit == eCSSUnit_Inherit ||
-                  (i >= inheritedOffset && unit == eCSSUnit_Unset)) {
+                  (i >= inheritedOffset && unit == eCSSUnit_Unset) ||
+                  (i >= inheritedOffset && unit == eCSSUnit_Revert)) {
                 haveExplicitUAInherit = true;
                 values[i]->SetDummyInheritValue();
               } else {
@@ -10829,6 +10938,8 @@ nsRuleNode::ComputeColor(const nsCSSValue& aValue, nsPresContext* aPresContext,
              "aValue shouldn't have eCSSUnit_Initial");
   MOZ_ASSERT(aValue.GetUnit() != eCSSUnit_Unset,
              "aValue shouldn't have eCSSUnit_Unset");
+  MOZ_ASSERT(aValue.GetUnit() != eCSSUnit_Revert,
+             "aValue shouldn't have eCSSUnit_Revert");
 
   RuleNodeCacheConditions conditions;
   bool ok = SetColor(aValue, NS_RGB(0, 0, 0), aPresContext, aStyleContext,
