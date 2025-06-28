@@ -9336,7 +9336,8 @@ nsLayoutUtils::GetNonAnonymousStyleContext(nsIFrame* aFrame)
   }
   MOZ_ASSERT(node, "Native anonymous element with no originating node?");
   if (nsIFrame* primaryFrame = node->GetPrimaryFrame()) {
-    return RefPtr<nsStyleContext>(primaryFrame->StyleContext()).forget();
+    RefPtr<nsStyleContext> context = primaryFrame->StyleContext();
+    return context.forget();
   }
   // If the element doesn't have primary frame, get the computed style
   // from the element directly.
