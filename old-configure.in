@@ -3301,28 +3301,10 @@ dnl ========================================================
 dnl = FFmpeg's ffvpx configuration
 dnl ========================================================
 
-MOZ_FFVPX=
+MOZ_FFVPX=1
 
 dnl Build ffvpx on 32-bit Windows and all supported 64-bit platforms.
 dnl 32-bit *nix has performance issues due to not supporting assembly decoder.
-
-case "$OS_ARCH:$CPU_ARCH" in
-  WINNT:x86)
-      MOZ_FFVPX=1
-  ;;
-  *:x86)
-      MOZ_FFVPX=1
-  ;;
-  *:x86_64)
-      MOZ_FFVPX=1
-  ;;
-  *:aarch64)
-      MOZ_FFVPX=1
-  ;;
-  *:arm*)
-      MOZ_FFVPX=1
-  ;;
-esac
 
 dnl Detect if we can use yasm to enable FFmpeg's ffvpx assembly decoder.
 
@@ -3346,11 +3328,6 @@ if test -n "$MOZ_FFVPX" -a -n "$COMPILE_ENVIRONMENT"; then
       FFVPX_ASFLAGS="-D__x86_64__ -DPIC -DELF"
     fi
   ;;
-  *:x86)
-    if $CC -E -dM -</dev/null | grep -q __ELF__; then
-      FFVPX_ASFLAGS="-DPIC -DELF"
-    fi
-  ;;
   *:aarch64)
     if $CC -E -dM -</dev/null | grep -q __ELF__; then
       FFVPX_ASFLAGS="-D__aarch64__ -DPIC -DELF"
@@ -3362,7 +3339,7 @@ if test -n "$MOZ_FFVPX" -a -n "$COMPILE_ENVIRONMENT"; then
     fi
   ;;
   *)
-    AC_MSG_ERROR([ffvpx's assembly routines are only available for 32-bit Windows or 64-bit platforms.])
+    AC_MSG_WARN([ffvpx's assembly routines are only available for 32-bit Windows, 32-bit ARM, and 64-bit platforms.])
   ;;
   esac
 fi
