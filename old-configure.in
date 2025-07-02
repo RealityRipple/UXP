@@ -3303,8 +3303,8 @@ dnl ========================================================
 
 MOZ_FFVPX=1
 
-dnl Build ffvpx on 32-bit Windows and all supported 64-bit platforms.
-dnl 32-bit *nix has performance issues due to not supporting assembly decoder.
+dnl Build ffvpx on 32-bit Windows, 32-bit ARM, and all supported 64-bit platforms.
+dnl 32-bit x86 *nix has performance issues due to not supporting assembly decoder.
 
 dnl Detect if we can use yasm to enable FFmpeg's ffvpx assembly decoder.
 
