@@ -2244,7 +2244,8 @@ AreAllMathMLPropertiesUndefined(const nsRuleData* aRuleData)
 
 inline nsRuleNode::RuleDetail
 nsRuleNode::CheckSpecifiedProperties(const nsStyleStructID aSID,
-                                     const nsRuleData* aRuleData)
+                                     const nsRuleData* aRuleData,
+                                     bool& ignoreRuleCache)
 {
   // Build a count of the:
   uint32_t total = 0,      // total number of props in the struct
@@ -2318,6 +2319,8 @@ nsRuleNode::CheckSpecifiedProperties(const nsStyleStructID aSID,
   if (cb) {
     result = (*cb)(aRuleData, result);
   }
+
+  ignoreRuleCache = revert > 0;
 
   return result;
 }
@@ -2487,6 +2490,7 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
                                // will be the root.  (XXX misnamed)
   RuleDetail detail = eRuleNone;
   uint32_t bit = nsCachedStyleData::GetBitForSID(aSID);
+  bool ignoreRuleCache = false;
 
   while (ruleNode) {
     // See if this rule node has cached the fact that the remaining
@@ -2513,9 +2517,16 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
     // we'll miss it.
     startStruct = ruleNode->mStyleData.GetStyleData(aSID);
     if (startStruct) {
-      break; // We found a rule with fully specified data.  We don't
-    }        // need to go up the tree any further, since the remainder
-             // of this branch has already been computed.
+      // XXX: Ignore cached data if the previous rule node has revert values.
+      if (ignoreRuleCache) {
+        startStruct = nullptr;
+      } else {
+        // We found a rule with fully specified data.  We don't
+        // need to go up the tree any further, since the remainder
+        // of this branch has already been computed.
+        break;
+      }
+    }
 
     // Ask the rule to fill in the properties that it specifies.
     nsIStyleRule *rule = ruleNode->mRule;
@@ -2528,15 +2539,15 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
     // Now we check to see how many properties have been specified by
     // the rules we've examined so far.
     RuleDetail oldDetail = detail;
-    detail = CheckSpecifiedProperties(aSID, &ruleData);
+    detail = CheckSpecifiedProperties(aSID, &ruleData, ignoreRuleCache);
 
-    if (oldDetail == eRuleNone && detail != eRuleNone) {
+    if (oldDetail == eRuleNone && (detail != eRuleNone || ignoreRuleCache)) {
       highestNode = ruleNode;
     }
 
-    if (detail == eRuleFullReset ||
-        detail == eRuleFullMixed ||
-        detail == eRuleFullInherited) {
+    if (!ignoreRuleCache && (detail == eRuleFullReset ||
+                             detail == eRuleFullMixed ||
+                             detail == eRuleFullInherited)) {
       break; // We don't need to examine any more rules.  All properties
     }        // have been fully specified.
 
@@ -2572,7 +2583,7 @@ nsRuleNode::WalkRuleTree(const nsStyleStructID aSID,
   }
 
   if (recomputeDetail) {
-    detail = CheckSpecifiedProperties(aSID, &ruleData);
+    detail = CheckSpecifiedProperties(aSID, &ruleData, ignoreRuleCache);
   }
 
   NS_ASSERTION(!startStruct || (detail != eRuleFullReset &&
@@ -10800,7 +10811,8 @@ nsRuleNode::HasAuthorSpecifiedRules(nsStyleContext* aStyleContext,
           for (uint32_t i = 0; i < nValues; ++i) {
             if (values[i]->GetUnit() != eCSSUnit_Null &&
                 values[i]->GetUnit() != eCSSUnit_Dummy && // see above
-                values[i]->GetUnit() != eCSSUnit_DummyInherit) {
+                values[i]->GetUnit() != eCSSUnit_DummyInherit &&
+                values[i]->GetUnit() != eCSSUnit_Revert) {
               // If author colors are not allowed, only claim to have
               // author-specified rules if we're looking at a non-color
               // property or if we're looking at the background color and it's
