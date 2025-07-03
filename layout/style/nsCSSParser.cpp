@@ -1524,6 +1524,9 @@ protected:
   // enum type be signed.
   css::SheetParsingMode mParsingMode : 3;
 
+  // Indicates the cascade origin of the sheet.
+  mozilla::SheetType mLevel;
+
   // True if we are in parsing rules for the chrome.
   bool mIsChrome : 1;
 
@@ -1655,6 +1658,7 @@ CSSParserImpl::CSSParserImpl()
     mHashlessColorQuirk(false),
     mUnitlessLengthQuirk(false),
     mParsingMode(css::eAuthorSheetFeatures),
+    mLevel(mozilla::SheetType::Doc),
     mIsChrome(false),
     mViewportUnitsEnabled(true),
     mHTMLMediaMode(false),
@@ -1798,6 +1802,22 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   }
 
   mParsingMode = mSheet->ParsingMode();
+  switch (mParsingMode) {
+    case css::eAgentSheetFeatures:
+      mLevel = mozilla::SheetType::Agent;
+      break;
+
+    case css::eUserSheetFeatures:
+      mLevel = mozilla::SheetType::User;
+      break;
+
+    case css::eAuthorSheetFeatures:
+      mLevel = mozilla::SheetType::Doc;
+      break;
+
+    default:
+      MOZ_CRASH("impossible value for aType");
+  }
   mIsChrome = dom::IsChromeURI(aSheetURI);
   mReusableSheets = aReusableSheets;
 
@@ -1823,6 +1843,7 @@ CSSParserImpl::ParseSheet(const nsAString& aInput,
   ReleaseScanner();
 
   mParsingMode = css::eAuthorSheetFeatures;
+  mLevel = mozilla::SheetType::Doc;
   mIsChrome = false;
   mReusableSheets = nullptr;
 
