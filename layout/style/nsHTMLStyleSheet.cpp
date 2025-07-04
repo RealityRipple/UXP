@@ -39,9 +39,11 @@ nsHTMLStyleSheet::HTMLColorRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   if (aRuleData->mSIDs & NS_STYLE_INHERIT_BIT(Color)) {
     nsCSSValue* color = aRuleData->ValueForColor();
-    if (color->GetUnit() == eCSSUnit_Null &&
-        aRuleData->mPresContext->UseDocumentColors())
+    if ((color->GetUnit() == eCSSUnit_Null ||
+         color->GetUnit() == eCSSUnit_Revert) &&
+        aRuleData->mPresContext->UseDocumentColors()) {
       color->SetColorValue(mColor);
+    }
   }
 }
 
@@ -91,7 +93,8 @@ nsHTMLStyleSheet::TableTHRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   if (aRuleData->mSIDs & NS_STYLE_INHERIT_BIT(Text)) {
     nsCSSValue* textAlign = aRuleData->ValueForTextAlign();
-    if (textAlign->GetUnit() == eCSSUnit_Null) {
+    if (textAlign->GetUnit() == eCSSUnit_Null ||
+        textAlign->GetUnit() == eCSSUnit_Revert) {
       textAlign->SetIntValue(NS_STYLE_TEXT_ALIGN_MOZ_CENTER_OR_INHERIT,
                              eCSSUnit_Enumerated);
     }
@@ -119,9 +122,11 @@ nsHTMLStyleSheet::TableQuirkColorRule::MapRuleInfoInto(nsRuleData* aRuleData)
     nsCSSValue* color = aRuleData->ValueForColor();
     // We do not check UseDocumentColors() here, because we want to
     // use the body color no matter what.
-    if (color->GetUnit() == eCSSUnit_Null)
+    if (color->GetUnit() == eCSSUnit_Null ||
+        color->GetUnit() == eCSSUnit_Revert) {
       color->SetIntValue(NS_STYLE_COLOR_INHERIT_FROM_BODY,
                          eCSSUnit_Enumerated);
+    }
   }
 }
 
@@ -146,7 +151,8 @@ nsHTMLStyleSheet::LangRule::MapRuleInfoInto(nsRuleData* aRuleData)
 {
   if (aRuleData->mSIDs & NS_STYLE_INHERIT_BIT(Font)) {
     nsCSSValue* lang = aRuleData->ValueForLang();
-    if (lang->GetUnit() == eCSSUnit_Null) {
+    if (lang->GetUnit() == eCSSUnit_Null ||
+        lang->GetUnit() == eCSSUnit_Revert) {
       lang->SetStringValue(mLang, eCSSUnit_Ident);
     }
   }
