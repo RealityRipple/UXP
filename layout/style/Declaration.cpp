@@ -823,7 +823,7 @@ Declaration::GetPropertyValueInternal(
         return;
       }
 
-      bool isCurrentColor =
+      isCurrentColor =
         colorValue->GetUnit() == eCSSUnit_EnumColor &&
         colorValue->GetIntValue() == NS_COLOR_CURRENTCOLOR;
 
