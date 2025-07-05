@@ -6403,26 +6403,16 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            NS_STYLE_OVERFLOW_VISIBLE);
 
   // CSS3 overflow-x and overflow-y require some fixup as well in some
-  // cases.  NS_STYLE_OVERFLOW_VISIBLE and NS_STYLE_OVERFLOW_CLIP are
-  // meaningful only when used in both dimensions.
+  // cases.  NS_STYLE_OVERFLOW_VISIBLE is meaningful only when used in both dimensions.
+  // NS_STYLE_OVERFLOW_CLIP is now a standard value and should be preserved.
   if (display->mOverflowX != display->mOverflowY &&
       (display->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE ||
-       display->mOverflowX == NS_STYLE_OVERFLOW_CLIP ||
-       display->mOverflowY == NS_STYLE_OVERFLOW_VISIBLE ||
-       display->mOverflowY == NS_STYLE_OVERFLOW_CLIP)) {
+       display->mOverflowY == NS_STYLE_OVERFLOW_VISIBLE)) {
     // We can't store in the rule tree since a more specific rule might
     // change these conditions.
     conditions.SetUncacheable();
 
-    // NS_STYLE_OVERFLOW_CLIP is a deprecated value, so if it's specified
-    // in only one dimension, convert it to NS_STYLE_OVERFLOW_HIDDEN.
-    if (display->mOverflowX == NS_STYLE_OVERFLOW_CLIP) {
-      display->mOverflowX = NS_STYLE_OVERFLOW_HIDDEN;
-    }
-    if (display->mOverflowY == NS_STYLE_OVERFLOW_CLIP) {
-      display->mOverflowY = NS_STYLE_OVERFLOW_HIDDEN;
-    }
-
+    // Note: clip values are now preserved as-is when axes differ
   }
 
   // When 'contain: paint', update overflow from 'visible' to 'clip'.
