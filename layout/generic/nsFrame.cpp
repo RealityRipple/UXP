@@ -1934,9 +1934,9 @@ ApplyOverflowClipping(nsDisplayListBuilder* aBuilder,
                       const nsStyleDisplay* aDisp,
                       DisplayListClipState::AutoClipMultiple& aClipState)
 {
-  // Only -moz-hidden-unscrollable is handled here (and 'hidden' for table
+  // Only clip is handled here (and 'hidden' for table
   // frames, and any non-visible value for blocks in a paginated context).
-  // We allow -moz-hidden-unscrollable to apply to any kind of frame. This
+  // We allow clip to apply to any kind of frame. This
   // is required by comboboxes which make their display text (an inline frame)
   // have clipping.
   if (!nsFrame::ShouldApplyOverflowClipping(aFrame, aDisp)) {
@@ -2829,7 +2829,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     clipState.SetScrollClipForContainingBlockDescendants(aBuilder, nullptr);
   }
 
-  // Setup clipping for the parent's overflow:-moz-hidden-unscrollable,
+  // Setup clipping for the parent's overflow:clip,
   // or overflow:hidden on elements that don't support scrolling (and therefore
   // don't create nsHTML/XULScrollFrame). This clipping needs to not clip
   // anything directly rendered by the parent, only the rendering of its

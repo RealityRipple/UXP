@@ -3651,7 +3651,7 @@ var gCSSProperties = {
     prerequisites: { "display": "block", "contain": "none" },
     subproperties: [ "overflow-x", "overflow-y" ],
     initial_values: [ "visible" ],
-    other_values: [ "auto", "scroll", "hidden", "clip", "-moz-hidden-unscrollable", "-moz-scrollbars-none" ],
+    other_values: [ "auto", "scroll", "hidden", "clip", "-moz-scrollbars-none" ],
     invalid_values: []
   },
   "overflow-x": {
@@ -3660,7 +3660,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     prerequisites: { "display": "block", "overflow-y": "visible", "contain": "none" },
     initial_values: [ "visible" ],
-    other_values: [ "auto", "scroll", "hidden", "clip", "-moz-hidden-unscrollable" ],
+    other_values: [ "auto", "scroll", "hidden", "clip" ],
     invalid_values: []
   },
   "overflow-y": {
@@ -3669,7 +3669,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     prerequisites: { "display": "block", "overflow-x": "visible", "contain": "none" },
     initial_values: [ "visible" ],
-    other_values: [ "auto", "scroll", "hidden", "clip", "-moz-hidden-unscrollable" ],
+    other_values: [ "auto", "scroll", "hidden", "clip" ],
     invalid_values: []
   },
   "padding": {

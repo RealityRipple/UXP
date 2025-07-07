@@ -4750,20 +4750,36 @@ nsComputedDOMStyle::DoGetOverflow()
 {
   const nsStyleDisplay* display = StyleDisplay();
 
-  if (display->mOverflowX == display->mOverflowY) {
+  if (false && display->mOverflowX == display->mOverflowY) {
     RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-    val->SetIdent(nsCSSProps::ValueToKeywordEnum(display->mOverflowX,
-                                                 nsCSSProps::kOverflowKTable));
+    nsCSSKeyword overflowKeyword = nsCSSProps::ValueToKeywordEnum(display->mOverflowX,
+                                                                  nsCSSProps::kOverflowKTable);
+    // Web compatibility: serialize clip as hidden in computed style
+    if (overflowKeyword == eCSSKeyword_clip) {
+      overflowKeyword = eCSSKeyword_hidden;
+    }
+    val->SetIdent(overflowKeyword);
     return val.forget();
   }
 
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
   nsAutoString result;
   
-  nsCSSKeyword xKeyword = nsCSSProps::ValueToKeywordEnum(display->mOverflowX,
-                                                         nsCSSProps::kOverflowKTable);
-  nsCSSKeyword yKeyword = nsCSSProps::ValueToKeywordEnum(display->mOverflowY,
-                                                         nsCSSProps::kOverflowKTable);
+  auto MapOverflow = [](int32_t selfEnum, int32_t otherEnum)->nsCSSKeyword {
+    nsCSSKeyword selfKw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowKTable);
+    nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowKTable);
+    if (selfKw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip && otherKw != eCSSKeyword_visible) {
+      selfKw = eCSSKeyword_hidden;
+    }
+    return selfKw;
+  };
+  nsCSSKeyword xKeyword = MapOverflow(display->mOverflowX, display->mOverflowY);
+  nsCSSKeyword yKeyword = MapOverflow(display->mOverflowY, display->mOverflowX);
+  
+  if (xKeyword == yKeyword) {
+    val->SetIdent(xKeyword);
+    return val.forget();
+  }
   
   result.AppendASCII(nsCSSKeywords::GetStringValue(xKeyword).get());
   result.Append(char16_t(' '));
@@ -4777,9 +4793,8 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetOverflowX()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  val->SetIdent(
-    nsCSSProps::ValueToKeywordEnum(StyleDisplay()->mOverflowX,
-                                   nsCSSProps::kOverflowSubKTable));
+  val->SetIdent(nsCSSProps::ValueToKeywordEnum(StyleDisplay()->mOverflowX,
+                                              nsCSSProps::kOverflowSubKTable));
   return val.forget();
 }
 
@@ -4787,9 +4802,8 @@ already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetOverflowY()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  val->SetIdent(
-    nsCSSProps::ValueToKeywordEnum(StyleDisplay()->mOverflowY,
-                                   nsCSSProps::kOverflowSubKTable));
+  val->SetIdent(nsCSSProps::ValueToKeywordEnum(StyleDisplay()->mOverflowY,
+                                              nsCSSProps::kOverflowSubKTable));
   return val.forget();
 }
 
@@ -6781,4 +6795,14 @@ nsComputedDOMStyle::UnregisterPrefChangeCallbacks()
 #undef CSS_PROP_LIST_INCLUDE_LOGICAL
 #undef CSS_PROP
 #undef UNREGISTER_CALLBACK
+}
+
+already_AddRefed<CSSValue>
+nsComputedDOMStyle::DoGetOverflowBlock()
+{
+  // For now, treat block axis as overflow-y regardless of writing mode.
+  RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+  val->SetIdent(nsCSSProps::ValueToKeywordEnum(StyleDisplay()->mOverflowY,
+                                               nsCSSProps::kOverflowSubKTable));
+  return val.forget();
 }

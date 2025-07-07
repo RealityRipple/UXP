@@ -6417,7 +6417,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
 
   // When 'contain: paint', update overflow from 'visible' to 'clip'.
   if (display->IsContainPaint()) {
-    // XXX This actually sets overflow-[x|y] to -moz-hidden-unscrollable.
+    // XXX This actually sets overflow-[x|y] to clip.
     if (display->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE) {
       // This uncacheability (and the one below) could be fixed by adding
       // mOriginalOverflowX and mOriginalOverflowY fields, if necessary.

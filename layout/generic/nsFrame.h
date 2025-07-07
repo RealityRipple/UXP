@@ -623,14 +623,14 @@ public:
   static bool ShouldApplyOverflowClipping(const nsIFrame* aFrame,
                                           const nsStyleDisplay* aDisp)
   {
-    // clip overflow:-moz-hidden-unscrollable, except for nsListControlFrame,
+    // clip overflow:clip, except for nsListControlFrame,
     // which is an nsHTMLScrollFrame.
     if (MOZ_UNLIKELY(aDisp->mOverflowX == NS_STYLE_OVERFLOW_CLIP &&
                      aFrame->GetType() != nsGkAtoms::listControlFrame)) {
       return true;
     }
 
-    // and overflow:hidden that we should interpret as -moz-hidden-unscrollable
+    // and overflow:hidden that we should interpret as clip
     if (aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN &&
         aDisp->mOverflowY == NS_STYLE_OVERFLOW_HIDDEN) {
       // REVIEW: these are the frame types that set up clipping.

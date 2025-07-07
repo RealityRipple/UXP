@@ -4553,6 +4553,17 @@ CSS_PROP_POSITION(
     nullptr,
     offsetof(nsStylePosition, mZIndex),
     eStyleAnimType_Coord)
+CSS_PROP_DISPLAY(
+    overflow-block,
+    overflow_block,
+    OverflowBlock,
+    CSS_PROPERTY_PARSE_VALUE |
+        CSS_PROPERTY_APPLIES_TO_PLACEHOLDER,
+    "",
+    VARIANT_HK,
+    kOverflowSubKTable,
+    CSS_PROP_NO_OFFSET,
+    eStyleAnimType_Discrete)
 
 #ifdef USED_CSS_PROP
 
