@@ -10080,7 +10080,18 @@ SetStyleShapeSourceToCSSValue(
   if (basicShape) {
     aShapeSource->SetBasicShape(basicShape, referenceBox);
   } else {
+    if (mozilla::IsSame<ReferenceBox, StyleGeometryBox>::value && 
+      referenceBox != ReferenceBox::NoBox) {
+    RefPtr<StyleBasicShape> defaultInset = new StyleBasicShape(StyleBasicShapeType::Inset);
+    nsStyleCoord zero;
+    zero.SetCoordValue(0);
+    for (int i = 0; i < 4; i++) {
+      defaultInset->Coordinates().AppendElement(zero);
+    }
+    aShapeSource->SetBasicShape(defaultInset, referenceBox);
+  } else {
     aShapeSource->SetReferenceBox(referenceBox);
+  }
   }
 }
 
