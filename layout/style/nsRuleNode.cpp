@@ -10089,9 +10089,9 @@ SetStyleShapeSourceToCSSValue(
       defaultInset->Coordinates().AppendElement(zero);
     }
     aShapeSource->SetBasicShape(defaultInset, referenceBox);
-  } else {
-    aShapeSource->SetReferenceBox(referenceBox);
-  }
+    } else {
+      aShapeSource->SetReferenceBox(referenceBox);
+    }
   }
 }
 
