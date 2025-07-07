@@ -1543,30 +1543,6 @@ exports.CSS_PROPERTIES = {
       "write-only"
     ]
   },
-  "-moz-user-select": {
-    "isInherited": false,
-    "subproperties": [
-      "-moz-user-select"
-    ],
-    "supports": [],
-    "values": [
-      "-moz-all",
-      "-moz-none",
-      "-moz-text",
-      "all",
-      "auto",
-      "element",
-      "elements",
-      "inherit",
-      "initial",
-      "none",
-      "revert",
-      "text",
-      "toggle",
-      "tri-state",
-      "unset"
-    ]
-  },
   "-moz-window-dragging": {
     "isInherited": false,
     "subproperties": [
@@ -2993,7 +2969,7 @@ exports.CSS_PROPERTIES = {
   "-webkit-user-select": {
     "isInherited": false,
     "subproperties": [
-      "-moz-user-select"
+      "user-select"
     ],
     "supports": [],
     "values": [
@@ -3391,7 +3367,7 @@ exports.CSS_PROPERTIES = {
       "-moz-user-focus",
       "-moz-user-input",
       "-moz-user-modify",
-      "-moz-user-select",
+      "user-select",
       "vector-effect",
       "vertical-align",
       "visibility",
@@ -10081,6 +10057,30 @@ exports.CSS_PROPERTIES = {
       "normal",
       "plaintext",
       "revert",
+      "unset"
+    ]
+  },
+  "user-select": {
+    "isInherited": false,
+    "subproperties": [
+      "user-select"
+    ],
+    "supports": [],
+    "values": [
+      "-moz-all",
+      "-moz-none",
+      "-moz-text",
+      "all",
+      "auto",
+      "element",
+      "elements",
+      "inherit",
+      "initial",
+      "none",
+      "revert",
+      "text",
+      "toggle",
+      "tri-state",
       "unset"
     ]
   },

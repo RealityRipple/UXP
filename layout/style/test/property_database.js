@@ -2237,7 +2237,7 @@ var gCSSProperties = {
     other_values: [ "read-write", "write-only" ],
     invalid_values: []
   },
-  "-moz-user-select": {
+  "user-select": {
     domProp: "MozUserSelect",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
@@ -7885,8 +7885,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.webkit")) {
     domProp: "webkitUserSelect",
     inherited: false,
     type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-    alias_for: "-moz-user-select",
-    subproperties: [ "-moz-user-select" ],
+    alias_for: "user-select",
+    subproperties: [ "user-select" ],
   };
 
   if (SupportsMaskShorthand()) {
