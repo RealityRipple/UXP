@@ -9290,7 +9290,7 @@ exports.CSS_PROPERTIES = {
     ]
   },
   "scrollbar-width": {
-    "isInherited": true,
+    "isInherited": false,
     "subproperties": [
       "scrollbar-width"
     ],
