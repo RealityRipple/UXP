@@ -756,6 +756,7 @@ protected:
   bool ParseSupportsConditionTermsAfterOperator(
                                        bool& aConditionMet,
                                        SupportsConditionTermOperator aOperator);
+  bool ParseSupportsSelector(bool& aConditionMet);
 
   bool ParseCounterStyleRule(RuleAppendFunc aAppendFunc, void* aProcessData);
   bool ParseCounterStyleName(nsAString& aName, bool aForDefinition);
@@ -4790,6 +4791,11 @@ CSSParserImpl::ParseSupportsConditionInParens(bool& aConditionMet)
     return ParseSupportsMozBoolPrefName(aConditionMet);
   }
 
+  if (mToken.mType == eCSSToken_Function &&
+      mToken.mIdent.LowerCaseEqualsLiteral("selector")) {
+    return ParseSupportsSelector(aConditionMet);
+  }
+
   if (mToken.mType == eCSSToken_Function ||
       mToken.mType == eCSSToken_Bad_URL) {
     if (!SkipUntil(')')) {
@@ -4847,6 +4853,105 @@ CSSParserImpl::ParseSupportsMozBoolPrefName(bool& aConditionMet)
     return false;
   }
 
+  return true;
+}
+
+// supports_selector
+//   : 'selector(' single_selector ')'
+//   ;
+bool
+CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
+{
+  aConditionMet = false;
+
+  nsAutoString selectorText;
+  bool foundClosingParen = false;
+  bool hasContent = false;
+  
+  
+  for (;;) { 
+    if (!GetToken(true)) {
+      return false; // fail unexpected EOF
+    }
+    
+    if (mToken.IsSymbol(')')) {
+      foundClosingParen = true;
+      break;
+    }
+    
+    hasContent = true;
+    
+    bool needSpace = false;
+    if (!selectorText.IsEmpty()) {
+      char16_t lastChar = selectorText.Last();
+      if (lastChar != ':' && lastChar != '.' && lastChar != '#' && lastChar != '[' && lastChar != '(') {
+        needSpace = true;
+      }
+    }
+    
+    if (mToken.mType == eCSSToken_Ident) {
+      if (needSpace) selectorText.Append(' ');
+      selectorText.Append(mToken.mIdent);
+
+    } else if (mToken.mType == eCSSToken_AtKeyword) {
+      if (needSpace) selectorText.Append(' ');
+      selectorText.Append('@');
+      selectorText.Append(mToken.mIdent);
+
+    } else if (mToken.mType == eCSSToken_Hash) {
+      if (needSpace) selectorText.Append(' ');
+      selectorText.Append('#');
+      selectorText.Append(mToken.mIdent);
+
+    } else if (mToken.mType == eCSSToken_Symbol) {
+      selectorText.Append(mToken.mSymbol);
+
+    } else if (mToken.mType == eCSSToken_String) {
+      if (needSpace) selectorText.Append(' ');
+      selectorText.Append('"');
+      selectorText.Append(mToken.mIdent);
+      selectorText.Append('"');
+
+    } else if (mToken.mType == eCSSToken_Function) {
+      if (needSpace) selectorText.Append(' ');
+      selectorText.Append(mToken.mIdent);
+      selectorText.Append('(');
+
+    } else {
+      if (!mToken.mIdent.IsEmpty()) {
+        if (needSpace) selectorText.Append(' ');
+        selectorText.Append(mToken.mIdent);
+      }
+    }
+  }
+  
+  if (!foundClosingParen) {
+    return false;
+  }
+  
+  if (!hasContent) {
+    aConditionMet = false;
+    return true;
+  }
+  
+  selectorText.CompressWhitespace(true, true);
+  
+  // basic validation
+  // reject issues like multiple selectors (comma-separated)
+  if (selectorText.FindChar(',') >= 0) {
+    aConditionMet = false;
+  } else if (selectorText.IsEmpty()) {
+    aConditionMet = false;
+  } else {
+    // assume basic selectors, pseudo-elements, and compound selectors to be true
+    aConditionMet = true;
+    
+    // special case: reject obviously unsupported pseudo-elements
+    if (selectorText.Find(NS_LITERAL_STRING("::-webkit-")) >= 0) {
+      aConditionMet = false;
+    }
+  }
+  
   return true;
 }
 
@@ -4917,6 +5022,8 @@ CSSParserImpl::ParseSupportsConditionInParensInsideParens(bool& aConditionMet)
   return ParseSupportsConditionInParens(aConditionMet) &&
          ParseSupportsConditionTerms(aConditionMet);
 }
+
+
 
 // supports_condition_terms
 //   : S+ 'and' supports_condition_terms_after_operator('and')
