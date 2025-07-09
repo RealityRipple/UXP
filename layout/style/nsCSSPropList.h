@@ -4564,6 +4564,17 @@ CSS_PROP_DISPLAY(
     kOverflowSubKTable,
     CSS_PROP_NO_OFFSET,
     eStyleAnimType_Discrete)
+CSS_PROP_DISPLAY(
+    overflow-inline,
+    overflow_inline,
+    OverflowInline,
+    CSS_PROPERTY_PARSE_VALUE |
+        CSS_PROPERTY_APPLIES_TO_PLACEHOLDER,
+    "",
+    VARIANT_HK,
+    kOverflowSubKTable,
+    CSS_PROP_NO_OFFSET,
+    eStyleAnimType_Discrete)
 
 #ifdef USED_CSS_PROP
 

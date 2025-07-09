@@ -6402,6 +6402,28 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            parentDisplay->mOverflowY,
            NS_STYLE_OVERFLOW_VISIBLE);
 
+  // overflow-inline: enum, inherit, initial
+  // For simplicity, map overflow-inline to overflow-x for now (horizontal writing mode assumption)
+  const nsCSSValue* overflowInlineValue = aRuleData->ValueForOverflowInline();
+  if (overflowInlineValue->GetUnit() != eCSSUnit_Null) {
+    SetValue(*overflowInlineValue,
+             display->mOverflowX, conditions,
+             SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
+             parentDisplay->mOverflowX,
+             NS_STYLE_OVERFLOW_VISIBLE);
+  }
+
+  // overflow-block: enum, inherit, initial
+  // For simplicity, map overflow-block to overflow-y for now (horizontal writing mode assumption)
+  const nsCSSValue* overflowBlockValue = aRuleData->ValueForOverflowBlock();
+  if (overflowBlockValue->GetUnit() != eCSSUnit_Null) {
+    SetValue(*overflowBlockValue,
+             display->mOverflowY, conditions,
+             SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
+             parentDisplay->mOverflowY,
+             NS_STYLE_OVERFLOW_VISIBLE);
+  }
+
   // CSS3 overflow-x and overflow-y require some fixup as well in some
   // cases.  NS_STYLE_OVERFLOW_VISIBLE is meaningful only when used in both dimensions.
   // NS_STYLE_OVERFLOW_CLIP is now a standard value and should be preserved.
