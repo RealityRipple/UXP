@@ -4868,8 +4868,7 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
   bool foundClosingParen = false;
   bool hasContent = false;
   
-  
-  for (;;) { 
+  while (true) { 
     if (!GetToken(true)) {
       return false; // fail unexpected EOF
     }
@@ -4889,39 +4888,47 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
       }
     }
     
-    if (mToken.mType == eCSSToken_Ident) {
-      if (needSpace) selectorText.Append(' ');
-      selectorText.Append(mToken.mIdent);
-
-    } else if (mToken.mType == eCSSToken_AtKeyword) {
-      if (needSpace) selectorText.Append(' ');
-      selectorText.Append('@');
-      selectorText.Append(mToken.mIdent);
-
-    } else if (mToken.mType == eCSSToken_Hash) {
-      if (needSpace) selectorText.Append(' ');
-      selectorText.Append('#');
-      selectorText.Append(mToken.mIdent);
-
-    } else if (mToken.mType == eCSSToken_Symbol) {
-      selectorText.Append(mToken.mSymbol);
-
-    } else if (mToken.mType == eCSSToken_String) {
-      if (needSpace) selectorText.Append(' ');
-      selectorText.Append('"');
-      selectorText.Append(mToken.mIdent);
-      selectorText.Append('"');
-
-    } else if (mToken.mType == eCSSToken_Function) {
-      if (needSpace) selectorText.Append(' ');
-      selectorText.Append(mToken.mIdent);
-      selectorText.Append('(');
-
-    } else {
-      if (!mToken.mIdent.IsEmpty()) {
+    switch (mToken.mType) {
+      case eCSSToken_Ident:
         if (needSpace) selectorText.Append(' ');
         selectorText.Append(mToken.mIdent);
-      }
+        break;
+        
+      case eCSSToken_AtKeyword:
+        if (needSpace) selectorText.Append(' ');
+        selectorText.Append('@');
+        selectorText.Append(mToken.mIdent);
+        break;
+        
+      case eCSSToken_Hash:
+        if (needSpace) selectorText.Append(' ');
+        selectorText.Append('#');
+        selectorText.Append(mToken.mIdent);
+        break;
+        
+      case eCSSToken_Symbol:
+        selectorText.Append(mToken.mSymbol);
+        break;
+        
+      case eCSSToken_String:
+        if (needSpace) selectorText.Append(' ');
+        selectorText.Append('"');
+        selectorText.Append(mToken.mIdent);
+        selectorText.Append('"');
+        break;
+        
+      case eCSSToken_Function:
+        if (needSpace) selectorText.Append(' ');
+        selectorText.Append(mToken.mIdent);
+        selectorText.Append('(');
+        break;
+        
+      default:
+        if (!mToken.mIdent.IsEmpty()) {
+          if (needSpace) selectorText.Append(' ');
+          selectorText.Append(mToken.mIdent);
+        }
+        break;
     }
   }
   
@@ -4936,20 +4943,52 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
   
   selectorText.CompressWhitespace(true, true);
   
-  // basic validation
-  // reject issues like multiple selectors (comma-separated)
-  if (selectorText.FindChar(',') >= 0) {
+  if (selectorText.IsEmpty()) {
     aConditionMet = false;
-  } else if (selectorText.IsEmpty()) {
-    aConditionMet = false;
-  } else {
-    // assume basic selectors, pseudo-elements, and compound selectors to be true
-    aConditionMet = true;
-    
-    // special case: reject obviously unsupported pseudo-elements
-    if (selectorText.Find(NS_LITERAL_STRING("::-webkit-")) >= 0) {
+    return true;
+  }
+
+  int32_t parenDepth = 0;
+  for (uint32_t i = 0; i < selectorText.Length(); i++) {
+    char16_t c = selectorText.CharAt(i);
+    if (c == '(') {
+      parenDepth++;
+    } else if (c == ')') {
+      if (parenDepth > 0) {
+        parenDepth--;
+      }
+    } else if (c == ',' && parenDepth == 0) { // top-level comma found
       aConditionMet = false;
+      return true;
     }
+  }
+
+  if (selectorText.Find(NS_LITERAL_STRING("::-webkit-")) >= 0) {
+    aConditionMet = false;
+    return true;
+  }
+
+  nsCSSScanner tempScanner(selectorText, 0);
+  css::ErrorReporter tempReporter(tempScanner, mSheet, mChildLoader, mSheetURI);
+  
+  nsCSSScanner* savedScanner = mScanner;
+  css::ErrorReporter* savedReporter = mReporter;
+  
+  mScanner = &tempScanner;
+  mReporter = &tempReporter;
+  
+  nsCSSSelectorList* selectorList = nullptr;
+  SelectorParsingFlags flags = SelectorParsingFlags::eNone;
+  bool parseSuccess = ParseSelectorGroup(selectorList, flags);
+  
+  mScanner = savedScanner;
+  mReporter = savedReporter;
+  
+  if (parseSuccess && selectorList) {
+    aConditionMet = true;
+    delete selectorList;
+  } else {
+    aConditionMet = false;
   }
   
   return true;
@@ -5022,8 +5061,6 @@ CSSParserImpl::ParseSupportsConditionInParensInsideParens(bool& aConditionMet)
   return ParseSupportsConditionInParens(aConditionMet) &&
          ParseSupportsConditionTerms(aConditionMet);
 }
-
-
 
 // supports_condition_terms
 //   : S+ 'and' supports_condition_terms_after_operator('and')
