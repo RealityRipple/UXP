@@ -6437,12 +6437,12 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
     // Note: clip values are now preserved as-is when axes differ
     // If 'visible' is specified but doesn't match the other dimension, it
     // turns into 'auto'.
-    if (display->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE) {
-      display->mOverflowX = NS_STYLE_OVERFLOW_AUTO;
-    }
-    if (display->mOverflowY == NS_STYLE_OVERFLOW_VISIBLE) {
-      display->mOverflowY = NS_STYLE_OVERFLOW_AUTO;
-    }
+    // if (display->mOverflowX == NS_STYLE_OVERFLOW_CLIP) {
+    //   display->mOverflowX = NS_STYLE_OVERFLOW_HIDDEN;
+    // }
+    // if (display->mOverflowY == NS_STYLE_OVERFLOW_CLIP) {
+    //   display->mOverflowY = NS_STYLE_OVERFLOW_HIDDEN;
+    // }
     
   }
 

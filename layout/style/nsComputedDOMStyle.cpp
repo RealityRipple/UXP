@@ -4772,7 +4772,8 @@ nsComputedDOMStyle::DoGetOverflow()
       selfKw = eCSSKeyword_hidden;
     }
     // Map visible -> auto when paired with a non-visible/non-clip keyword
-    if (selfKw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+    if (selfKw == eCSSKeyword_visible &&
+        (otherKw == eCSSKeyword_hidden || otherKw == eCSSKeyword_scroll || otherKw == eCSSKeyword_overlay || otherKw == eCSSKeyword_auto)) {
       selfKw = eCSSKeyword_auto;
     }
     return selfKw;
@@ -4807,7 +4808,9 @@ nsComputedDOMStyle::DoGetOverflowX()
   if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip && otherKw != eCSSKeyword_visible) {
     kw = eCSSKeyword_hidden;
   }
-  if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+  // Map visible->auto only when axes differ (two-value shorthand) and paired with non-visible values
+  if (kw == eCSSKeyword_visible && kw != otherKw &&
+      (otherKw == eCSSKeyword_scroll || otherKw == eCSSKeyword_overlay || otherKw == eCSSKeyword_hidden || otherKw == eCSSKeyword_auto)) {
     kw = eCSSKeyword_auto;
   }
 
@@ -4829,7 +4832,9 @@ nsComputedDOMStyle::DoGetOverflowY()
   if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip && otherKw != eCSSKeyword_visible) {
     kw = eCSSKeyword_hidden;
   }
-  if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+  // Map visible->auto only when axes differ (two-value shorthand) and paired with non-visible values
+  if (kw == eCSSKeyword_visible && kw != otherKw &&
+      (otherKw == eCSSKeyword_scroll || otherKw == eCSSKeyword_overlay || otherKw == eCSSKeyword_hidden || otherKw == eCSSKeyword_auto)) {
     kw = eCSSKeyword_auto;
   }
 
