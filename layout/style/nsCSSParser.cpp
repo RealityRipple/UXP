@@ -4892,8 +4892,44 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
     bool needSpace = false;
     if (!selectorText.IsEmpty()) {
       char16_t lastChar = selectorText.Last();
-      if (lastChar != ':' && lastChar != '.' && lastChar != '#' && lastChar != '[' && lastChar != '(') {
-        needSpace = true;
+      
+      // Don't add spaces inside parentheses for nth-child formulas
+      if (parenDepth > 0) {
+        // Inside parentheses, only add space before "of" keyword
+        if (mToken.mType == eCSSToken_Ident && mToken.mIdent.LowerCaseEqualsLiteral("of")) {
+          needSpace = true;
+        }
+        // Also add space after "of"
+        else if (mToken.mType != eCSSToken_Ident && lastChar != '(' && lastChar != ' ' && 
+                 selectorText.Length() >= 2) {
+          // Check if previous token was "of"
+          nsAutoString lastTwo;
+          if (selectorText.Length() >= 2) {
+            lastTwo = Substring(selectorText, selectorText.Length() - 2, 2);
+            if (lastTwo.EqualsLiteral("of")) {
+              needSpace = true;
+            }
+          }
+        }
+      } else {
+        // Outside parentheses, use normal spacing rules
+        // Add space before identifiers and classes if last char was alphanumeric
+        if ((mToken.mType == eCSSToken_Ident || mToken.mType == eCSSToken_Symbol) && 
+            lastChar != ' ' && lastChar != ':' && lastChar != '.' && lastChar != '#' && 
+            lastChar != '[' && lastChar != '(' && lastChar != '>' && lastChar != '+' && 
+            lastChar != '~' && lastChar != ',') {
+          // Special case: add space before '.' if it follows an identifier
+          if (mToken.mType == eCSSToken_Symbol && mToken.mSymbol == '.' && 
+              ((lastChar >= 'a' && lastChar <= 'z') || (lastChar >= 'A' && lastChar <= 'Z'))) {
+            needSpace = true;
+          }
+          // Add space between consecutive identifiers
+          else if (mToken.mType == eCSSToken_Ident && 
+                   ((lastChar >= 'a' && lastChar <= 'z') || (lastChar >= 'A' && lastChar <= 'Z') || 
+                    (lastChar >= '0' && lastChar <= '9') || lastChar == ')')) {
+            needSpace = true;
+          }
+        }
       }
     }
     
@@ -4920,7 +4956,28 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
         break;
         
       case eCSSToken_Symbol:
-        selectorText.Append(mToken.mSymbol);
+        if ((mToken.mSymbol == '+' || mToken.mSymbol == '-') && parenDepth > 0) {
+          selectorText.Append(mToken.mSymbol);
+        }
+        // add spaces around combinators (only at top level)
+        else if ((mToken.mSymbol == '+' || mToken.mSymbol == '>' || mToken.mSymbol == '~') && parenDepth == 0) {
+          if (!selectorText.IsEmpty() && selectorText.Last() != ' ') {
+            selectorText.Append(' ');
+          }
+          selectorText.Append(mToken.mSymbol);
+          selectorText.Append(' ');
+        }
+        // add spaces around top-level combinators
+        else if (mToken.mSymbol == '.' && !selectorText.IsEmpty()) {
+          char16_t lastChar = selectorText.Last();
+          if ((lastChar >= 'a' && lastChar <= 'z') || (lastChar >= 'A' && lastChar <= 'Z')) {
+            selectorText.Append(' ');
+          }
+          selectorText.Append(mToken.mSymbol);
+        }
+        else {
+          selectorText.Append(mToken.mSymbol);
+        }
         break;
         
       case eCSSToken_String:
