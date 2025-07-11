@@ -4867,6 +4867,7 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
   nsAutoString selectorText;
   bool foundClosingParen = false;
   bool hasContent = false;
+  int32_t parenDepth = 0;
   
   while (true) { 
     if (!GetToken(true)) {
@@ -4874,11 +4875,18 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
     }
     
     if (mToken.IsSymbol(')')) {
-      foundClosingParen = true;
-      break;
-    }
-    
-    hasContent = true;
+      if (parenDepth == 0) {
+        foundClosingParen = true;
+        break;
+      } else {
+        parenDepth--;
+        selectorText.Append(mToken.mSymbol);
+      }
+    } else if (mToken.IsSymbol('(')) {
+      parenDepth++;
+      selectorText.Append(mToken.mSymbol);
+    } else {
+      hasContent = true;
     
     bool needSpace = false;
     if (!selectorText.IsEmpty()) {
@@ -4921,6 +4929,7 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
         if (needSpace) selectorText.Append(' ');
         selectorText.Append(mToken.mIdent);
         selectorText.Append('(');
+        parenDepth++;
         break;
         
       default:
@@ -4948,7 +4957,7 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
     return true;
   }
 
-  int32_t parenDepth = 0;
+  parenDepth = 0; // reset parenDepth for comma checking
   for (uint32_t i = 0; i < selectorText.Length(); i++) {
     char16_t c = selectorText.CharAt(i);
     if (c == '(') {
