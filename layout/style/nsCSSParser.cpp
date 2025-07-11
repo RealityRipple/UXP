@@ -5032,6 +5032,7 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
           selectorText.Append(mToken.mIdent);
         }
         break;
+      }
     }
   }
   
