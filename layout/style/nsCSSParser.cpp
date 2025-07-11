@@ -13,6 +13,7 @@
 
 #include <algorithm> // for std::stable_sort
 #include <limits> // for std::numeric_limits
+#include <cmath> // for std::floor
 
 #include "nsCSSParser.h"
 #include "nsAlgorithm.h"
@@ -4908,8 +4909,12 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
         selectorText.Append(mToken.mIdent);
         break;
         
+      case eCSSToken_ID:
+        selectorText.Append('#');
+        selectorText.Append(mToken.mIdent);
+        break;
+        
       case eCSSToken_Hash:
-        if (needSpace) selectorText.Append(' ');
         selectorText.Append('#');
         selectorText.Append(mToken.mIdent);
         break;
@@ -4930,6 +4935,25 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
         selectorText.Append(mToken.mIdent);
         selectorText.Append('(');
         parenDepth++;
+        break;
+        
+      case eCSSToken_Number:
+        if (needSpace) selectorText.Append(' ');
+        if (mToken.mNumber == floor(mToken.mNumber)) {
+          selectorText.AppendInt(int32_t(mToken.mNumber));
+        } else {
+          selectorText.AppendFloat(mToken.mNumber);
+        }
+        break;
+        
+      case eCSSToken_Dimension:
+        if (needSpace) selectorText.Append(' ');
+        if (mToken.mNumber == floor(mToken.mNumber)) {
+          selectorText.AppendInt(int32_t(mToken.mNumber));
+        } else {
+          selectorText.AppendFloat(mToken.mNumber);
+        }
+        selectorText.Append(mToken.mIdent);
         break;
         
       default:
