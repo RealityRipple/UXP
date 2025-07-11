@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Overflow Clipping Fixes Test</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  line-height: 1.4;
+}
+
+.test-container {
+  margin: 40px 0;
+  padding: 20px;
+  border: 2px solid #333;
+  background: #f5f5f5;
+}
+
+.test-box {
+  width: 320px;
+  height: 200px;
+  padding: 20px;
+  background: #f7faff;
+  border: 2px solid #ddd;
+  margin: 20px 0;
+}
+
+.wide-content {
+  width: 600px;
+  background: #ffe6e6;
+  padding: 10px;
+  margin: 10px 0;
+  font-weight: bold;
+}
+
+.tall-content {
+  height: 400px;
+  background: #e6f3ff;
+  padding: 10px;
+  font-weight: bold;
+}
+
+/* Test 1: overflow-x: visible; overflow-y: clip */
+.test1 {
+  overflow-x: visible;
+  overflow-y: clip;
+}
+
+/* Test 2: overflow-x: visible; overflow-y: hidden */
+.test2 {
+  overflow-x: visible;
+  overflow-y: hidden;
+}
+
+/* Test 3: overflow-x: clip; overflow-y: visible */
+.test3 {
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+/* Test 4: overflow-x: hidden; overflow-y: visible */
+.test4 {
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+/* Test 5: Both axes clip */
+.test5 {
+  overflow-x: clip;
+  overflow-y: clip;
+}
+
+/* Test 6: Both axes hidden */
+.test6 {
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+h2 {
+  color: #333;
+  border-bottom: 2px solid #666;
+  padding-bottom: 5px;
+}
+
+.expected {
+  color: #006600;
+  font-size: 14px;
+  margin: 5px 0;
+}
+</style>
+</head>
+<body>
+
+<h1>Mozilla Platform Overflow Clipping Fixes Test</h1>
+
+<div class="test-container">
+  <h2>Test 1: overflow-x: visible; overflow-y: clip</h2>
+  <div class="expected">Expected: Horizontal content should overflow and be visible, vertical content should be clipped</div>
+  <div class="test-box test1">
+    <div class="wide-content">This wide content should be visible (overflow horizontally)</div>
+    <div class="tall-content">This tall content should be clipped (no vertical scroll)</div>
+  </div>
+</div>
+
+<div class="test-container">
+  <h2>Test 2: overflow-x: visible; overflow-y: hidden</h2>
+  <div class="expected">Expected: Horizontal content should overflow and be visible, vertical content should be clipped</div>
+  <div class="test-box test2">
+    <div class="wide-content">This wide content should be visible (overflow horizontally)</div>
+    <div class="tall-content">This tall content should be clipped (no vertical scroll)</div>
+  </div>
+</div>
+
+<div class="test-container">
+  <h2>Test 3: overflow-x: clip; overflow-y: visible</h2>
+  <div class="expected">Expected: Horizontal content should be clipped, vertical content should overflow and be visible</div>
+  <div class="test-box test3">
+    <div class="wide-content">This wide content should be clipped</div>
+    <div class="tall-content">This tall content should be visible (overflow vertically)</div>
+  </div>
+</div>
+
+<div class="test-container">
+  <h2>Test 4: overflow-x: hidden; overflow-y: visible</h2>
+  <div class="expected">Expected: Horizontal content should be clipped, vertical content should overflow and be visible</div>
+  <div class="test-box test4">
+    <div class="wide-content">This wide content should be clipped</div>
+    <div class="tall-content">This tall content should be visible (overflow vertically)</div>
+  </div>
+</div>
+
+<div class="test-container">
+  <h2>Test 5: overflow-x: clip; overflow-y: clip</h2>
+  <div class="expected">Expected: Both horizontal and vertical content should be clipped</div>
+  <div class="test-box test5">
+    <div class="wide-content">This wide content should be clipped</div>
+    <div class="tall-content">This tall content should be clipped</div>
+  </div>
+</div>
+
+<div class="test-container">
+  <h2>Test 6: overflow-x: hidden; overflow-y: hidden</h2>
+  <div class="expected">Expected: Both horizontal and vertical content should be clipped (traditional behavior)</div>
+  <div class="test-box test6">
+    <div class="wide-content">This wide content should be clipped</div>
+    <div class="tall-content">This tall content should be clipped</div>
+  </div>
+</div>
+
+<div class="test-container">
+  <h2>Summary</h2>
+  <p>If the fixes are working correctly:</p>
+  <ul>
+    <li><strong>Test 1 & 2:</strong> Red horizontal bars should extend beyond the right edge, blue vertical content should be cut off</li>
+    <li><strong>Test 3 & 4:</strong> Red horizontal bars should be cut off at the right edge, blue vertical content should extend below</li>
+    <li><strong>Test 5 & 6:</strong> Both red and blue content should be cut off at container boundaries</li>
+  </ul>
+</div>
+
+</body>
+</html> 

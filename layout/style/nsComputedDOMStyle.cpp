@@ -4805,13 +4805,16 @@ nsComputedDOMStyle::DoGetOverflowX()
   nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowSubKTable);
   nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowSubKTable);
 
-  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip && otherKw != eCSSKeyword_visible) {
-    kw = eCSSKeyword_hidden;
-  }
-  // Map visible->auto only when axes differ (two-value shorthand) and paired with non-visible values
-  if (kw == eCSSKeyword_visible && kw != otherKw &&
-      (otherKw == eCSSKeyword_scroll || otherKw == eCSSKeyword_overlay || otherKw == eCSSKeyword_hidden || otherKw == eCSSKeyword_auto)) {
+  // "Setting overflow to visible in one direction when it isn't set to visible or clip 
+  // in the other direction results in the visible value behaving as auto."
+  // "Setting overflow to clip in one direction when it isn't set to visible or clip 
+  // in the other direction results in the clip value behaving as hidden."
+  
+  if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
     kw = eCSSKeyword_auto;
+  }
+  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+    kw = eCSSKeyword_hidden;
   }
 
   val->SetIdent(kw);
@@ -4829,13 +4832,16 @@ nsComputedDOMStyle::DoGetOverflowY()
   nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowSubKTable);
   nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowSubKTable);
 
-  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip && otherKw != eCSSKeyword_visible) {
-    kw = eCSSKeyword_hidden;
-  }
-  // Map visible->auto only when axes differ (two-value shorthand) and paired with non-visible values
-  if (kw == eCSSKeyword_visible && kw != otherKw &&
-      (otherKw == eCSSKeyword_scroll || otherKw == eCSSKeyword_overlay || otherKw == eCSSKeyword_hidden || otherKw == eCSSKeyword_auto)) {
+  // "Setting overflow to visible in one direction when it isn't set to visible or clip 
+  // in the other direction results in the visible value behaving as auto."
+  // "Setting overflow to clip in one direction when it isn't set to visible or clip 
+  // in the other direction results in the clip value behaving as hidden."
+  
+  if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
     kw = eCSSKeyword_auto;
+  }
+  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+    kw = eCSSKeyword_hidden;
   }
 
   val->SetIdent(kw);

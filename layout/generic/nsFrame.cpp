@@ -1942,6 +1942,7 @@ ApplyOverflowClipping(nsDisplayListBuilder* aBuilder,
   if (!nsFrame::ShouldApplyOverflowClipping(aFrame, aDisp)) {
     return;
   }
+  
   nsRect clipRect;
   bool haveRadii = false;
   nscoord radii[8];
@@ -1955,6 +1956,23 @@ ApplyOverflowClipping(nsDisplayListBuilder* aBuilder,
       aBuilder->ToReferenceFrame(aFrame);
     // XXX border-radius
   }
+
+  // Support per-axis clipping: If only one axis has 'clip' or 'hidden' value,
+  // only clip that axis by extending the clip rect to infinity on the other axis
+  bool clipX = (aDisp->mOverflowX == NS_STYLE_OVERFLOW_CLIP || aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN);
+  bool clipY = (aDisp->mOverflowY == NS_STYLE_OVERFLOW_CLIP || aDisp->mOverflowY == NS_STYLE_OVERFLOW_HIDDEN);
+  
+  if (clipX && !clipY) {
+    // Only clip X axis - extend Y to infinity
+    clipRect.y = nscoord_MIN / 2;
+    clipRect.height = nscoord_MAX;
+  } else if (clipY && !clipX) {
+    // Only clip Y axis - extend X to infinity
+    clipRect.x = nscoord_MIN / 2;
+    clipRect.width = nscoord_MAX;
+  }
+  // If both axes are clip/hidden, use the normal rect (no modification needed)
+
   aClipState.ClipContainingBlockDescendantsExtra(clipRect, haveRadii ? radii : nullptr);
 }
 

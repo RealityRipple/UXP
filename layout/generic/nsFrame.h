@@ -625,13 +625,16 @@ public:
   {
     // clip overflow:clip, except for nsListControlFrame,
     // which is an nsHTMLScrollFrame.
-    if (MOZ_UNLIKELY(aDisp->mOverflowX == NS_STYLE_OVERFLOW_CLIP &&
+    // Support per-axis clipping: clip on either axis should enable clipping
+    if (MOZ_UNLIKELY((aDisp->mOverflowX == NS_STYLE_OVERFLOW_CLIP ||
+                      aDisp->mOverflowY == NS_STYLE_OVERFLOW_CLIP) &&
                      aFrame->GetType() != nsGkAtoms::listControlFrame)) {
       return true;
     }
 
     // and overflow:hidden that we should interpret as clip
-    if (aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN &&
+    // Support per-axis hidden overflow: apply clipping if either axis is hidden
+    if (aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN ||
         aDisp->mOverflowY == NS_STYLE_OVERFLOW_HIDDEN) {
       // REVIEW: these are the frame types that set up clipping.
       nsIAtom* type = aFrame->GetType();
@@ -640,7 +643,9 @@ public:
           type == nsGkAtoms::bcTableCellFrame ||
           type == nsGkAtoms::svgOuterSVGFrame ||
           type == nsGkAtoms::svgInnerSVGFrame ||
-          type == nsGkAtoms::svgForeignObjectFrame) {
+          type == nsGkAtoms::svgForeignObjectFrame ||
+          type == nsGkAtoms::blockFrame ||
+          type == nsGkAtoms::inlineFrame) {
         return true;
       }
       if (aFrame->IsFrameOfType(nsIFrame::eReplacedContainsBlock)) {

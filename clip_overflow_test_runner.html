@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WPT Overflow Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .test-suite {
+            background: white;
+            margin: 25px 0;
+            border-radius: 10px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .suite-header {
+            background: #34495e;
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .suite-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+        }
+        .stat {
+            padding: 5px 10px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.2);
+        }
+        .test-case {
+            border-bottom: 1px solid #eee;
+            padding: 15px 20px;
+            transition: background 0.2s;
+        }
+        .test-case:hover {
+            background: #f8f9fa;
+        }
+        .test-case.pass {
+            border-left: 5px solid #28a745;
+        }
+        .test-case.fail {
+            border-left: 5px solid #dc3545;
+        }
+        .test-case.skip {
+            border-left: 5px solid #ffc107;
+            opacity: 0.7;
+        }
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .test-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .test-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .skip { background: #fff3cd; color: #856404; }
+        
+        .test-details {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .test-property {
+            margin: 8px 0;
+            padding: 8px;
+            background: #e3f2fd;
+            border-radius: 4px;
+        }
+        .expected-actual {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .expected, .actual {
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+        }
+        .expected {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+        }
+        .actual {
+            background: #ffeaea;
+            border: 1px solid #dc3545;
+        }
+        .actual.match {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 28px;
+            font-weight: bold;
+            display: block;
+        }
+        .error-msg {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #2980b9; }
+        .btn.run { background: #28a745; }
+        .btn.run:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="btn run" onclick="fetchAndRunAllTests()">▶️ Fetch & Run All Tests</button>
+        <button class="btn" onclick="clearResults()">🗑️ Clear Results</button>
+        <span style="margin-left: 20px; color: #666;">Fetches real WPT tests from live URLs</span>
+    </div>
+
+    <div id="summary" class="summary" style="display: none;">
+        <div class="summary-item">
+            <span class="summary-number" id="total-tests">0</span>
+            <span>Total Tests</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-number" id="passed-tests" style="color: #2ecc71;">0</span>
+            <span>Passed</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-number" id="failed-tests" style="color: #e74c3c;">0</span>
+            <span>Failed</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-number" id="skipped-tests" style="color: #f39c12;">0</span>
+            <span>Skipped</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-number" id="success-rate">0%</span>
+            <span>Success Rate</span>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <h3>🔄 Running Tests...</h3>
+        <p>Testing CSS overflow clip properties...</p>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            skipped: 0
+        };
+
+        // Test data based on WPT patterns for overflow clip
+        const clipTests = {
+            computed: [
+                { property: 'overflow', value: 'clip', expected: 'clip' },
+                { property: 'overflow-x', value: 'clip', expected: 'clip' },
+                { property: 'overflow-y', value: 'clip', expected: 'clip' },
+                { property: 'overflow', value: 'clip clip', expected: 'clip' },
+                { property: 'overflow', value: 'clip hidden', expected: 'clip hidden' },
+                { property: 'overflow', value: 'hidden clip', expected: 'hidden clip' },
+                { property: 'overflow', value: 'visible clip', expected: 'auto clip' },
+                { property: 'overflow', value: 'clip visible', expected: 'clip auto' },
+                { property: 'overflow', value: 'clip scroll', expected: 'clip scroll' },
+                { property: 'overflow', value: 'scroll clip', expected: 'scroll clip' },
+                { property: 'overflow', value: 'clip auto', expected: 'clip auto' },
+                { property: 'overflow', value: 'auto clip', expected: 'auto clip' }
+            ],
+            parsing: [
+                { property: 'overflow', value: 'clip', valid: true },
+                { property: 'overflow-x', value: 'clip', valid: true },
+                { property: 'overflow-y', value: 'clip', valid: true },
+                { property: 'overflow', value: 'clip clip', valid: true },
+                { property: 'overflow', value: 'clip hidden scroll', valid: false },
+                { property: 'overflow', value: 'clip-clip', valid: false },
+                { property: 'overflow', value: 'CLIP', valid: false },
+                { property: 'overflow', value: 'clip!', valid: false }
+            ],
+            shorthand: [
+                { 
+                    shorthand: 'overflow', 
+                    value: 'clip', 
+                    expectedLonghands: { 'overflow-x': 'clip', 'overflow-y': 'clip' } 
+                },
+                { 
+                    shorthand: 'overflow', 
+                    value: 'clip hidden', 
+                    expectedLonghands: { 'overflow-x': 'clip', 'overflow-y': 'hidden' } 
+                },
+                { 
+                    shorthand: 'overflow', 
+                    value: 'hidden clip', 
+                    expectedLonghands: { 'overflow-x': 'hidden', 'overflow-y': 'clip' } 
+                }
+            ]
+        };
+
+        function createElement() {
+            const div = document.createElement('div');
+            div.style.position = 'absolute';
+            div.style.left = '-9999px';
+            div.style.width = '100px';
+            div.style.height = '100px';
+            document.body.appendChild(div);
+            return div;
+        }
+
+        function runComputedValueTest(test) {
+            const element = createElement();
+            const testCase = {
+                title: `${test.property}: ${test.value}`,
+                property: test.property,
+                value: test.value,
+                expected: test.expected,
+                actual: null,
+                status: 'skip',
+                error: null
+            };
+
+            try {
+                // Set the CSS property
+                element.style.setProperty(test.property, test.value);
+                
+                // Get computed style
+                const computedStyle = getComputedStyle(element);
+                testCase.actual = computedStyle.getPropertyValue(test.property);
+                
+                // Check if it matches expected
+                if (testCase.actual === test.expected) {
+                    testCase.status = 'pass';
+                    testResults.passed++;
+                } else {
+                    testCase.status = 'fail';
+                    testResults.failed++;
+                }
+            } catch (error) {
+                testCase.status = 'fail';
+                testCase.error = error.message;
+                testResults.failed++;
+            } finally {
+                document.body.removeChild(element);
+                testResults.total++;
+            }
+
+            return testCase;
+        }
+
+        function runParsingTest(test) {
+            const element = createElement();
+            const testCase = {
+                title: `Parse ${test.property}: ${test.value}`,
+                property: test.property,
+                value: test.value,
+                expected: test.valid ? 'valid' : 'invalid',
+                actual: null,
+                status: 'skip',
+                error: null
+            };
+
+            try {
+                // Try to set the property
+                const initialValue = element.style.getPropertyValue(test.property);
+                element.style.setProperty(test.property, test.value);
+                const newValue = element.style.getPropertyValue(test.property);
+                
+                // If the value changed or was accepted, it's valid
+                const isValid = newValue !== '' && newValue !== initialValue;
+                testCase.actual = isValid ? 'valid' : 'invalid';
+                
+                if ((test.valid && isValid) || (!test.valid && !isValid)) {
+                    testCase.status = 'pass';
+                    testResults.passed++;
+                } else {
+                    testCase.status = 'fail';
+                    testResults.failed++;
+                }
+            } catch (error) {
+                testCase.status = 'fail';
+                testCase.error = error.message;
+                testResults.failed++;
+            } finally {
+                document.body.removeChild(element);
+                testResults.total++;
+            }
+
+            return testCase;
+        }
+
+        function runShorthandTest(test) {
+            const element = createElement();
+            const testCase = {
+                title: `Shorthand ${test.shorthand}: ${test.value}`,
+                property: test.shorthand,
+                value: test.value,
+                expected: JSON.stringify(test.expectedLonghands),
+                actual: null,
+                status: 'skip',
+                error: null,
+                longhands: {}
+            };
+
+            try {
+                // Set the shorthand property
+                element.style.setProperty(test.shorthand, test.value);
+                
+                // Get the longhand values
+                const computedStyle = getComputedStyle(element);
+                const actualLonghands = {};
+                
+                Object.keys(test.expectedLonghands).forEach(longhand => {
+                    actualLonghands[longhand] = computedStyle.getPropertyValue(longhand);
+                });
+                
+                testCase.actual = JSON.stringify(actualLonghands);
+                testCase.longhands = actualLonghands;
+                
+                // Check if all longhands match
+                const allMatch = Object.keys(test.expectedLonghands).every(longhand => 
+                    actualLonghands[longhand] === test.expectedLonghands[longhand]
+                );
+                
+                if (allMatch) {
+                    testCase.status = 'pass';
+                    testResults.passed++;
+                } else {
+                    testCase.status = 'fail';
+                    testResults.failed++;
+                }
+            } catch (error) {
+                testCase.status = 'fail';
+                testCase.error = error.message;
+                testResults.failed++;
+            } finally {
+                document.body.removeChild(element);
+                testResults.total++;
+            }
+
+            return testCase;
+        }
+
+        function renderTestCase(testCase) {
+            const isMatch = testCase.status === 'pass';
+            
+            return `
+                <div class="test-case ${testCase.status}">
+                    <div class="test-header">
+                        <div class="test-title">${testCase.title}</div>
+                        <div class="test-status ${testCase.status}">${testCase.status}</div>
+                    </div>
+                    
+                    <div class="test-details">
+                        <div class="test-property">
+                            <strong>Property:</strong> ${testCase.property}<br>
+                            <strong>Value:</strong> ${testCase.value}
+                        </div>
+                        
+                        ${testCase.status === 'fail' ? `
+                            <div class="expected-actual">
+                                <div class="expected">
+                                    <strong>Expected:</strong><br>
+                                    ${testCase.expected}
+                                </div>
+                                <div class="actual">
+                                    <strong>Actual:</strong><br>
+                                    ${testCase.actual || 'null'}
+                                </div>
+                            </div>
+                        ` : `
+                            <div class="test-property">
+                                <strong>Result:</strong> ${testCase.actual || testCase.expected}
+                            </div>
+                        `}
+                        
+                        ${testCase.longhands ? `
+                            <div class="test-property">
+                                <strong>Longhand Breakdown:</strong><br>
+                                ${Object.entries(testCase.longhands).map(([prop, val]) => 
+                                    `${prop}: ${val}`
+                                ).join('<br>')}
+                            </div>
+                        ` : ''}
+                        
+                        ${testCase.error ? `
+                            <div class="error-msg">
+                                <strong>Error:</strong> ${testCase.error}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTestSuite(suiteName, tests, description) {
+            const passed = tests.filter(t => t.status === 'pass').length;
+            const failed = tests.filter(t => t.status === 'fail').length;
+            const skipped = tests.filter(t => t.status === 'skip').length;
+            
+            return `
+                <div class="test-suite">
+                    <div class="suite-header">
+                        <div>
+                            <h3>${suiteName}</h3>
+                            <p style="margin: 5px 0; opacity: 0.9;">${description}</p>
+                        </div>
+                        <div class="suite-stats">
+                            <div class="stat">✅ ${passed} passed</div>
+                            <div class="stat">❌ ${failed} failed</div>
+                            <div class="stat">⏭️ ${skipped} skipped</div>
+                        </div>
+                    </div>
+                    ${tests.map(test => renderTestCase(test)).join('')}
+                </div>
+            `;
+        }
+
+        function updateSummary() {
+            document.getElementById('total-tests').textContent = testResults.total;
+            document.getElementById('passed-tests').textContent = testResults.passed;
+            document.getElementById('failed-tests').textContent = testResults.failed;
+            document.getElementById('skipped-tests').textContent = testResults.skipped;
+            
+            const successRate = testResults.total > 0 
+                ? Math.round((testResults.passed / testResults.total) * 100) 
+                : 0;
+            document.getElementById('success-rate').textContent = successRate + '%';
+            
+            document.getElementById('summary').style.display = 'block';
+        }
+
+        function runComputedTests() {
+            showLoading(true);
+            const results = clipTests.computed.map(test => runComputedValueTest(test));
+            
+            document.getElementById('results').innerHTML += renderTestSuite(
+                '📊 Computed Value Tests',
+                results,
+                'Testing getComputedStyle() results for overflow: clip properties'
+            );
+            
+            updateSummary();
+            showLoading(false);
+        }
+
+        function runParsingTests() {
+            showLoading(true);
+            const results = clipTests.parsing.map(test => runParsingTest(test));
+            
+            document.getElementById('results').innerHTML += renderTestSuite(
+                '✅ CSS Parsing Tests',
+                results,
+                'Testing whether overflow: clip values parse correctly'
+            );
+            
+            updateSummary();
+            showLoading(false);
+        }
+
+        function runShorthandTests() {
+            showLoading(true);
+            const results = clipTests.shorthand.map(test => runShorthandTest(test));
+            
+            document.getElementById('results').innerHTML += renderTestSuite(
+                '🔗 Shorthand Property Tests',
+                results,
+                'Testing overflow shorthand expansion to longhand properties'
+            );
+            
+            updateSummary();
+            showLoading(false);
+        }
+
+        function runAllTests() {
+            clearResults();
+            showLoading(true);
+            
+            setTimeout(() => {
+                runComputedTests();
+                runParsingTests();
+                runShorthandTests();
+                showLoading(false);
+            }, 100);
+        }
+
+        function clearResults() {
+            testResults = { total: 0, passed: 0, failed: 0, skipped: 0 };
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Auto-run tests on load
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html> 
