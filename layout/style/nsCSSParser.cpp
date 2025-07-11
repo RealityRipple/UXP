@@ -13,7 +13,7 @@
 
 #include <algorithm> // for std::stable_sort
 #include <limits> // for std::numeric_limits
-#include <cmath> // for std::floor
+#include <cmath> // for std::floor and std::abs
 
 #include "nsCSSParser.h"
 #include "nsAlgorithm.h"
@@ -4995,11 +4995,24 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
         break;
         
       case eCSSToken_Number:
-        if (needSpace) selectorText.Append(' ');
-        if (mToken.mNumber == floor(mToken.mNumber)) {
-          selectorText.AppendInt(int32_t(mToken.mNumber));
+        if (mToken.mHasSign && parenDepth > 0) {
+          if (mToken.mNumber >= 0) {
+            selectorText.Append('+');
+          } else {
+            selectorText.Append('-');
+          }
+          if (std::abs(mToken.mNumber) == floor(std::abs(mToken.mNumber))) {
+            selectorText.AppendInt(int32_t(std::abs(mToken.mNumber)));
+          } else {
+            selectorText.AppendFloat(std::abs(mToken.mNumber));
+          }
         } else {
-          selectorText.AppendFloat(mToken.mNumber);
+          if (needSpace) selectorText.Append(' ');
+          if (mToken.mNumber == floor(mToken.mNumber)) {
+            selectorText.AppendInt(int32_t(mToken.mNumber));
+          } else {
+            selectorText.AppendFloat(mToken.mNumber);
+          }
         }
         break;
         
