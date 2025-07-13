@@ -633,8 +633,7 @@ public:
     }
 
     // and overflow:hidden that we should interpret as clip
-    // Support per-axis hidden overflow: apply clipping if either axis is hidden
-    if (aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN ||
+    if (aDisp->mOverflowX == NS_STYLE_OVERFLOW_HIDDEN &&
         aDisp->mOverflowY == NS_STYLE_OVERFLOW_HIDDEN) {
       // REVIEW: these are the frame types that set up clipping.
       nsIAtom* type = aFrame->GetType();
@@ -643,9 +642,7 @@ public:
           type == nsGkAtoms::bcTableCellFrame ||
           type == nsGkAtoms::svgOuterSVGFrame ||
           type == nsGkAtoms::svgInnerSVGFrame ||
-          type == nsGkAtoms::svgForeignObjectFrame ||
-          type == nsGkAtoms::blockFrame ||
-          type == nsGkAtoms::inlineFrame) {
+          type == nsGkAtoms::svgForeignObjectFrame) {
         return true;
       }
       if (aFrame->IsFrameOfType(nsIFrame::eReplacedContainsBlock)) {

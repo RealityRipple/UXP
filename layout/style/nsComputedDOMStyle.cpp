@@ -4771,9 +4771,9 @@ nsComputedDOMStyle::DoGetOverflow()
     if (selfKw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip && otherKw != eCSSKeyword_visible) {
       selfKw = eCSSKeyword_hidden;
     }
-    // Map visible -> auto when paired with a non-visible/non-clip keyword
-    if (selfKw == eCSSKeyword_visible &&
-        (otherKw == eCSSKeyword_hidden || otherKw == eCSSKeyword_scroll || otherKw == eCSSKeyword_overlay || otherKw == eCSSKeyword_auto)) {
+    // Map visible -> auto only when paired with scroll (creates scroll container)
+    // visible should remain visible when paired with hidden or auto
+    if (selfKw == eCSSKeyword_visible && otherKw == eCSSKeyword_scroll) {
       selfKw = eCSSKeyword_auto;
     }
     return selfKw;
@@ -4805,12 +4805,11 @@ nsComputedDOMStyle::DoGetOverflowX()
   nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowSubKTable);
   nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowSubKTable);
 
-  // "Setting overflow to visible in one direction when it isn't set to visible or clip 
-  // in the other direction results in the visible value behaving as auto."
-  // "Setting overflow to clip in one direction when it isn't set to visible or clip 
-  // in the other direction results in the clip value behaving as hidden."
-  
-  if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+  // - If one axis is 'visible' and the other is 'scroll', 'visible' behaves as 'auto' (creates a scroll container).
+  // - If one axis is 'visible' and the other is 'hidden' or 'auto', 'visible' remains 'visible' (no scroll container, no clipping).
+  // - If one axis is 'clip' and the other is not 'visible' or 'clip', 'clip' behaves as 'hidden'.
+    
+  if (kw == eCSSKeyword_visible && otherKw == eCSSKeyword_scroll) {
     kw = eCSSKeyword_auto;
   }
   if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
@@ -4832,12 +4831,11 @@ nsComputedDOMStyle::DoGetOverflowY()
   nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowSubKTable);
   nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowSubKTable);
 
-  // "Setting overflow to visible in one direction when it isn't set to visible or clip 
-  // in the other direction results in the visible value behaving as auto."
-  // "Setting overflow to clip in one direction when it isn't set to visible or clip 
-  // in the other direction results in the clip value behaving as hidden."
-  
-  if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+  // - If one axis is 'visible' and the other is 'scroll', 'visible' behaves as 'auto' (creates a scroll container).
+  // - If one axis is 'visible' and the other is 'hidden' or 'auto', 'visible' remains 'visible' (no scroll container, no clipping).
+  // - If one axis is 'clip' and the other is not 'visible' or 'clip', 'clip' behaves as 'hidden'.
+    
+  if (kw == eCSSKeyword_visible && otherKw == eCSSKeyword_scroll) {
     kw = eCSSKeyword_auto;
   }
   if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
@@ -6838,79 +6836,4 @@ nsComputedDOMStyle::UnregisterPrefChangeCallbacks()
 #undef UNREGISTER_CALLBACK
 }
 
-already_AddRefed<CSSValue>
-nsComputedDOMStyle::DoGetOverflowBlock()
-{
-  RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
 
-  const nsStyleDisplay* display = StyleDisplay();
-  uint8_t writingMode = StyleVisibility()->mWritingMode;
-
-  // The block axis is vertical in horizontal-writing-mode documents and
-  // horizontal in vertical-writing-mode documents.  Choose the appropriate
-  // overflow axis accordingly.
-  const bool isVerticalWritingMode =
-    writingMode == NS_STYLE_WRITING_MODE_VERTICAL_LR ||
-    writingMode == NS_STYLE_WRITING_MODE_VERTICAL_RL ||
-    writingMode == NS_STYLE_WRITING_MODE_SIDEWAYS_LR ||
-    writingMode == NS_STYLE_WRITING_MODE_SIDEWAYS_RL;
-
-  int32_t selfEnum  = isVerticalWritingMode ? display->mOverflowX
-                                            : display->mOverflowY;
-  int32_t otherEnum = isVerticalWritingMode ? display->mOverflowY
-                                            : display->mOverflowX;
-
-  nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum,
-                                                   nsCSSProps::kOverflowSubKTable);
-  nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum,
-                                                        nsCSSProps::kOverflowSubKTable);
-
-  // Apply the same computed-value adjustments used for overflow-x/overflow-y.
-  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip &&
-      otherKw != eCSSKeyword_visible) {
-    kw = eCSSKeyword_hidden;
-  } else if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
-    kw = eCSSKeyword_auto;
-  }
-
-  val->SetIdent(kw);
-  return val.forget();
-}
-
-already_AddRefed<CSSValue>
-nsComputedDOMStyle::DoGetOverflowInline()
-{
-  RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-
-  const nsStyleDisplay* display = StyleDisplay();
-  uint8_t writingMode = StyleVisibility()->mWritingMode;
-
-  // The inline axis is horizontal in horizontal writing modes and vertical
-  // in vertical writing modes.
-  const bool isVerticalWritingMode =
-    writingMode == NS_STYLE_WRITING_MODE_VERTICAL_LR ||
-    writingMode == NS_STYLE_WRITING_MODE_VERTICAL_RL ||
-    writingMode == NS_STYLE_WRITING_MODE_SIDEWAYS_LR ||
-    writingMode == NS_STYLE_WRITING_MODE_SIDEWAYS_RL;
-
-  int32_t selfEnum  = isVerticalWritingMode ? display->mOverflowY
-                                             : display->mOverflowX;
-  int32_t otherEnum = isVerticalWritingMode ? display->mOverflowX
-                                             : display->mOverflowY;
-
-  nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum,
-                                                    nsCSSProps::kOverflowSubKTable);
-  nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum,
-                                                         nsCSSProps::kOverflowSubKTable);
-
-  // Apply the same computed-value adjustments used for overflow-x/overflow-y.
-  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip &&
-      otherKw != eCSSKeyword_visible) {
-    kw = eCSSKeyword_hidden;
-  } else if (kw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
-    kw = eCSSKeyword_auto;
-  }
-
-  val->SetIdent(kw);
-  return val.forget();
-}

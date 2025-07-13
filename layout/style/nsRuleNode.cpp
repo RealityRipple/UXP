@@ -6402,27 +6402,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
            parentDisplay->mOverflowY,
            NS_STYLE_OVERFLOW_VISIBLE);
 
-  // overflow-inline: enum, inherit, initial
-  // For simplicity, map overflow-inline to overflow-x for now (horizontal writing mode assumption)
-  const nsCSSValue* overflowInlineValue = aRuleData->ValueForOverflowInline();
-  if (overflowInlineValue->GetUnit() != eCSSUnit_Null) {
-    SetValue(*overflowInlineValue,
-             display->mOverflowX, conditions,
-             SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
-             parentDisplay->mOverflowX,
-             NS_STYLE_OVERFLOW_VISIBLE);
-  }
 
-  // overflow-block: enum, inherit, initial
-  // For simplicity, map overflow-block to overflow-y for now (horizontal writing mode assumption)
-  const nsCSSValue* overflowBlockValue = aRuleData->ValueForOverflowBlock();
-  if (overflowBlockValue->GetUnit() != eCSSUnit_Null) {
-    SetValue(*overflowBlockValue,
-             display->mOverflowY, conditions,
-             SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
-             parentDisplay->mOverflowY,
-             NS_STYLE_OVERFLOW_VISIBLE);
-  }
 
  
   // "Setting overflow to visible in one direction when it isn't set to visible or clip
@@ -6432,15 +6412,14 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
   if (display->mOverflowX != display->mOverflowY) {
     conditions.SetUncacheable();
 
-    // Convert visible->auto when paired with non-visible, non-clip values
+    // Convert visible->auto only when paired with scroll (creates scroll container)
+    // visible should remain visible when paired with hidden or auto
     if (display->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE &&
-        display->mOverflowY != NS_STYLE_OVERFLOW_VISIBLE &&
-        display->mOverflowY != NS_STYLE_OVERFLOW_CLIP) {
+        display->mOverflowY == NS_STYLE_OVERFLOW_SCROLL) {
       display->mOverflowX = NS_STYLE_OVERFLOW_AUTO;
     }
     if (display->mOverflowY == NS_STYLE_OVERFLOW_VISIBLE &&
-        display->mOverflowX != NS_STYLE_OVERFLOW_VISIBLE &&
-        display->mOverflowX != NS_STYLE_OVERFLOW_CLIP) {
+        display->mOverflowX == NS_STYLE_OVERFLOW_SCROLL) {
       display->mOverflowY = NS_STYLE_OVERFLOW_AUTO;
     }
 
