@@ -4745,51 +4745,38 @@ nsComputedDOMStyle::DoGetWillChange()
   return valueList.forget();
 }
 
+// Helper for overflow computed value remapping according to CSS Overflow-3 spec.
+static nsCSSKeyword ComputeOverflowKeyword(int32_t selfEnum, int32_t otherEnum, const KTableEntry* table) {
+  nsCSSKeyword selfKw = nsCSSProps::ValueToKeywordEnum(selfEnum, table);
+  nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, table);
+  // The visible/clip values of overflow compute to auto/hidden (respectively)
+  // if one of overflow-x or overflow-y is neither visible nor clip.
+  if (selfKw == eCSSKeyword_visible && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+    selfKw = eCSSKeyword_auto;
+  }
+  if (selfKw == eCSSKeyword_clip && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
+    selfKw = eCSSKeyword_hidden;
+  }
+  return selfKw;
+}
+
 already_AddRefed<CSSValue>
 nsComputedDOMStyle::DoGetOverflow()
 {
   const nsStyleDisplay* display = StyleDisplay();
 
-  if (display->mOverflowX == display->mOverflowY) {
-    RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-    nsCSSKeyword overflowKeyword = nsCSSProps::ValueToKeywordEnum(display->mOverflowX,
-                                                                  nsCSSProps::kOverflowKTable);
-    // If both axes share the same overflow value, serialize that value
-    // directly.  We no longer remap 'clip' to 'hidden' here—keeping the
-    // original value is required for spec-compliant computed style
-    // serialization (see CSS Overflow-3 §3.1).
-    val->SetIdent(overflowKeyword);
-    return val.forget();
-  }
+  nsCSSKeyword xKeyword = ComputeOverflowKeyword(display->mOverflowX, display->mOverflowY, nsCSSProps::kOverflowKTable);
+  nsCSSKeyword yKeyword = ComputeOverflowKeyword(display->mOverflowY, display->mOverflowX, nsCSSProps::kOverflowKTable);
 
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  nsAutoString result;
-  
-  auto MapOverflow = [](int32_t selfEnum, int32_t otherEnum)->nsCSSKeyword {
-    nsCSSKeyword selfKw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowKTable);
-    nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowKTable);
-    if (selfKw == eCSSKeyword_clip && otherKw != eCSSKeyword_clip && otherKw != eCSSKeyword_visible) {
-      selfKw = eCSSKeyword_hidden;
-    }
-    // Map visible -> auto only when paired with scroll (creates scroll container)
-    // visible should remain visible when paired with hidden or auto
-    if (selfKw == eCSSKeyword_visible && otherKw == eCSSKeyword_scroll) {
-      selfKw = eCSSKeyword_auto;
-    }
-    return selfKw;
-  };
-  nsCSSKeyword xKeyword = MapOverflow(display->mOverflowX, display->mOverflowY);
-  nsCSSKeyword yKeyword = MapOverflow(display->mOverflowY, display->mOverflowX);
-  
   if (xKeyword == yKeyword) {
     val->SetIdent(xKeyword);
     return val.forget();
   }
-  
+  nsAutoString result;
   result.AppendASCII(nsCSSKeywords::GetStringValue(xKeyword).get());
   result.Append(char16_t(' '));
   result.AppendASCII(nsCSSKeywords::GetStringValue(yKeyword).get());
-  
   val->SetString(result);
   return val.forget();
 }
@@ -4799,23 +4786,7 @@ nsComputedDOMStyle::DoGetOverflowX()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
   const nsStyleDisplay* display = StyleDisplay();
-  int32_t selfEnum = display->mOverflowX;
-  int32_t otherEnum = display->mOverflowY;
-
-  nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowSubKTable);
-  nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowSubKTable);
-
-  // - If one axis is 'visible' and the other is 'scroll', 'visible' behaves as 'auto' (creates a scroll container).
-  // - If one axis is 'visible' and the other is 'hidden' or 'auto', 'visible' remains 'visible' (no scroll container, no clipping).
-  // - If one axis is 'clip' and the other is not 'visible' or 'clip', 'clip' behaves as 'hidden'.
-    
-  if (kw == eCSSKeyword_visible && otherKw == eCSSKeyword_scroll) {
-    kw = eCSSKeyword_auto;
-  }
-  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
-    kw = eCSSKeyword_hidden;
-  }
-
+  nsCSSKeyword kw = ComputeOverflowKeyword(display->mOverflowX, display->mOverflowY, nsCSSProps::kOverflowSubKTable);
   val->SetIdent(kw);
   return val.forget();
 }
@@ -4825,23 +4796,7 @@ nsComputedDOMStyle::DoGetOverflowY()
 {
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
   const nsStyleDisplay* display = StyleDisplay();
-  int32_t selfEnum = display->mOverflowY;
-  int32_t otherEnum = display->mOverflowX;
-
-  nsCSSKeyword kw = nsCSSProps::ValueToKeywordEnum(selfEnum, nsCSSProps::kOverflowSubKTable);
-  nsCSSKeyword otherKw = nsCSSProps::ValueToKeywordEnum(otherEnum, nsCSSProps::kOverflowSubKTable);
-
-  // - If one axis is 'visible' and the other is 'scroll', 'visible' behaves as 'auto' (creates a scroll container).
-  // - If one axis is 'visible' and the other is 'hidden' or 'auto', 'visible' remains 'visible' (no scroll container, no clipping).
-  // - If one axis is 'clip' and the other is not 'visible' or 'clip', 'clip' behaves as 'hidden'.
-    
-  if (kw == eCSSKeyword_visible && otherKw == eCSSKeyword_scroll) {
-    kw = eCSSKeyword_auto;
-  }
-  if (kw == eCSSKeyword_clip && otherKw != eCSSKeyword_visible && otherKw != eCSSKeyword_clip) {
-    kw = eCSSKeyword_hidden;
-  }
-
+  nsCSSKeyword kw = ComputeOverflowKeyword(display->mOverflowY, display->mOverflowX, nsCSSProps::kOverflowSubKTable);
   val->SetIdent(kw);
   return val.forget();
 }
