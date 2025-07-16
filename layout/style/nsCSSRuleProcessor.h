@@ -28,7 +28,7 @@ struct ElementDependentRuleProcessorData;
 struct nsCSSSelector;
 struct nsCSSSelectorList;
 struct nsFontFaceRuleContainer;
-struct RuleCascadeData;
+struct ResolvedRuleCascades;
 struct TreeMatchContext;
 class nsCSSKeyframesRule;
 class nsCSSPageRule;
@@ -230,7 +230,7 @@ private:
   static bool CascadeSheet(mozilla::CSSStyleSheet* aSheet,
                            CascadeEnumData* aData);
 
-  RuleCascadeData* GetRuleCascade(nsPresContext* aPresContext);
+  ResolvedRuleCascades* GetRuleCascade(nsPresContext* aPresContext);
   void RefreshRuleCascade(nsPresContext* aPresContext);
 
   nsRestyleHint HasStateDependentStyle(ElementDependentRuleProcessorData* aData,
@@ -244,7 +244,7 @@ private:
   sheet_array_type mSheets;
 
   // active first, then cached (most recent first)
-  RuleCascadeData* mRuleCascades;
+  ResolvedRuleCascades* mRuleCascades;
 
   // If we cleared our mRuleCascades or replaced a previous rule
   // processor, this is the media query result cache key that was used
@@ -270,8 +270,8 @@ private:
   const bool mIsShared;
 
   // Whether we need to build up mDocumentCacheKey and mDocumentRules as
-  // we build a RuleCascadeData.  Is true only for shared rule processors
-  // and only before we build the first RuleCascadeData.  See comment in
+  // we build ResolvedRuleCascades.  Is true only for shared rule processors
+  // and only before we build the first ResolvedRuleCascades.  See comment in
   // RefreshRuleCascade for why.
   bool mMustGatherDocumentRules;
 
