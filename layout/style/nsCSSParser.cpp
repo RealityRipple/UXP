@@ -5072,29 +5072,23 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
     return true;
   }
 
-  nsCSSScanner tempScanner(selectorText, 0);
-  css::ErrorReporter tempReporter(tempScanner, mSheet, mChildLoader, mSheetURI);
+  // isolate parser instance to avoid state corruption
+  CSSParserImpl tempParser;
+  tempParser.SetStyleSheet(mSheet);
+  tempParser.SetChildLoader(mChildLoader);
   
-  nsCSSScanner* savedScanner = mScanner;
-  css::ErrorReporter* savedReporter = mReporter;
-  
-  mScanner = &tempScanner;
-  mReporter = &tempReporter;
-  
-  nsCSSSelectorList* selectorList = nullptr;
+  // check support
   SelectorParsingFlags flags = SelectorParsingFlags::eNone;
-  bool parseSuccess = ParseSelectorGroup(selectorList, flags);
-  
-  mScanner = savedScanner;
-  mReporter = savedReporter;
-  
-  if (parseSuccess && selectorList) {
-    aConditionMet = true;
+  nsCSSSelectorList* selectorList = nullptr;
+  bool supportSuccess = tempParser.ParseSelectorString(selectorText, mSheetURI, 0, &selectorList) == NS_OK;
+
+  // clean up
+  if (selectorList) {
     delete selectorList;
-  } else {
-    aConditionMet = false;
   }
-  
+
+
+  aConditionMet = supportSuccess;
   return true;
 }
 
