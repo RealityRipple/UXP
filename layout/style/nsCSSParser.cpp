@@ -12,8 +12,9 @@
 #include "mozilla/TypedEnumBits.h"
 
 #include <algorithm> // for std::stable_sort
-#include <limits> // for std::numeric_limits
-#include <cmath> // for std::floor and std::abs
+#include <limits>    // for std::numeric_limits
+#include <cmath>     // for std::floor and std::abs
+#include <regex>     // for std::regex and std::regex_match
 
 #include "nsCSSParser.h"
 #include "nsAlgorithm.h"
@@ -4893,21 +4894,22 @@ AppendSelectorToken(const nsCSSToken& aToken,
     } else {
       // normal case: standard spacing rules (add space before 
       // identifiers/classes if last char is alphanumeric)
-      if ((aToken.mType == eCSSToken_Ident || aToken.mType == eCSSToken_Symbol) && 
-          lastChar != ' ' && lastChar != ':' && lastChar != '.' && lastChar != '#' && 
-          lastChar != '[' && lastChar != '(' && lastChar != '>' && lastChar != '+' && 
-          lastChar != '~' && lastChar != ',') {
-
-        // special case: if it follows an identifier, add space before '.' 
-        if (aToken.mType == eCSSToken_Symbol && aToken.mSymbol == '.' && 
-            ((lastChar >= 'a' && lastChar <= 'z') || (lastChar >= 'A' && lastChar <= 'Z'))) {
-          needSpace = true;
+      if ((aToken.mType == eCSSToken_Ident || aToken.mType == eCSSToken_Symbol) &&
+        std::string(" :.#[(>+~," ).find(lastChar) == std::string::npos) {
+  
+        static const std::regex letter_regex("[a-zA-Z]");
+        static const std::regex ident_regex("[a-zA-Z0-9)]");
+        std::string lastCharStr(1, lastChar);
+  
+        // special case: if it follows an identifier, add space before '.'
+        if (aToken.mType == eCSSToken_Symbol && aToken.mSymbol == '.' &&
+            std::regex_match(lastCharStr, letter_regex)) {
+            needSpace = true;
         }
         // add space between consecutive identifiers
-        else if (aToken.mType == eCSSToken_Ident && 
-                 ((lastChar >= 'a' && lastChar <= 'z') || (lastChar >= 'A' && lastChar <= 'Z') || 
-                  (lastChar >= '0' && lastChar <= '9') || lastChar == ')')) {
-          needSpace = true;
+        else if (aToken.mType == eCSSToken_Ident &&
+                std::regex_match(lastCharStr, ident_regex)) {
+            needSpace = true;
         }
       }
     }
@@ -5030,8 +5032,9 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
   bool hasContent = false;
   int32_t parenDepth = 0;
   
-  // fail unexpected EOF
+
   while (true) { 
+    // fail unexpected EOF
     if (!GetToken(true)) {
       return false; 
     }
@@ -5078,7 +5081,7 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
       if (parenDepth > 0) {
         parenDepth--;
       }
-      // top-level comma found
+    // top-level comma found
     } else if (c == ',' && parenDepth == 0) { 
       aConditionMet = false;
       return true;
