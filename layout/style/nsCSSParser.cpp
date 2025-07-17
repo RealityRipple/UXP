@@ -5081,8 +5081,8 @@ CSSParserImpl::ParseSupportsSelector(bool& aConditionMet)
       if (parenDepth > 0) {
         parenDepth--;
       }
-    // top-level comma found
     } else if (c == ',' && parenDepth == 0) { 
+      // top-level comma found
       aConditionMet = false;
       return true;
     }
