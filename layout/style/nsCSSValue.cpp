@@ -1731,6 +1731,28 @@ nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
     }
     serializable.AppendToString(aProperty, aResult, aSerialization);
   }
+  else if (eCSSUnit_ColorMix == unit) {
+    const ColorMixValue* colorMix = GetColorMixValue();
+    aResult.AppendLiteral("color-mix(in ");
+    
+    // append color space
+    switch (colorMix->mColorSpace) {
+      case eColorMixColorSpace_sRGB:
+        aResult.AppendLiteral("srgb");
+        break;
+      case eColorMixColorSpace_HSL:
+        aResult.AppendLiteral("hsl");
+        break;
+    }
+    
+    // append color1 and color2
+    aResult.AppendLiteral(", ");
+    colorMix->mColor1.AppendToString(aProperty, aResult, aSerialization);
+    aResult.AppendLiteral(", ");
+    colorMix->mColor2.AppendToString(aProperty, aResult, aSerialization);
+    
+    aResult.Append(')');
+  }
   else if (eCSSUnit_URL == unit || eCSSUnit_Image == unit) {
     aResult.AppendLiteral("url(");
     nsStyleUtil::AppendEscapedCSSString(
