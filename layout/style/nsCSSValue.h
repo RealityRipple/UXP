@@ -804,7 +804,7 @@ public:
     MOZ_ASSERT(mUnit == eCSSUnit_ComplexColor);
     return mValue.mComplexColor->ToComplexColor();
   }
-
+  
   Array* GetArrayValue() const
   {
     MOZ_ASSERT(UnitHasArrayValue(), "not an array value");
