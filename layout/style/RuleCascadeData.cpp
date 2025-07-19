@@ -786,7 +786,7 @@ AtomSelector_CIMatchEntry(const PLDHashEntryHdr* hdr, const void* key)
   AtomSelector_InitEntry
 };
 
-RuleCascadeData::RuleCascadeData(nsIAtom* aMedium, bool aQuirksMode)
+RuleCascadeData::RuleCascadeData(bool aQuirksMode)
   : mRuleHash(aQuirksMode)
   , mStateSelectors()
   , mSelectorDocumentStates(0)
@@ -803,7 +803,6 @@ RuleCascadeData::RuleCascadeData(nsIAtom* aMedium, bool aQuirksMode)
   , mXULTreeRules(&RuleHash::TagTable_Ops, sizeof(RuleHashTagTableEntry))
   , mKeyframesRuleTable()
   , mCounterStyleRuleTable()
-  , mCacheKey(aMedium)
   , mQuirksMode(aQuirksMode)
 {
   memset(mPseudoElementRuleHashes, 0, sizeof(mPseudoElementRuleHashes));
@@ -1555,7 +1554,8 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
                                  nsTArray<css::DocumentRule*>& aDocumentRules,
                                  nsDocumentRuleResultCacheKey& aDocumentKey,
                                  SheetType aSheetType,
-                                 bool aMustGatherDocumentRules)
+                                 bool aMustGatherDocumentRules,
+                                 nsMediaQueryResultCacheKey& aCacheKey)
   : mPresContext(aPresContext)
   , mName(aName)
   , mIsAnonymous(mName.IsEmpty())
@@ -1571,6 +1571,7 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
   , mSheetType(aSheetType)
   , mMustGatherDocumentRules(aMustGatherDocumentRules)
   , mRulesByWeight(&sRulesByWeightOps, sizeof(RuleByWeightEntry), 32)
+  , mCacheKey(aCacheKey)
 {
   Initialize();
 }
@@ -1580,7 +1581,8 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
                                  nsTArray<css::DocumentRule*>& aDocumentRules,
                                  nsDocumentRuleResultCacheKey& aDocumentKey,
                                  SheetType aSheetType,
-                                 bool aMustGatherDocumentRules)
+                                 bool aMustGatherDocumentRules,
+                                 nsMediaQueryResultCacheKey& aCacheKey)
   : mPresContext(aPresContext)
   , mContainer(aContainer)
   , mIsAnonymous(false)
@@ -1595,6 +1597,7 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
   , mSheetType(aSheetType)
   , mMustGatherDocumentRules(aMustGatherDocumentRules)
   , mRulesByWeight(&sRulesByWeightOps, sizeof(RuleByWeightEntry), 32)
+  , mCacheKey(aCacheKey)
 {
   Initialize();
 }
@@ -1626,7 +1629,8 @@ CascadeEnumData::CreateNamedChildLayer(const nsTArray<nsString>& aPath)
                                      mDocumentRules,
                                      mDocumentCacheKey,
                                      mSheetType,
-                                     mMustGatherDocumentRules);
+                                     mMustGatherDocumentRules,
+                                     mCacheKey);
     mPreLayers.AppendElement(childLayer);
     mLayers.Put(name, childLayer);
   }
@@ -1656,7 +1660,8 @@ CascadeEnumData::CreateAnonymousChildLayer()
                                                     mDocumentRules,
                                                     mDocumentCacheKey,
                                                     mSheetType,
-                                                    mMustGatherDocumentRules);
+                                                    mMustGatherDocumentRules,
+                                                    mCacheKey);
   mPreLayers.AppendElement(childLayer);
   return childLayer;
 }
@@ -1769,8 +1774,7 @@ CascadeEnumData::Flatten()
 void
 CascadeEnumData::Initialize()
 {
-  mData = new RuleCascadeData(mPresContext->Medium(),
-                              eCompatibility_NavQuirks ==
+  mData = new RuleCascadeData(eCompatibility_NavQuirks ==
                                 mPresContext->CompatibilityMode());
 
   // Initialize our arena

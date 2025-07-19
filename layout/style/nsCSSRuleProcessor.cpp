@@ -333,7 +333,7 @@ nsCSSRuleProcessor::MediumFeaturesChanged(nsPresContext* aPresContext)
     // order hasn't changed).  Other cases will do a restyle anyway, so
     // we shouldn't need to worry about posting a second.
     return !mRuleCascades || // all sheets gone, but we had sheets before
-           mRuleCascades->mUnlayered->mCacheKey != *previousCacheKey;
+           mRuleCascades->mCacheKey != *previousCacheKey;
   }
 
   return false;
@@ -359,11 +359,11 @@ nsCSSRuleProcessor::CloneMQCacheKey()
     return UniquePtr<nsMediaQueryResultCacheKey>();
   }
 
-  if (!c->mUnlayered->mCacheKey.HasFeatureConditions()) {
+  if (!c->mCacheKey.HasFeatureConditions()) {
     return UniquePtr<nsMediaQueryResultCacheKey>();
   }
 
-  return MakeUnique<nsMediaQueryResultCacheKey>(c->mUnlayered->mCacheKey);
+  return MakeUnique<nsMediaQueryResultCacheKey>(c->mCacheKey);
 }
 
 /* virtual */ size_t
@@ -606,7 +606,7 @@ CascadeRuleEnumFunc(css::Rule* aRule, void* aData)
              css::Rule::SUPPORTS_RULE == type) {
     css::GroupRule* groupRule = static_cast<css::GroupRule*>(aRule);
     const bool use = groupRule->UseForPresentation(layer->mPresContext,
-                                                   layer->mData->mCacheKey);
+                                                   layer->mCacheKey);
     if (use || layer->mMustGatherDocumentRules) {
       if (!groupRule->EnumerateRulesForwards(
             use ? CascadeRuleEnumFunc : GatherDocRuleEnumFunc, aData)) {
@@ -631,7 +631,7 @@ CascadeRuleEnumFunc(css::Rule* aRule, void* aData)
                                      ? layer->CreateAnonymousChildLayer()
                                      : layer->CreateNamedChildLayer(path);
     const bool use = layerRule->UseForPresentation(layer->mPresContext,
-                                                   layer->mData->mCacheKey);
+                                                   layer->mCacheKey);
     if (use || layer->mMustGatherDocumentRules) {
       if (!layerRule->EnumerateRulesForwards(
             use ? CascadeRuleEnumFunc : GatherDocRuleEnumFunc, targetLayer)) {
@@ -696,7 +696,7 @@ nsCSSRuleProcessor::CascadeSheet(CSSStyleSheet* aSheet, CascadeEnumData* aLayer)
 {
   if (aSheet->IsApplicable() &&
       aSheet->UseForPresentation(aLayer->mPresContext,
-                                 aLayer->mData->mCacheKey) &&
+                                 aLayer->mCacheKey) &&
       aSheet->mInner) {
     CSSStyleSheet* child = aSheet->mInner->mFirstChild;
     while (child) {
@@ -742,7 +742,7 @@ nsCSSRuleProcessor::RefreshRuleCascade(nsPresContext* aPresContext)
   for (ResolvedRuleCascades** cascadep = &mRuleCascades, *cascade;
         (cascade = *cascadep);
         cascadep = &cascade->mNext) {
-    if (cascade->mUnlayered->mCacheKey.Matches(aPresContext)) {
+    if (cascade->mCacheKey.Matches(aPresContext)) {
       // Ensure that the current one is always mRuleCascades.
       *cascadep = cascade->mNext;
       cascade->mNext = mRuleCascades;
@@ -758,14 +758,15 @@ nsCSSRuleProcessor::RefreshRuleCascade(nsPresContext* aPresContext)
   mPreviousCacheKey = nullptr;
 
   if (mSheets.Length() != 0) {
-    nsAutoPtr<ResolvedRuleCascades> resolvedCascade =
-      new ResolvedRuleCascades();
+    nsAutoPtr<ResolvedRuleCascades> resolvedCascade(
+      new ResolvedRuleCascades(aPresContext->Medium()));
     CascadeEnumData unlayered(aPresContext,
                               resolvedCascade,
                               mDocumentRules,
                               mDocumentCacheKey,
                               mSheetType,
-                              mMustGatherDocumentRules);
+                              mMustGatherDocumentRules,
+                              resolvedCascade->mCacheKey);
     if (unlayered.mData) {
       for (uint32_t i = 0; i < mSheets.Length(); ++i) {
         if (!CascadeSheet(mSheets.ElementAt(i), &unlayered)) {
