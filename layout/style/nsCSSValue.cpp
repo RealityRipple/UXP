@@ -1737,10 +1737,10 @@ nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
     
     // append color space
     switch (colorMix->mColorSpace) {
-      case eColorMixColorSpace_sRGB:
+      case mozilla::css::ColorMixColorSpace::sRGB:
         aResult.AppendLiteral("srgb");
         break;
-      case eColorMixColorSpace_HSL:
+      case mozilla::css::ColorMixColorSpace::HSL:
         aResult.AppendLiteral("hsl");
         break;
     }
