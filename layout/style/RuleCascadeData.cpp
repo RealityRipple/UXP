@@ -1566,7 +1566,7 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
   , mName(aName)
   , mIsAnonymous(mName.IsEmpty())
   , mIsWeak(aIsWeak)
-  , mWasFlattened(false)
+  , mRulesAdded(false)
 #ifdef DEBUG
   , mParent(aParent)
   , mIsRoot(false)
@@ -1590,7 +1590,7 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
   : mPresContext(aPresContext)
   , mIsAnonymous(false)
   , mIsWeak(false)
-  , mWasFlattened(false)
+  , mRulesAdded(false)
 #ifdef DEBUG
   , mParent(nullptr)
   , mIsRoot(true)
@@ -1679,6 +1679,8 @@ CompareWeightData(const void* aArg1, const void* aArg2, void* closure)
 void
 CascadeEnumData::AddRules()
 {
+  MOZ_ASSERT(!mRulesAdded, "Rule cascade data already filled");
+
   for (css::StyleRule* styleRule : mStyleRules) {
     for (nsCSSSelectorList* sel = styleRule->Selector(); sel;
          sel = sel->mNext) {
@@ -1746,15 +1748,13 @@ CascadeEnumData::AddRules()
     nsCSSCounterStyleRule* rule = mData->mCounterStyleRules[i];
     mData->mCounterStyleRuleTable.Put(rule->GetName(), rule);
   }
+
+  mRulesAdded = true;
 }
 
 void
 CascadeEnumData::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
 {
-  if (mWasFlattened) {
-    return;
-  }
-
   if (mPreLayers.Length() > 0) {
     for (CascadeEnumData* pre : mPreLayers) {
       pre->EnumerateAllLayers(aFunc, aData);
@@ -1768,8 +1768,6 @@ CascadeEnumData::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
       post->EnumerateAllLayers(aFunc, aData);
     }
   }
-
-  mWasFlattened = true;
 }
 
 void
