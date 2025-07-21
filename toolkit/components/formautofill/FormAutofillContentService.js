@@ -11,6 +11,8 @@
 
 "use strict";
 
+console.log('🔍 AUTOFILL: FormAutofillContentService.js loaded');
+
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
@@ -130,7 +132,9 @@ FormHandler.prototype = {
       return "cancel";
     }
 
+    console.log('🔍 AUTOFILL: About to call autofillFormFields with result:', result);
     this.autofillFormFields(result);
+    console.log('🔍 AUTOFILL: autofillFormFields completed');
 
     return "success";
   }),
@@ -226,22 +230,38 @@ FormHandler.prototype = {
    *        }
    */
   autofillFormFields: function (aAutofillResult) {
+    console.log('🔍 AUTOFILL: autofillFormFields called with', aAutofillResult);
+    
     for (let field of aAutofillResult.fields) {
+      console.log('🔍 AUTOFILL: Processing field', field);
+      
       // Get the field details, if it was processed by the user interface.
       let fieldDetail = this.fieldDetails
                             .find(f => f.section == field.section &&
                                        f.addressType == field.addressType &&
                                        f.contactType == field.contactType &&
                                        f.fieldName == field.fieldName);
+      
+      console.log('🔍 AUTOFILL: Found fieldDetail?', !!fieldDetail, fieldDetail);
+      
       if (!fieldDetail) {
+        console.log('🔍 AUTOFILL: No fieldDetail found, skipping');
         continue;
       }
 
+      console.log('🔍 AUTOFILL: Setting value on element', fieldDetail.element);
       fieldDetail.element.value = field.value;
       
       // Set the autofilled state on the element
+      console.log('🔍 AUTOFILL: Checking if setAutofilled exists on element');
+      console.log('🔍 AUTOFILL: setAutofilled type:', typeof fieldDetail.element.setAutofilled);
+      
       if (typeof fieldDetail.element.setAutofilled === 'function') {
+        console.log('🔍 AUTOFILL: Calling setAutofilled(true) on element');
         fieldDetail.element.setAutofilled(true);
+        console.log('🔍 AUTOFILL: setAutofilled(true) called successfully');
+      } else {
+        console.log('🔍 AUTOFILL: setAutofilled is not a function on this element');
       }
     }
   },

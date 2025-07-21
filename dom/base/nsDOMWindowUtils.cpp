@@ -4061,3 +4061,27 @@ nsTranslationNodeList::GetLength(uint32_t* aRetVal)
   *aRetVal = mLength;
   return NS_OK;
 }
+
+NS_IMETHODIMP
+nsDOMWindowUtils::AddElementEventState(nsIDOMElement* aElement, uint64_t aState)
+{
+  NS_ENSURE_ARG_POINTER(aElement);
+  nsCOMPtr<nsIContent> content = do_QueryInterface(aElement);
+  if (!content) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  content->AddStates(mozilla::EventStates(aState));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::RemoveElementEventState(nsIDOMElement* aElement, uint64_t aState)
+{
+  NS_ENSURE_ARG_POINTER(aElement);
+  nsCOMPtr<nsIContent> content = do_QueryInterface(aElement);
+  if (!content) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  content->RemoveStates(mozilla::EventStates(aState));
+  return NS_OK;
+}
