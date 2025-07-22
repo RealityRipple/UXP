@@ -31,6 +31,19 @@ function FormHandler(aForm, aWindow) {
   this.window = aWindow;
 
   this.fieldDetails = [];
+
+  // Add a reset event listener to clear autofill state
+  this.form.addEventListener("reset", () => {
+    console.log('Form reset detected, clearing autofill state');
+    for (let element of this.form.elements) {
+      if (typeof element.setAutofilled === "function") {
+        element.setAutofilled(false);
+        console.log('setAutofilled(false) called on', element);
+      }
+    }
+    // Optionally, clear fieldDetails if you want to force re-collection
+    // this.fieldDetails = [];
+  });
 }
 
 FormHandler.prototype = {

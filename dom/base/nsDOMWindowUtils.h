@@ -63,8 +63,6 @@ public:
   explicit nsDOMWindowUtils(nsGlobalWindow *aWindow);
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMWINDOWUTILS
-  NS_IMETHOD AddElementEventState(nsIDOMElement* aElement, uint64_t aState) override;
-  NS_IMETHOD RemoveElementEventState(nsIDOMElement* aElement, uint64_t aState) override;
 
 protected:
   ~nsDOMWindowUtils();
