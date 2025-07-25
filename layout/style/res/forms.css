@@ -82,24 +82,8 @@ label {
 /* Note: Values in nsNativeTheme IsWidgetStyled function
    need to match textfield background/border values here */
 
-/* Autofill persistent highlight styles */
-input:-moz-autofill {
-  background-color: #FFEB3B !important;
-  background-image: none !important;
-  color: fieldtext !important;
-}
-
-input:-moz-autofill:hover,
-input:-moz-autofill:focus,
-input:-moz-autofill:active {
-  background-color: #FFEB3B !important;
-  background-image: none !important;
-  color: fieldtext !important;
-}
-
 input {
   -moz-appearance: textfield;
-  appearance: textfield;
   /* The sum of border and padding on block-start and block-end
      must be the same here, for buttons, and for <select> (including its
      internal padding magic) */
@@ -107,22 +91,6 @@ input {
   border: 2px inset ThreeDLightShadow;
   background-color: -moz-Field;
   color: -moz-FieldText;
-}
-
-/* Autofill styles - make highlighting persist */
-input:-moz-autofill {
-  background-color: #FFEB3B !important;
-  color: fieldtext !important;
-  background-image: none !important;
-}
-
-/* Ensure highlight persists on focus/hover/active states */
-input:-moz-autofill:hover,
-input:-moz-autofill:focus,
-input:-moz-autofill:active {
-  background-color: #FFEB3B !important;
-  color: fieldtext !important;
-  background-image: none !important;
   font: -moz-field;
   text-rendering: optimizeLegibility;
   line-height: normal;

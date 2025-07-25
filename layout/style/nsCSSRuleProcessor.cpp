@@ -1656,7 +1656,6 @@ StateSelectorMatches(Element* aElement,
 {
   for (nsPseudoClassList* pseudoClass = aSelector->mPseudoClassList;
        pseudoClass; pseudoClass = pseudoClass->mNext) {
-    // --- Autofill explicit matching ---
     if (pseudoClass->mType == CSSPseudoClassType::autofill ||
         pseudoClass->mType == CSSPseudoClassType::mozAutofillHighlight) {
       // Match if the element has the autofill state, regardless of focus
@@ -3578,13 +3577,11 @@ EventStates ComputeSelectorStateDependence(nsCSSSelector& aSelector)
       continue;
     }
 
-    // --- BEGIN PATCH: Explicit autofill state dependence ---
     if (pseudoClass->mType == CSSPseudoClassType::autofill ||
         pseudoClass->mType == CSSPseudoClassType::mozAutofillHighlight) {
       states |= NS_EVENT_STATE_AUTOFILL;
       continue;
     }
-    // --- END PATCH ---
 
     auto idx = static_cast<CSSPseudoClassTypeBase>(pseudoClass->mType);
     states |= sPseudoClassStateDependences[idx];
