@@ -40,6 +40,7 @@
 #include "nsIFrame.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsFocusManager.h"
+#include "mozilla/dom/HTMLInputElement.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -541,9 +542,21 @@ nsFormFillController::SetTextValue(const nsAString & aTextValue)
 {
   nsCOMPtr<nsIDOMNSEditableElement> editable = do_QueryInterface(mFocusedInput);
   if (editable) {
+    editable->BeginProgrammaticValueSet();
     mSuppressOnInput = true;
     editable->SetUserInput(aTextValue);
     mSuppressOnInput = false;
+    editable->EndProgrammaticValueSet();
+
+    if (mFocusedInput) {
+      nsCOMPtr<nsIContent> content = do_QueryInterface(mFocusedInput);
+      if (content) {
+        mozilla::dom::HTMLInputElement* htmlInput = mozilla::dom::HTMLInputElement::FromContentOrNull(content);
+        if (htmlInput) {
+          htmlInput->SetAutofilled(true);
+        }
+      }
+    }
   }
   return NS_OK;
 }
@@ -1332,7 +1345,8 @@ nsFormFillController::StopControllingInput()
     nsCOMPtr <nsIFormAutoComplete> formAutoComplete =
       do_GetService("@mozilla.org/satchel/form-autocomplete;1", &rv);
     if (formAutoComplete) {
-      formAutoComplete->StopControllingInput(mFocusedInput);
+      // PATCH: Do NOT call StopControllingInput here, so autofill state is NOT cleared on blur/focus.
+      // formAutoComplete->StopControllingInput(mFocusedInput);
     }
 
     mFocusedInputNode = nullptr;

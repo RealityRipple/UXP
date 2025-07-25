@@ -69,6 +69,8 @@ public:
     return nsGenericHTMLElement::GetEditor(aEditor);
   }
   NS_IMETHOD SetUserInput(const nsAString& aInput) override;
+  NS_IMETHOD BeginProgrammaticValueSet() override;
+  NS_IMETHOD EndProgrammaticValueSet() override;
 
   /**
    * Sets or clears the autofilled state of this textarea element.
@@ -302,6 +304,7 @@ public:
   {
     return mState.GetEditor();
   }
+  nsTextEditorState* GetEditorState() const;
 
 protected:
   virtual ~HTMLTextAreaElement() {}
@@ -333,6 +336,7 @@ protected:
   void FireChangeEventIfNeeded();
 
   nsString mFocusedValue;
+  nsString mAutofilledValue;
 
   /** The state of the text editor (selection controller and the editor) **/
   nsTextEditorState mState;
@@ -406,6 +410,7 @@ protected:
 private:
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                     nsRuleData* aData);
+  void EnsureAutofillState();
 };
 
 } // namespace dom
