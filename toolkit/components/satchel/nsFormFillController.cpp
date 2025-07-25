@@ -554,6 +554,9 @@ nsFormFillController::SetTextValue(const nsAString & aTextValue)
         mozilla::dom::HTMLInputElement* htmlInput = mozilla::dom::HTMLInputElement::FromContentOrNull(content);
         if (htmlInput) {
           htmlInput->SetAutofilled(true);
+          nsAutoString value;
+          htmlInput->GetValue(value);
+          htmlInput->SetAutofilledValue(value);
         }
       }
     }
