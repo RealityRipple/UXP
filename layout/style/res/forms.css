@@ -1150,13 +1150,20 @@ input[type="time"] {
   overflow: hidden !important;
 }
 
-/* Autofill highlight for internal-only pseudo-class */
-input:-moz-autofill-highlight,
+input[type="text"]:-moz-autofill-highlight,
+input[type="email"]:-moz-autofill-highlight,
+input[type="password"]:-moz-autofill-highlight,
+input[type="search"]:-moz-autofill-highlight,
+input[type="tel"]:-moz-autofill-highlight,
+input[type="url"]:-moz-autofill-highlight,
+input[type="number"]:-moz-autofill-highlight,
+input[type="date"]:-moz-autofill-highlight,
+input[type="time"]:-moz-autofill-highlight,
+input[type="datetime-local"]:-moz-autofill-highlight,
+input[type="month"]:-moz-autofill-highlight,
+input[type="week"]:-moz-autofill-highlight,
 select:-moz-autofill-highlight,
 textarea:-moz-autofill-highlight {
-  background-color: #ffff99 !important;
+  background-color: #fffcd0 !important;
 }
 
-.custom-autofill-highlight {
-  background: yellow !important;
-}
