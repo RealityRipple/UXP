@@ -235,9 +235,7 @@ FormHandler.prototype = {
    *        }
    */
   autofillFormFields: function (aAutofillResult) {
-    
     for (let field of aAutofillResult.fields) {
-      
       // Get the field details, if it was processed by the user interface.
       let fieldDetail = this.fieldDetails
                             .find(f => f.section == field.section &&
@@ -249,8 +247,6 @@ FormHandler.prototype = {
         continue;
       }
       fieldDetail.element.value = field.value;
-      
-      
       if (typeof fieldDetail.element.setAutofilled === 'function') {
         fieldDetail.element.setAutofilled(!!field.value);
       }

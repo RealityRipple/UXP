@@ -2607,7 +2607,7 @@ HTMLInputElement::MozSetFileNameArray(const Sequence<nsString>& aFileNames,
 
 NS_IMETHODIMP
 HTMLInputElement::MozSetFileNameArray(const char16_t** aFileNames,
-                                     uint32_t aLength)
+                                      uint32_t aLength)
 {
   if (!nsContentUtils::IsCallerChrome()) {
     // setting the value of a "FILE" input widget requires chrome privilege
