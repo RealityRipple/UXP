@@ -2631,7 +2631,7 @@ HTMLInputElement::MozSetFileNameArray(const char16_t** aFileNames,
 
 void
 HTMLInputElement::MozSetDirectory(const nsAString& aDirectoryPath,
-                              ErrorResult& aRv)
+                                  ErrorResult& aRv)
 {
   nsCOMPtr<nsIFile> file;
   aRv = NS_NewLocalFile(aDirectoryPath, true, getter_AddRefs(file));
