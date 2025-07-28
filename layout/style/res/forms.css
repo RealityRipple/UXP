@@ -106,6 +106,14 @@ input {
   overflow-clip-box: content-box;
 }
 
+/* Autofill highlight - placed immediately after base input styles */
+input:-moz-autofill-highlight,
+select:-moz-autofill-highlight,
+textarea:-moz-autofill-highlight {
+  background-color: #fffcd0 !important;
+  color: #090909;
+}
+
 input > .anonymous-div,
 input::placeholder {
   word-wrap: normal !important;
@@ -1149,21 +1157,3 @@ input[type="date"],
 input[type="time"] {
   overflow: hidden !important;
 }
-
-input[type="text"]:-moz-autofill-highlight,
-input[type="email"]:-moz-autofill-highlight,
-input[type="password"]:-moz-autofill-highlight,
-input[type="search"]:-moz-autofill-highlight,
-input[type="tel"]:-moz-autofill-highlight,
-input[type="url"]:-moz-autofill-highlight,
-input[type="number"]:-moz-autofill-highlight,
-input[type="date"]:-moz-autofill-highlight,
-input[type="time"]:-moz-autofill-highlight,
-input[type="datetime-local"]:-moz-autofill-highlight,
-input[type="month"]:-moz-autofill-highlight,
-input[type="week"]:-moz-autofill-highlight,
-select:-moz-autofill-highlight,
-textarea:-moz-autofill-highlight {
-  background-color: #fffcd0 !important;
-}
-
