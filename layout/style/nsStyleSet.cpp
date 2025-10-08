@@ -1373,10 +1373,10 @@ nsStyleSet::ResolveStyleFor(Element* aElement,
   }
 
   uint32_t flags = eDoAnimation;
-  if (nsCSSRuleUtils::IsLink(aElement)) {
+  if (nsCSSRuleProcessor::IsLink(aElement)) {
     flags |= eIsLink;
   }
-  if (nsCSSRuleUtils::GetContentState(aElement, aTreeMatchContext).
+  if (nsCSSRuleProcessor::GetContentState(aElement, aTreeMatchContext).
                             HasState(NS_EVENT_STATE_VISITED)) {
     flags |= eIsVisitedLink;
   }

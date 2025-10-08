@@ -44,7 +44,6 @@ EXPORTS += [
     'nsCSSPseudoElementList.h',
     'nsCSSPseudoElements.h',
     'nsCSSRuleProcessor.h',
-    'nsCSSRuleUtils.h',
     'nsCSSScanner.h',
     'nsCSSValue.h',
     'nsDOMCSSAttrDeclaration.h',
@@ -70,7 +69,6 @@ EXPORTS += [
     'nsStyleStructInlines.h',
     'nsStyleTransformMatrix.h',
     'nsStyleUtil.h',
-    'RuleCascadeData.h',
 ]
 
 EXPORTS.mozilla += [
@@ -147,9 +145,7 @@ UNIFIED_SOURCES += [
     'nsCSSProps.cpp',
     'nsCSSPseudoClasses.cpp',
     'nsCSSPseudoElements.cpp',
-    'nsCSSRuleProcessor.cpp',
     'nsCSSRules.cpp',
-    'nsCSSRuleUtils.cpp',
     'nsCSSScanner.cpp',
     'nsCSSValue.cpp',
     'nsDOMCSSAttrDeclaration.cpp',
@@ -187,14 +183,14 @@ UNIFIED_SOURCES += [
 # includes, via nsStyleCoord.h, <type_traits>, which ends up including
 # <xutility>, which fails in much the way described in
 # <https://bugzilla.mozilla.org/show_bug.cgi?id=1331102>.
-# - RuleCascadeData.cpp needs to be built separately because it uses
+# - nsCSSRuleProcessor.cpp needs to be built separately because it uses
 # plarena.h.
 # - nsLayoutStylesheetCache.cpp needs to be built separately because it uses
 # nsExceptionHandler.h, which includes windows.h.
 SOURCES += [
     'BindingStyleRule.cpp',
+    'nsCSSRuleProcessor.cpp',
     'nsLayoutStylesheetCache.cpp',
-    'RuleCascadeData.cpp',
 ]
 
 include('/ipc/chromium/chromium-config.mozbuild')
