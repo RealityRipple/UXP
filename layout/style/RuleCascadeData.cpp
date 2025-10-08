@@ -7,7 +7,7 @@
 // We want page-sized arenas so there's no fragmentation involved.
 // Including plarena.h must come first to avoid it being included by some
 // header file thereby making PL_ARENA_CONST_ALIGN_MASK ineffective.
-#define NS_CASCADELAYER_ARENA_BLOCK_SIZE (4096)
+#define NS_CASCADEENUMDATA_ARENA_BLOCK_SIZE (4096)
 #include "plarena.h"
 
 #include "RuleCascadeData.h"
@@ -1532,7 +1532,7 @@ InitWeightEntry(PLDHashEntryHdr* hdr, const void* key)
   new (KnownNotNull, entry) RuleByWeightEntry();
 }
 
-/* static */ const PLDHashTableOps CascadeLayer::sRulesByWeightOps = {
+/* static */ const PLDHashTableOps CascadeEnumData::sRulesByWeightOps = {
   HashIntKey,
   MatchWeightEntry,
   PLDHashTable::MoveEntryStub,
@@ -1540,17 +1540,17 @@ InitWeightEntry(PLDHashEntryHdr* hdr, const void* key)
   InitWeightEntry
 };
 
-CascadeLayer::CascadeLayer(nsPresContext* aPresContext,
-                           nsString aName,
+CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
+                                 nsString aName,
 #ifdef DEBUG
-                           CascadeLayer* aParent,
+                                 CascadeEnumData* aParent,
 #endif
-                           bool aIsWeak,
-                           nsTArray<css::DocumentRule*>& aDocumentRules,
-                           nsDocumentRuleResultCacheKey& aDocumentKey,
-                           SheetType aSheetType,
-                           bool aMustGatherDocumentRules,
-                           nsMediaQueryResultCacheKey& aCacheKey)
+                                 bool aIsWeak,
+                                 nsTArray<css::DocumentRule*>& aDocumentRules,
+                                 nsDocumentRuleResultCacheKey& aDocumentKey,
+                                 SheetType aSheetType,
+                                 bool aMustGatherDocumentRules,
+                                 nsMediaQueryResultCacheKey& aCacheKey)
   : mPresContext(aPresContext)
   , mName(aName)
   , mIsAnonymous(mName.IsEmpty())
@@ -1570,12 +1570,12 @@ CascadeLayer::CascadeLayer(nsPresContext* aPresContext,
   Initialize();
 }
 
-CascadeLayer::CascadeLayer(nsPresContext* aPresContext,
-                           nsTArray<css::DocumentRule*>& aDocumentRules,
-                           nsDocumentRuleResultCacheKey& aDocumentKey,
-                           SheetType aSheetType,
-                           bool aMustGatherDocumentRules,
-                           nsMediaQueryResultCacheKey& aCacheKey)
+CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
+                                 nsTArray<css::DocumentRule*>& aDocumentRules,
+                                 nsDocumentRuleResultCacheKey& aDocumentKey,
+                                 SheetType aSheetType,
+                                 bool aMustGatherDocumentRules,
+                                 nsMediaQueryResultCacheKey& aCacheKey)
   : mPresContext(aPresContext)
   , mIsAnonymous(false)
   , mIsWeak(false)
@@ -1594,35 +1594,35 @@ CascadeLayer::CascadeLayer(nsPresContext* aPresContext,
   Initialize();
 }
 
-CascadeLayer::~CascadeLayer()
+CascadeEnumData::~CascadeEnumData()
 {
   delete mData;
   PL_FinishArenaPool(&mArena);
 }
 
-CascadeLayer*
-CascadeLayer::CreateNamedChildLayer(const nsTArray<nsString>& aPath)
+CascadeEnumData*
+CascadeEnumData::CreateNamedChildLayer(const nsTArray<nsString>& aPath)
 {
   if (aPath.IsEmpty()) {
     return this;
   }
 
   const nsString& name = aPath[0];
-  CascadeLayer* childLayer = nullptr;
+  CascadeEnumData* childLayer = nullptr;
 
   // Create new layer if it doesn't exist.
   if (!mLayers.Get(name, &childLayer)) {
-    childLayer = new CascadeLayer(mPresContext,
-                                  name,
+    childLayer = new CascadeEnumData(mPresContext,
+                                     name,
 #ifdef DEBUG
-                                  this,
+                                     this,
 #endif
-                                  false,
-                                  mDocumentRules,
-                                  mDocumentCacheKey,
-                                  mSheetType,
-                                  mMustGatherDocumentRules,
-                                  mCacheKey);
+                                     false,
+                                     mDocumentRules,
+                                     mDocumentCacheKey,
+                                     mSheetType,
+                                     mMustGatherDocumentRules,
+                                     mCacheKey);
     mPreLayers.AppendElement(childLayer);
     mLayers.Put(name, childLayer);
   }
@@ -1638,21 +1638,21 @@ CascadeLayer::CreateNamedChildLayer(const nsTArray<nsString>& aPath)
   return childLayer->CreateNamedChildLayer(tail);
 }
 
-CascadeLayer*
-CascadeLayer::CreateAnonymousChildLayer()
+CascadeEnumData*
+CascadeEnumData::CreateAnonymousChildLayer()
 {
   nsString name;
-  CascadeLayer* childLayer = new CascadeLayer(mPresContext,
-                                              name,
+  CascadeEnumData* childLayer = new CascadeEnumData(mPresContext,
+                                                    name,
 #ifdef DEBUG
-                                              this,
+                                                    this,
 #endif
-                                              false,
-                                              mDocumentRules,
-                                              mDocumentCacheKey,
-                                              mSheetType,
-                                              mMustGatherDocumentRules,
-                                              mCacheKey);
+                                                    false,
+                                                    mDocumentRules,
+                                                    mDocumentCacheKey,
+                                                    mSheetType,
+                                                    mMustGatherDocumentRules,
+                                                    mCacheKey);
   mPreLayers.AppendElement(childLayer);
   return childLayer;
 }
@@ -1666,7 +1666,7 @@ CompareWeightData(const void* aArg1, const void* aArg2, void* closure)
 }
 
 void
-CascadeLayer::AddRules()
+CascadeEnumData::AddRules()
 {
   MOZ_ASSERT(!mRulesAdded, "Rule cascade data already filled");
 
@@ -1742,10 +1742,10 @@ CascadeLayer::AddRules()
 }
 
 void
-CascadeLayer::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
+CascadeEnumData::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
 {
   if (mPreLayers.Length() > 0) {
-    for (CascadeLayer* pre : mPreLayers) {
+    for (CascadeEnumData* pre : mPreLayers) {
       pre->EnumerateAllLayers(aFunc, aData);
     }
   }
@@ -1753,19 +1753,19 @@ CascadeLayer::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
   (*aFunc)(this, aData);
 
   if (mPostLayers.Length() > 0) {
-    for (CascadeLayer* post : mPostLayers) {
+    for (CascadeEnumData* post : mPostLayers) {
       post->EnumerateAllLayers(aFunc, aData);
     }
   }
 }
 
 void
-CascadeLayer::Initialize()
+CascadeEnumData::Initialize()
 {
   mData = new RuleCascadeData(eCompatibility_NavQuirks ==
                                 mPresContext->CompatibilityMode());
 
   // Initialize our arena
   PL_INIT_ARENA_POOL(
-    &mArena, "CascadeLayerArena", NS_CASCADELAYER_ARENA_BLOCK_SIZE);
+    &mArena, "CascadeEnumDataArena", NS_CASCADEENUMDATA_ARENA_BLOCK_SIZE);
 }

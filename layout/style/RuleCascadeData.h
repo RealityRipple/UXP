@@ -322,28 +322,28 @@ private:
   static const PLDHashTableOps AtomSelector_CIOps;
 };
 
-struct CascadeLayer
+struct CascadeEnumData
 {
-  CascadeLayer(nsPresContext* aPresContext,
-               nsString aName,
+  CascadeEnumData(nsPresContext* aPresContext,
+                  nsString aName,
 #ifdef DEBUG
-               CascadeLayer* aParent,
+                  CascadeEnumData* aParent,
 #endif
-               bool aIsWeak,
-               nsTArray<css::DocumentRule*>& aDocumentRules,
-               nsDocumentRuleResultCacheKey& aDocumentKey,
-               SheetType aSheetType,
-               bool aMustGatherDocumentRules,
-               nsMediaQueryResultCacheKey& aCacheKey);
+                  bool aIsWeak,
+                  nsTArray<css::DocumentRule*>& aDocumentRules,
+                  nsDocumentRuleResultCacheKey& aDocumentKey,
+                  SheetType aSheetType,
+                  bool aMustGatherDocumentRules,
+                  nsMediaQueryResultCacheKey& aCacheKey);
 
-  CascadeLayer(nsPresContext* aPresContext,
-               nsTArray<css::DocumentRule*>& aDocumentRules,
-               nsDocumentRuleResultCacheKey& aDocumentKey,
-               SheetType aSheetType,
-               bool aMustGatherDocumentRules,
-               nsMediaQueryResultCacheKey& aCacheKey);
+  CascadeEnumData(nsPresContext* aPresContext,
+                  nsTArray<css::DocumentRule*>& aDocumentRules,
+                  nsDocumentRuleResultCacheKey& aDocumentKey,
+                  SheetType aSheetType,
+                  bool aMustGatherDocumentRules,
+                  nsMediaQueryResultCacheKey& aCacheKey);
 
-  ~CascadeLayer();
+  ~CascadeEnumData();
 
   nsPresContext* mPresContext;
   nsString mName;
@@ -366,17 +366,17 @@ struct CascadeLayer
   PLDHashTable mRulesByWeight; // of PerWeightDataListItem linked lists
 
 #ifdef DEBUG
-  CascadeLayer* mParent;
+  CascadeEnumData* mParent;
   bool mIsRoot;
 #endif
-  nsTArray<CascadeLayer*> mPreLayers;
-  nsTArray<CascadeLayer*> mPostLayers;
-  nsDataHashtable<nsStringHashKey, CascadeLayer*> mLayers;
+  nsTArray<CascadeEnumData*> mPreLayers;
+  nsTArray<CascadeEnumData*> mPostLayers;
+  nsDataHashtable<nsStringHashKey, CascadeEnumData*> mLayers;
 
-  CascadeLayer* CreateNamedChildLayer(const nsTArray<nsString>& aPath);
-  CascadeLayer* CreateAnonymousChildLayer();
+  CascadeEnumData* CreateNamedChildLayer(const nsTArray<nsString>& aPath);
+  CascadeEnumData* CreateAnonymousChildLayer();
 
-  typedef void (*nsLayerEnumFunc)(CascadeLayer* aLayer, void* aData);
+  typedef void (*nsLayerEnumFunc)(CascadeEnumData* aLayer, void* aData);
   void EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData);
   void AddRules();
 

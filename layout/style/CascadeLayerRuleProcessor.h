@@ -23,7 +23,7 @@
 #include "nsTArray.h"
 
 struct AttributeEnumData;
-struct CascadeLayer;
+struct CascadeEnumData;
 struct RuleCascadeData;
 struct ElementDependentRuleProcessorData;
 struct nsFontFaceRuleContainer;
@@ -46,14 +46,14 @@ class DocumentRule;
  * rule processor within the context of a specific cascade layer. It ensures
  * rules are applied in the correct order, as defined by the CSS specification.
  *
- * It also handles unlayered styles, which are treated as belonging to an
- * implicit layer.
+ * It also handles unlayered rules, which are treated as belonging to an
+ * implicit base layer.
  */
  
 class CascadeLayerRuleProcessor : public nsIStyleRuleProcessor
 {
 public:
-  CascadeLayerRuleProcessor(CascadeLayer* aLayer);
+  CascadeLayerRuleProcessor(CascadeEnumData* aLayer);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(CascadeLayerRuleProcessor)
@@ -124,7 +124,7 @@ public:
 protected:
   virtual ~CascadeLayerRuleProcessor();
 
-  CascadeLayer* mLayer;
+  CascadeEnumData* mLayer;
   RuleCascadeData* mCascade;
 
 private:

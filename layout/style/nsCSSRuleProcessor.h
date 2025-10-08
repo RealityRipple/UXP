@@ -23,7 +23,7 @@
 #include "nsRuleWalker.h"
 #include "nsTArray.h"
 
-struct CascadeLayer;
+struct CascadeEnumData;
 struct ElementDependentRuleProcessorData;
 struct nsFontFaceRuleContainer;
 struct RuleProcessorGroup;
@@ -157,7 +157,7 @@ protected:
 
 private:
   static bool CascadeSheet(mozilla::CSSStyleSheet* aSheet,
-                           CascadeLayer* aLayer);
+                           CascadeEnumData* aData);
 
   RuleProcessorGroup* GetGroup(nsPresContext* aPresContext);
   void RefreshGroup(nsPresContext* aPresContext);

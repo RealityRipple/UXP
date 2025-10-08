@@ -64,7 +64,7 @@ using namespace mozilla::dom;
 //
 
 CascadeLayerRuleProcessor::CascadeLayerRuleProcessor(
-  CascadeLayer* aLayer)
+  CascadeEnumData* aLayer)
   : mLayer(aLayer)
   , mCascade(aLayer->mData)
 {
