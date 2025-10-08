@@ -651,10 +651,9 @@ CascadeRuleEnumFunc(css::Rule* aRule, void* aData)
   } else if (css::Rule::IMPORT_RULE == type &&
              nsCSSRuleUtils::LoadImportedSheetsInOrderEnabled()) {
     css::ImportRule* importRule = static_cast<css::ImportRule*>(aRule);
-    StyleSheet* sheet = importRule->GetStyleSheet();
-    if (sheet) {
-      nsCSSRuleProcessor::CascadeSheet(sheet->AsConcrete(), layer);
-    }
+    nsCSSRuleProcessor::CascadeSheet(
+      importRule->GetStyleSheet()->AsConcrete(),
+      layer);
   }
   return true;
 }
