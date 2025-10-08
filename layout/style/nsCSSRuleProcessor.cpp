@@ -55,7 +55,6 @@
 #include "nsIMozBrowserFrame.h"
 #include "RuleCascadeData.h"
 #include "nsCSSRuleUtils.h"
-#include "CascadeLayerRuleProcessor.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -147,40 +146,52 @@ nsCSSRuleProcessor::ClearSheets()
 /* virtual */ void
 nsCSSRuleProcessor::RulesMatching(ElementRuleProcessorData *aData)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aData->mPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      processor->RulesMatching(aData);
-    }
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aData->mPresContext);
+
+  if (!resolvedCascade) {
+    return;
+  }
+  for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+    cascade->RulesMatching(aData);
   }
 }
 
 /* virtual */ void
 nsCSSRuleProcessor::RulesMatching(PseudoElementRuleProcessorData* aData)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aData->mPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      processor->RulesMatching(aData);
-    }
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aData->mPresContext);
+
+  if (!resolvedCascade) {
+    return;
+  }
+  for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+    cascade->RulesMatching(aData);
   }
 }
 
 /* virtual */ void
 nsCSSRuleProcessor::RulesMatching(AnonBoxRuleProcessorData* aData)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aData->mPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      processor->RulesMatching(aData);
-    }
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aData->mPresContext);
+
+  if (!resolvedCascade) {
+    return;
+  }
+  for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+    cascade->RulesMatching(aData);
   }
 }
 
 /* virtual */ void
 nsCSSRuleProcessor::RulesMatching(XULTreeRuleProcessorData* aData)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aData->mPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      processor->RulesMatching(aData);
-    }
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aData->mPresContext);
+
+  if (!resolvedCascade) {
+    return;
+  }
+  for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+    cascade->RulesMatching(aData);
   }
 }
 
@@ -194,19 +205,19 @@ nsCSSRuleProcessor::HasStateDependentStyle(ElementDependentRuleProcessorData* aD
              "mCurrentStyleScope will need to be saved and restored after the "
              "SelectorMatchesTree call");
 
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aData->mPresContext);
+
   nsRestyleHint hint = nsRestyleHint(0);
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aData->mPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      CascadeLayerRuleProcessor* layerProcessor =
-        static_cast<CascadeLayerRuleProcessor*>(processor.get());
-      layerProcessor->HasStateDependentStyle(
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+      cascade->HasStateDependentStyle(
         aData, aStatefulElement, aPseudoType, aStateMask, hint);
     }
   }
   return hint;
 }
 
-/* virtual */ nsRestyleHint
+nsRestyleHint
 nsCSSRuleProcessor::HasStateDependentStyle(StateRuleProcessorData* aData)
 {
   return HasStateDependentStyle(aData,
@@ -215,7 +226,7 @@ nsCSSRuleProcessor::HasStateDependentStyle(StateRuleProcessorData* aData)
                                 aData->mStateMask);
 }
 
-/* virtual */ nsRestyleHint
+nsRestyleHint
 nsCSSRuleProcessor::HasStateDependentStyle(PseudoElementStateRuleProcessorData* aData)
 {
   return HasStateDependentStyle(aData,
@@ -224,12 +235,15 @@ nsCSSRuleProcessor::HasStateDependentStyle(PseudoElementStateRuleProcessorData* 
                                 aData->mStateMask);
 }
 
-/* virtual */ bool
+bool
 nsCSSRuleProcessor::HasDocumentStateDependentStyle(StateRuleProcessorData* aData)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aData->mPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      if (processor->HasDocumentStateDependentStyle(aData)) {
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aData->mPresContext);
+
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+      if (cascade->mSelectorDocumentStates.HasAtLeastOneOfStates(
+            aData->mStateMask)) {
         return true;
       }
     }
@@ -243,15 +257,47 @@ nsCSSRuleProcessor::HasAttributeDependentStyle(
     AttributeRuleProcessorData* aData,
     RestyleHintData& aRestyleHintDataResult)
 {
+  //  We could try making use of aData->mModType, but :not rules make it a bit
+  //  of a pain to do so...  So just ignore it for now.
+
   AttributeEnumData data(aData, aRestyleHintDataResult);
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aData->mPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      CascadeLayerRuleProcessor* layerProcessor =
-        static_cast<CascadeLayerRuleProcessor*>(processor.get());
-      layerProcessor->HasAttributeDependentStyle(
+
+  // Don't do our special handling of certain attributes if the attr
+  // hasn't changed yet.
+  if (aData->mAttrHasChanged) {
+    // check for the lwtheme and lwthemetextcolor attribute on root XUL elements
+    if ((aData->mAttribute == nsGkAtoms::lwtheme ||
+         aData->mAttribute == nsGkAtoms::lwthemetextcolor) &&
+        aData->mElement->GetNameSpaceID() == kNameSpaceID_XUL &&
+        aData->mElement == aData->mElement->OwnerDoc()->GetRootElement())
+      {
+        data.change = nsRestyleHint(data.change | eRestyle_Subtree);
+      }
+
+    // We don't know the namespace of the attribute, and xml:lang applies to
+    // all elements.  If the lang attribute changes, we need to restyle our
+    // whole subtree, since the :lang selector on our descendants can examine
+    // our lang attribute.
+    if (aData->mAttribute == nsGkAtoms::lang) {
+      data.change = nsRestyleHint(data.change | eRestyle_Subtree);
+    }
+  }
+
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aData->mPresContext);
+
+  // Since we get both before and after notifications for attributes, we
+  // don't have to ignore aData->mAttribute while matching.  Just check
+  // whether we have selectors relevant to aData->mAttribute that we
+  // match.  If this is the before change notification, that will catch
+  // rules we might stop matching; if the after change notification, the
+  // ones we might have started matching.
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+      cascade->HasAttributeDependentStyle(
         aData, &data, aRestyleHintDataResult);
     }
   }
+
   return data.change;
 }
 
@@ -293,21 +339,13 @@ nsCSSRuleProcessor::MediumFeaturesChanged(nsPresContext* aPresContext)
   return false;
 }
 
-/* virtual */ nsTArray<nsCOMPtr<nsIStyleRuleProcessor>>*
-nsCSSRuleProcessor::GetChildRuleProcessors()
-{
-  return mRuleCascades
-    ? &mRuleCascades->mProcessors
-    : nullptr;
-}
-
 UniquePtr<nsMediaQueryResultCacheKey>
 nsCSSRuleProcessor::CloneMQCacheKey()
 {
   MOZ_ASSERT(!(mRuleCascades && mPreviousCacheKey));
 
   ResolvedRuleCascades* c = mRuleCascades;
-  if (!c) {
+  if (!c || !c->mUnlayered) {
     // We might have an mPreviousCacheKey.  It already comes from a call
     // to CloneMQCacheKey, so don't bother checking
     // HasFeatureConditions().
@@ -333,9 +371,9 @@ nsCSSRuleProcessor::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t n = 0;
   n += mSheets.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (ResolvedRuleCascades* cascades = mRuleCascades; cascades;
-       cascades = cascades->mNext) {
-    n += cascades->SizeOfIncludingThis(aMallocSizeOf);
+  for (ResolvedRuleCascades* cascade = mRuleCascades; cascade;
+       cascade = cascade->mNext) {
+    n += cascade->SizeOfIncludingThis(aMallocSizeOf);
   }
 
   return n;
@@ -347,16 +385,18 @@ nsCSSRuleProcessor::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
+// Append all the currently-active font face rules to aArray.  Return
+// true for success and false for failure.
 bool
 nsCSSRuleProcessor::AppendFontFaceRules(
                               nsPresContext *aPresContext,
                               nsTArray<nsFontFaceRuleContainer>& aArray)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      CascadeLayerRuleProcessor* layerProcessor =
-        static_cast<CascadeLayerRuleProcessor*>(processor.get());
-      if (!layerProcessor->AppendFontFaceRules(aPresContext, aArray)) {
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aPresContext);
+
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+      if (!aArray.AppendElements(cascade->mFontFaceRules)) {
         return false;
       }
     }
@@ -369,14 +409,13 @@ nsCSSKeyframesRule*
 nsCSSRuleProcessor::KeyframesRuleForName(nsPresContext* aPresContext,
                                          const nsString& aName)
 {
-  nsCSSKeyframesRule* rule = nullptr;
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aPresContext);
 
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      CascadeLayerRuleProcessor* layerProcessor =
-        static_cast<CascadeLayerRuleProcessor*>(processor.get());
+  nsCSSKeyframesRule* rule = nullptr;
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
       if (nsCSSKeyframesRule* newRule =
-            layerProcessor->KeyframesRuleForName(aPresContext, aName)) {
+            cascade->mKeyframesRuleTable.Get(aName)) {
         rule = newRule;
       }
     }
@@ -389,13 +428,13 @@ nsCSSCounterStyleRule*
 nsCSSRuleProcessor::CounterStyleRuleForName(nsPresContext* aPresContext,
                                             const nsAString& aName)
 {
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aPresContext);
+
   nsCSSCounterStyleRule* rule = nullptr;
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      CascadeLayerRuleProcessor* layerProcessor =
-        static_cast<CascadeLayerRuleProcessor*>(processor.get());
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
       if (nsCSSCounterStyleRule* newRule =
-            layerProcessor->CounterStyleRuleForName(aPresContext, aName)) {
+            cascade->mCounterStyleRuleTable.Get(aName)) {
         rule = newRule;
       }
     }
@@ -404,16 +443,18 @@ nsCSSRuleProcessor::CounterStyleRuleForName(nsPresContext* aPresContext,
   return rule;
 }
 
+// Append all the currently-active page rules to aArray.  Return
+// true for success and false for failure.
 bool
 nsCSSRuleProcessor::AppendPageRules(
                               nsPresContext* aPresContext,
                               nsTArray<nsCSSPageRule*>& aArray)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      CascadeLayerRuleProcessor* layerProcessor =
-        static_cast<CascadeLayerRuleProcessor*>(processor.get());
-      if (!layerProcessor->AppendPageRules(aPresContext, aArray)) {
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aPresContext);
+
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+      if (!aArray.AppendElements(cascade->mPageRules)) {
         return false;
       }
     }
@@ -427,11 +468,11 @@ nsCSSRuleProcessor::AppendFontFeatureValuesRules(
                               nsPresContext *aPresContext,
                               nsTArray<nsCSSFontFeatureValuesRule*>& aArray)
 {
-  if (ResolvedRuleCascades* cascades = GetRuleCascade(aPresContext)) {
-    for (nsCOMPtr<nsIStyleRuleProcessor> processor : cascades->mProcessors) {
-      CascadeLayerRuleProcessor* layerProcessor =
-        static_cast<CascadeLayerRuleProcessor*>(processor.get());
-      if (!layerProcessor->AppendFontFeatureValuesRules(aPresContext, aArray)) {
+  ResolvedRuleCascades* resolvedCascade = GetRuleCascade(aPresContext);
+
+  if (resolvedCascade) {
+    for (RuleCascadeData* cascade : resolvedCascade->mOrderedData) {
+      if (!aArray.AppendElements(cascade->mFontFeatureValuesRules)) {
         return false;
       }
     }
@@ -690,19 +731,6 @@ nsCSSRuleProcessor::GetRuleCascade(nsPresContext* aPresContext)
   return mRuleCascades;
 }
 
-/**
- * This enumerates layers in a sheet and creates child rule processors
- * for each layer. The child rule processors are created in the order
- * that the layers are encountered.
- */
-static void
-CreateChildProcessorsEnumFunc(CascadeEnumData* aLayer, void* aData)
-{
-  aLayer->AddRules();
-  ResolvedRuleCascades* data = static_cast<ResolvedRuleCascades*>(aData);
-  data->mProcessors.AppendElement(new CascadeLayerRuleProcessor(aLayer));
-}
-
 void
 nsCSSRuleProcessor::RefreshRuleCascade(nsPresContext* aPresContext)
 {
@@ -730,26 +758,24 @@ nsCSSRuleProcessor::RefreshRuleCascade(nsPresContext* aPresContext)
   mPreviousCacheKey = nullptr;
 
   if (mSheets.Length() != 0) {
-    nsAutoPtr<ResolvedRuleCascades> cascades(
+    nsAutoPtr<ResolvedRuleCascades> resolvedCascade(
       new ResolvedRuleCascades(aPresContext->Medium()));
-    CascadeEnumData* unlayered(new CascadeEnumData(aPresContext,
-                                                   mDocumentRules,
-                                                   mDocumentCacheKey,
-                                                   mSheetType,
-                                                   mMustGatherDocumentRules,
-                                                   cascades->mCacheKey));
-    if (unlayered->mData) {
+    CascadeEnumData unlayered(aPresContext,
+                              resolvedCascade,
+                              mDocumentRules,
+                              mDocumentCacheKey,
+                              mSheetType,
+                              mMustGatherDocumentRules,
+                              resolvedCascade->mCacheKey);
+    if (unlayered.mData) {
       for (uint32_t i = 0; i < mSheets.Length(); ++i) {
-        if (!CascadeSheet(mSheets.ElementAt(i), unlayered)) {
+        if (!CascadeSheet(mSheets.ElementAt(i), &unlayered)) {
           return; /* out of memory */
         }
       }
 
-      // Ensure that the current one is always mRuleCascades.
-      cascades->mNext = mRuleCascades;
-      mRuleCascades = cascades.forget();
-
-      unlayered->EnumerateAllLayers(CreateChildProcessorsEnumFunc, mRuleCascades);
+      unlayered.Flatten();
+      resolvedCascade->mUnlayered = unlayered.mData;
 
       // mMustGatherDocumentRules controls whether we build mDocumentRules
       // and mDocumentCacheKey so that they can be used as keys by the
@@ -784,6 +810,10 @@ nsCSSRuleProcessor::RefreshRuleCascade(nsPresContext* aPresContext)
         mDocumentRulesAndCacheKeyValid = true;
 #endif
       }
+
+      // Ensure that the current one is always mRuleCascades.
+      resolvedCascade->mNext = mRuleCascades;
+      mRuleCascades = resolvedCascade.forget();
     }
   }
   return;

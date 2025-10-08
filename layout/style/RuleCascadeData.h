@@ -325,17 +325,21 @@ private:
 struct ResolvedRuleCascades
 {
   ResolvedRuleCascades(nsIAtom* aMedium)
-    : mCacheKey(aMedium)
+    : mUnlayered(nullptr)
+    , mCacheKey(aMedium)
     , mNext(nullptr)
   {
   }
 
   ~ResolvedRuleCascades()
   {
-    mProcessors.Clear();
+    for (RuleCascadeData* data : mOrderedData) {
+      delete data;
+    }
   }
 
-  nsTArray<nsCOMPtr<nsIStyleRuleProcessor>> mProcessors;
+  nsTArray<RuleCascadeData*> mOrderedData;
+  RuleCascadeData* mUnlayered;
   nsMediaQueryResultCacheKey mCacheKey;
   ResolvedRuleCascades* mNext; // for a different medium
 
@@ -349,6 +353,7 @@ struct CascadeEnumData
 #ifdef DEBUG
                   CascadeEnumData* aParent,
 #endif
+                  nsAutoPtr<ResolvedRuleCascades>& aContainer,
                   bool aIsWeak,
                   nsTArray<css::DocumentRule*>& aDocumentRules,
                   nsDocumentRuleResultCacheKey& aDocumentKey,
@@ -357,6 +362,7 @@ struct CascadeEnumData
                   nsMediaQueryResultCacheKey& aCacheKey);
 
   CascadeEnumData(nsPresContext* aPresContext,
+                  nsAutoPtr<ResolvedRuleCascades>& aContainer,
                   nsTArray<css::DocumentRule*>& aDocumentRules,
                   nsDocumentRuleResultCacheKey& aDocumentKey,
                   SheetType aSheetType,
@@ -389,19 +395,18 @@ struct CascadeEnumData
   CascadeEnumData* mParent;
   bool mIsRoot;
 #endif
+  nsAutoPtr<ResolvedRuleCascades>& mContainer;
   nsTArray<CascadeEnumData*> mPreLayers;
   nsTArray<CascadeEnumData*> mPostLayers;
   nsDataHashtable<nsStringHashKey, CascadeEnumData*> mLayers;
 
   CascadeEnumData* CreateNamedChildLayer(const nsTArray<nsString>& aPath);
   CascadeEnumData* CreateAnonymousChildLayer();
-
-  typedef void (*nsLayerEnumFunc)(CascadeEnumData* aLayer, void* aData);
-  void EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData);
-  void AddRules();
+  void Flatten();
 
 private:
   void Initialize();
+  void AddRules();
 
   static const PLDHashTableOps sRulesByWeightOps;
 };

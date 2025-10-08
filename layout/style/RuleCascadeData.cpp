@@ -1188,13 +1188,6 @@ RuleCascadeData::HasAttributeDependentStyle(
   AttributeEnumData* aEnumData,
   mozilla::RestyleHintData& aRestyleHintDataResult)
 {
-  // Since we get both before and after notifications for attributes, we
-  // don't have to ignore aData->mAttribute while matching.  Just check
-  // whether we have selectors relevant to aData->mAttribute that we
-  // match.  If this is the before change notification, that will catch
-  // rules we might stop matching; if the after change notification, the
-  // ones we might have started matching.
-
   if (aData->mAttribute == nsGkAtoms::id) {
     nsIAtom* id = aData->mElement->GetID();
     if (id) {
@@ -1478,10 +1471,10 @@ size_t
 ResolvedRuleCascades::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
-  for (uint32_t i = 0; i < mProcessors.Length(); i++) {
-    n += mProcessors[i]->SizeOfIncludingThis(aMallocSizeOf);
+  n += mOrderedData.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (RuleCascadeData* data : mOrderedData) {
+    n += data->SizeOfIncludingThis(aMallocSizeOf);
   }
-  n += mProcessors.ShallowSizeOfExcludingThis(aMallocSizeOf);
   return n;
 }
 
@@ -1556,6 +1549,7 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
 #ifdef DEBUG
                                  CascadeEnumData* aParent,
 #endif
+                                 nsAutoPtr<ResolvedRuleCascades>& aContainer,
                                  bool aIsWeak,
                                  nsTArray<css::DocumentRule*>& aDocumentRules,
                                  nsDocumentRuleResultCacheKey& aDocumentKey,
@@ -1571,6 +1565,7 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
   , mParent(aParent)
   , mIsRoot(false)
 #endif
+  , mContainer(aContainer)
   , mDocumentRules(aDocumentRules)
   , mDocumentCacheKey(aDocumentKey)
   , mSheetType(aSheetType)
@@ -1582,12 +1577,14 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
 }
 
 CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
+                                 nsAutoPtr<ResolvedRuleCascades>& aContainer,
                                  nsTArray<css::DocumentRule*>& aDocumentRules,
                                  nsDocumentRuleResultCacheKey& aDocumentKey,
                                  SheetType aSheetType,
                                  bool aMustGatherDocumentRules,
                                  nsMediaQueryResultCacheKey& aCacheKey)
   : mPresContext(aPresContext)
+  , mContainer(aContainer)
   , mIsAnonymous(false)
   , mIsWeak(false)
   , mWasFlattened(false)
@@ -1607,7 +1604,6 @@ CascadeEnumData::CascadeEnumData(nsPresContext* aPresContext,
 
 CascadeEnumData::~CascadeEnumData()
 {
-  delete mData;
   PL_FinishArenaPool(&mArena);
 }
 
@@ -1628,6 +1624,7 @@ CascadeEnumData::CreateNamedChildLayer(const nsTArray<nsString>& aPath)
 #ifdef DEBUG
                                      this,
 #endif
+                                     mContainer,
                                      false,
                                      mDocumentRules,
                                      mDocumentCacheKey,
@@ -1658,6 +1655,7 @@ CascadeEnumData::CreateAnonymousChildLayer()
 #ifdef DEBUG
                                                     this,
 #endif
+                                                    mContainer,
                                                     false,
                                                     mDocumentRules,
                                                     mDocumentCacheKey,
@@ -1749,7 +1747,7 @@ CascadeEnumData::AddRules()
 }
 
 void
-CascadeEnumData::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
+CascadeEnumData::Flatten()
 {
   if (mWasFlattened) {
     return;
@@ -1757,15 +1755,16 @@ CascadeEnumData::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
 
   if (mPreLayers.Length() > 0) {
     for (CascadeEnumData* pre : mPreLayers) {
-      pre->EnumerateAllLayers(aFunc, aData);
+      pre->Flatten();
     }
   }
 
-  (*aFunc)(this, aData);
+  mContainer->mOrderedData.AppendElement(mData);
+  AddRules();
 
   if (mPostLayers.Length() > 0) {
     for (CascadeEnumData* post : mPostLayers) {
-      post->EnumerateAllLayers(aFunc, aData);
+      post->Flatten();
     }
   }
 
