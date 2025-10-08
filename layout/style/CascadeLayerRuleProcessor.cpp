@@ -223,9 +223,8 @@ CascadeLayerRuleProcessor::SizeOfExcludingThis(
   mozilla::MallocSizeOf aMallocSizeOf) const
 {
   size_t n = 0;
-  // The cascade layer owns the rule cascade, so we don't count it here.
-  // We do count the layer itself, though.
-  n += mLayer->SizeOfIncludingThis(aMallocSizeOf);
+  n += mCascade->SizeOfIncludingThis(aMallocSizeOf);
+  // FIXME: size of attached cascade layer is not included.
 
   return n;
 }

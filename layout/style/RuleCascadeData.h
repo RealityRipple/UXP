@@ -336,8 +336,6 @@ struct CascadeLayer
                nsMediaQueryResultCacheKey& aCacheKey);
   ~CascadeLayer();
 
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
-
   nsPresContext* mPresContext;
   nsString mName;
   bool mIsAnonymous;
