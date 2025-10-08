@@ -26,7 +26,6 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 struct nsFontFaceRuleContainer;
-struct PerWeightData;
 
 /**
  * A struct representing a given CSS rule and a particular selector
@@ -351,6 +350,11 @@ struct CascadeLayer
   SheetType mSheetType;
   bool mMustGatherDocumentRules;
 
+  PLArenaPool mArena;
+  // Hooray, a manual PLDHashTable since nsClassHashtable doesn't
+  // provide a getter that gives me a *reference* to the value.
+  PLDHashTable mRulesByWeight; // of PerWeightDataListItem linked lists
+
 #ifdef DEBUG
   CascadeLayer* mParent;
 #endif
@@ -366,22 +370,7 @@ struct CascadeLayer
   void AddRules();
 
 private:
-  struct WeightedRuleData
-  {
-    WeightedRuleData();
-    ~WeightedRuleData();
-
-    UniquePtr<PerWeightData[]> Consume(nsTArray<css::StyleRule*>& aStyleRules);
-
-    PLArenaPool mArena;
-    // Hooray, a manual PLDHashTable since nsClassHashtable doesn't
-    // provide a getter that gives me a *reference* to the value.
-    PLDHashTable mRulesByWeight; // of PerWeightDataListItem linked lists
-
-  private:
-    static const PLDHashTableOps sRulesByWeightOps;
-  };
-
+  static const PLDHashTableOps sRulesByWeightOps;
 };
 
 #endif /* RuleCascadeData_h___ */
