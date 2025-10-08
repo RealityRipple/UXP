@@ -1618,9 +1618,7 @@ CascadeLayer::CascadeLayer(nsPresContext* aPresContext,
                            nsMediaQueryResultCacheKey& aCacheKey)
   : mPresContext(aPresContext)
   , mIsAnonymous(true)
-#ifdef DEBUG
   , mIsStrong(false)
-#endif
   , mRulesAdded(false)
 #ifdef DEBUG
   , mParent(aParent)
@@ -1653,9 +1651,7 @@ CascadeLayer::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   // don't count them. Their ownership is managed by the rule processor
   // to which they are eventually attached (see nsCSSRuleProcessor).
   n += mPreLayers.ShallowSizeOfExcludingThis(aMallocSizeOf);
-#ifdef DEBUG
   n += mPostLayers.ShallowSizeOfExcludingThis(aMallocSizeOf);
-#endif
   n += mLayers.ShallowSizeOfExcludingThis(aMallocSizeOf);
   for (auto iter = mLayers.ConstIter(); !iter.Done(); iter.Next()) {
     // We don't own the CascadeLayer objects so we don't count them. We
@@ -1779,11 +1775,9 @@ CascadeLayer::EnumerateAllLayers(nsLayerEnumFunc aFunc, void* aData)
 
   (*aFunc)(this, aData);
 
-#ifdef DEBUG
   if (mPostLayers.Length() > 0) {
     for (CascadeLayer* post : mPostLayers) {
       post->EnumerateAllLayers(aFunc, aData);
     }
   }
-#endif
 }
