@@ -8,6 +8,7 @@
 #define AVCONV_DATADIR "/usr/local/share/ffmpeg"
 #define CC_IDENT "gcc 12.5.0 (nb1 20250721)"
 #define OS_NAME netbsd
+#define av_restrict restrict
 #define EXTERN_PREFIX ""
 #define EXTERN_ASM 
 #define BUILDSUF ""
