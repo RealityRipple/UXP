@@ -1216,6 +1216,9 @@ pref("privacy.popups.disable_from_plugins", 2);
 // Send "Sec-GPC" HTTP header, disabled by default
 pref("privacy.GPCheader.enabled",    false);
 
+// By default, do not clear domain passwords for "Forget about site"
+pref("privacy.forgetaboutsite.clearPasswords", false);
+
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
 
