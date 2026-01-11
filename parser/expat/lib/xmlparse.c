@@ -614,11 +614,7 @@ static ELEMENT_TYPE *getElementType(XML_Parser parser, const ENCODING *enc,
 static XML_Char *copyString(const XML_Char *s,
                             const XML_Memory_Handling_Suite *memsuite);
 
-/* BEGIN MCP CHANGE (we already set a salt through XML_SetHashSalt) */
-#if 0
 static unsigned long generate_hash_secret_salt(XML_Parser parser);
-#endif
-/* END MCP CHANGE */
 static XML_Bool startParsing(XML_Parser parser);
 
 static XML_Parser parserCreate(const XML_Char *encodingName,
@@ -806,7 +802,7 @@ struct XML_ParserStruct {
   ENTITY_STATS m_entity_stats;
 #endif
 /* END MCP CHANGE */
-#endif
+#endif /* XML_GE == 1 */
 /* BEGIN MOZILLA CHANGE (Report opening tag of mismatched closing tag) */
   const XML_Char* m_mismatch;
 /* END MOZILLA CHANGE */
@@ -843,8 +839,6 @@ static const XML_Char implicitContext[]
        ASCII_s,     ASCII_p,     ASCII_a,      ASCII_c,      ASCII_e,
        '\0'};
 
-/* BEGIN MOZILLA CHANGE (we already set a salt through XML_SetHashSalt) */
-#if 0
 /* To avoid warnings about unused functions: */
 #if ! defined(HAVE_ARC4RANDOM_BUF) && ! defined(HAVE_ARC4RANDOM)
 
@@ -1000,17 +994,17 @@ gather_time_entropy(void) {
 
 static unsigned long
 ENTROPY_DEBUG(const char *label, unsigned long entropy) {
+/* BEGIN MCP CHANGE (don't report debug information) */
+#if 0
   if (getDebugLevel("EXPAT_ENTROPY_DEBUG", 0) >= 1u) {
     fprintf(stderr, "expat: Entropy: %s --> 0x%0*lx (%lu bytes)\n", label,
             (int)sizeof(entropy) * 2, entropy, (unsigned long)sizeof(entropy));
   }
+#endif
+/* END MCP CHANGE */
   return entropy;
 }
-#endif
-/* END MOZILLA CHANGE */
 
-/* BEGIN MCP CHANGE (we already set a salt through XML_SetHashSalt) */
-#if 0
 static unsigned long
 generate_hash_secret_salt(XML_Parser parser) {
   unsigned long entropy;
@@ -1053,8 +1047,6 @@ generate_hash_secret_salt(XML_Parser parser) {
   }
 #endif
 }
-#endif
-/* END MCP CHANGE */
 
 static unsigned long
 get_hash_secret_salt(XML_Parser parser) {
@@ -1108,13 +1100,9 @@ callProcessor(XML_Parser parser, const char *start, const char *end,
 
 static XML_Bool /* only valid for root parser */
 startParsing(XML_Parser parser) {
-/* BEGIN MCP CHANGE (we already set a salt through XML_SetHashSalt) */
-#if 0
   /* hash functions must be initialized before setContext() is called */
   if (parser->m_hash_secret_salt == 0)
     parser->m_hash_secret_salt = generate_hash_secret_salt(parser);
-#endif
-/* END MCP CHANGE */
   if (parser->m_ns) {
     /* implicit context only set for root parser, since child
        parsers (i.e. external entity parsers) will inherit it
