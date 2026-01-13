@@ -3196,6 +3196,27 @@ nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aContext,
     case NS_THEME_SCROLLBARTRACK_VERTICAL:
     {
       bool isHorizontal = (aWidgetType == NS_THEME_SCROLLBARTRACK_HORIZONTAL);
+#if !defined(MAC_OS_X_VERSION_10_7) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_7
+      if (!nsCocoaFeatures::OnLionOrLater()) {
+        // There's only an endcap to worry about when both arrows are on the bottom
+        NSString *buttonPlacement = [[NSUserDefaults standardUserDefaults] objectForKey:@"AppleScrollBarVariant"];
+        if (!buttonPlacement || [buttonPlacement isEqualToString:@"DoubleMax"]) {
+          nsIFrame *scrollbarFrame = GetParentScrollbarFrame(aFrame);
+          if (!scrollbarFrame) return NS_ERROR_FAILURE;
+          bool isSmall = (scrollbarFrame->StyleDisplay()->mAppearance == NS_THEME_SCROLLBAR_SMALL);
+
+          // There isn't a metric for this, so just hardcode a best guess at the value.
+          // This value is even less exact due to the fact that the endcap is partially concave.
+          int32_t endcapSize = isSmall ? 5 : 6;
+
+          if (isHorizontal)
+            aResult->SizeTo(0, 0, 0, endcapSize);
+          else
+            aResult->SizeTo(endcapSize, 0, 0, 0);
+        }
+        // The use of overlay scrollbars is unpossible before 10.7.
+      }
+#endif
       if (nsLookAndFeel::UseOverlayScrollbars()) {
         if (!nsCocoaFeatures::OnYosemiteOrLater()) {
           // Pre-10.10, we have to center the thumb rect in the middle of the

@@ -5088,6 +5088,31 @@ GetIntegerDeltaForEvent(NSEvent* aEvent)
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
+#if !defined(MAC_OS_X_VERSION_10_6) || (MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_6)
+// Provide a legacy NSTextInput method for compatibility with Leopard (and below),
+// as interpretKeyEvents: isn't aware about new insertText:replacementRange: method
+// from NSTextInputClient.
+- (void)insertText:(id)aString
+{
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  NS_ENSURE_TRUE_VOID(mGeckoChild);
+
+  nsAutoRetainCocoaObject kungFuDeathGrip(self);
+
+  NSAttributedString* attrStr;
+  if ([aString isKindOfClass:[NSAttributedString class]]) {
+    attrStr = static_cast<NSAttributedString*>(aString);
+  } else {
+    attrStr = [[[NSAttributedString alloc] initWithString:aString] autorelease];
+  }
+
+  mTextInputHandler->InsertText(attrStr);
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+#endif
+
 - (void)insertText:(id)aString replacementRange:(NSRange)replacementRange
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
