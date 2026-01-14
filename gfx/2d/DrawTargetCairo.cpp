@@ -233,7 +233,7 @@ CopyToImageSurface(unsigned char *aData,
   unsigned char* surfData = cairo_image_surface_get_data(surf);
   size_t surfStride = cairo_image_surface_get_stride(surf);
   size_t pixelWidth = BytesPerPixel(aFormat);
-  size_t rowDataWidth = size_t(aRectWidth) * pixelWidth;
+  size_t rowDataWidth = size_t(aRect.width) * pixelWidth;
   if (rowDataWidth > surfStride || rowDataWidth > size_t(aStride)) {
     cairo_surface_destroy(surf);
     return nullptr;
