@@ -7,13 +7,12 @@ EXPORTS += [
     'expat_config.h',
     'lib/expat.h',
     'lib/expat_external.h',
-    'moz_expat.h',
 ]
 
 SOURCES += [
+    'lib/xmlparse.c',
     'lib/xmlrole.c',
-    'moz_xmlparse.c',
-    'moz_xmltok.c',
+    'lib/xmltok.c',
 ]
 
 FINAL_LIBRARY = 'gkmedias'
