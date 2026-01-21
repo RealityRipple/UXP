@@ -9,7 +9,7 @@
 void
 MOZ_XML_SetXmlDeclHandler(XML_Parser parser,
                           XML_XmlDeclHandler xmldecl) {
-  XML_SetXmlDeclHandler(parser, xmldecl);
+  return XML_SetXmlDeclHandler(parser, xmldecl);
 }
 
 XML_Parser
@@ -29,13 +29,13 @@ MOZ_XML_SetElementHandler(XML_Parser parser,
 void
 MOZ_XML_SetCharacterDataHandler(XML_Parser parser,
                                 XML_CharacterDataHandler handler) {
-  XML_SetCharacterDataHandler(parser, handler);
+  return XML_SetCharacterDataHandler(parser, handler);
 }
 
 void
 MOZ_XML_SetProcessingInstructionHandler(XML_Parser parser,
                                         XML_ProcessingInstructionHandler handler) {
-  XML_SetProcessingInstructionHandler(parser, handler);
+  return XML_SetProcessingInstructionHandler(parser, handler);
 }
 
 void
@@ -172,7 +172,7 @@ XML_Index MOZ_XML_GetCurrentByteIndex(XML_Parser parser) {
 
 void
 MOZ_XML_ParserFree(XML_Parser parser) {
-  XML_ParserFree(parser);
+  return XML_ParserFree(parser);
 }
 
 XML_Bool MOZ_XML_SetReparseDeferralEnabled(XML_Parser parser, int enabled) {
