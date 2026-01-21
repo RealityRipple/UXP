@@ -106,6 +106,7 @@ const CACHE_INVALIDATION_DELAY = 1000;
 const CACHE_VERSION = 7;
 
 const ICON_DATAURL_PREFIX = "data:image/x-icon;base64,";
+const PNG_DATAURL_PREFIX = "data:image/png;base64,";
 
 const NEW_LINES = /(\r\n|\r|\n)/;
 
@@ -1458,8 +1459,16 @@ Engine.prototype = {
         let iconLoadCallback = function (aByteArray, aEngine) {
           // This callback may run after we've already set a preferred icon,
           // so check again.
-          if (aEngine._hasPreferredIcon && !aIsPreferred)
-            return;
+          let logo = false;
+          if (aEngine._hasPreferredIcon && !aIsPreferred) {
+            if (aWidth == 64 && aHeight == 64) {
+              // However, 64x64 should be stored in the map, for "logo" purposes.
+              LOG("iconLoadCallback: allowing non-preferred 64x64 logo");
+              logo = true;
+            } else {
+              return;
+            }
+          }
 
           if (!aByteArray || aByteArray.length > MAX_ICON_SIZE) {
             LOG("iconLoadCallback: load failed, or the icon was too large!");
@@ -1468,7 +1477,11 @@ Engine.prototype = {
 
           var str = btoa(String.fromCharCode.apply(null, aByteArray));
           let dataURL = ICON_DATAURL_PREFIX + str;
-          aEngine._iconURI = makeURI(dataURL);
+          if (logo) {
+            dataURL = PNG_DATAURL_PREFIX + str;
+          } else {
+            aEngine._iconURI = makeURI(dataURL);
+          }
 
           if (aWidth && aHeight) {
             aEngine._addIconToMap(aWidth, aHeight, dataURL)
@@ -1809,6 +1822,19 @@ Engine.prototype = {
       if (imageNode) {
         imageNode.setAttribute("width", "16");
         imageNode.setAttribute("height", "16");
+      }
+    }
+    for (var sz in this._iconMapObj) {
+      var szv = JSON.parse(sz);
+      if (szv.width != 64 || szv.height != 64) {
+        continue;
+      }
+      var additionalImageNode = appendTextNode(OPENSEARCH_NS_11, "Image",
+                                               this._iconMapObj[sz]);
+      if (additionalImageNode) {
+        additionalImageNode.setAttribute("width", szv.width);
+        additionalImageNode.setAttribute("height", szv.height);
+        break;
       }
     }
 
