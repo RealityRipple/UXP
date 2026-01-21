@@ -138,7 +138,6 @@ extern "C" {
 #    endif
 #  endif
 
-#ifndef MOZILLA_CLIENT /* typedef XML_Char to char16_t */
 #  ifdef XML_UNICODE /* Information is UTF-16 encoded. */
 #    ifdef XML_UNICODE_WCHAR_T
 typedef wchar_t XML_Char;
@@ -151,7 +150,6 @@ typedef char XML_LChar;
 typedef char XML_Char;
 typedef char XML_LChar;
 #  endif   /* XML_UNICODE */
-#endif /* MOZILLA_CLIENT */
 
 #  ifdef XML_LARGE_SIZE /* Use large integers for file/stream positions. */
 typedef long long XML_Index;
