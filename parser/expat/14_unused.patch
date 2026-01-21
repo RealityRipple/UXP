@@ -1,241 +1,262 @@
 diff --git a/lib/xmlparse.c b/lib/xmlparse.c
 --- a/lib/xmlparse.c
 +++ b/lib/xmlparse.c
-@@ -582,8 +582,10 @@
+@@ -564,8 +564,12 @@ static XML_Bool setContext(XML_Parser pa
  static void FASTCALL normalizePublicId(XML_Char *s);
 
- static DTD *dtdCreate(XML_Parser parser);
-+#ifndef MOZILLA_CLIENT /* unused API */
+ static DTD *dtdCreate(const XML_Memory_Handling_Suite *ms);
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  /* do not call if m_parentParser != NULL */
- static void dtdReset(DTD *p, XML_Parser parser);
+ static void dtdReset(DTD *p, const XML_Memory_Handling_Suite *ms);
 +#endif
- static void dtdDestroy(DTD *p, XML_Bool isDocEntity, XML_Parser parser);
++/* END MOZILLA CHANGE */
+ static void dtdDestroy(DTD *p, XML_Bool isDocEntity,
+                        const XML_Memory_Handling_Suite *ms);
  static int dtdCopy(XML_Parser oldParser, DTD *newDtd, const DTD *oldDtd,
-                    XML_Parser parser);
-@@ -592,7 +594,9 @@
- static NAMED *lookup(XML_Parser parser, HASH_TABLE *table, KEY name,
+@@ -576,7 +580,11 @@ static NAMED *lookup(XML_Parser parser, 
                       size_t createSize);
- static void FASTCALL hashTableInit(HASH_TABLE *table, XML_Parser parser);
-+#ifndef MOZILLA_CLIENT /* unused API */
+ static void FASTCALL hashTableInit(HASH_TABLE *table,
+                                    const XML_Memory_Handling_Suite *ms);
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  static void FASTCALL hashTableClear(HASH_TABLE *table);
 +#endif
++/* END MOZILLA CHANGE */
  static void FASTCALL hashTableDestroy(HASH_TABLE *table);
  static void FASTCALL hashTableIterInit(HASH_TABLE_ITER *iter,
                                         const HASH_TABLE *table);
-@@ -1042,6 +1046,7 @@
- }
- #endif // XML_GE == 1
+@@ -800,6 +808,8 @@ struct XML_ParserStruct {
+ #define REALLOC(parser, p, s) (parser->m_mem.realloc_fcn((p), (s)))
+ #define FREE(parser, p) (parser->m_mem.free_fcn((p)))
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  XML_Parser XMLCALL
  XML_ParserCreate(const XML_Char *encodingName) {
    return XML_ParserCreate_MM(encodingName, NULL, NULL);
-@@ -1052,6 +1057,7 @@
+@@ -810,6 +820,8 @@ XML_ParserCreateNS(const XML_Char *encod
    XML_Char tmp[2] = {nsSep, 0};
    return XML_ParserCreate_MM(encodingName, NULL, tmp);
  }
 +#endif
++/* END MOZILLA CHANGE */
 
  // "xml=http://www.w3.org/XML/1998/namespace"
  static const XML_Char implicitContext[]
-@@ -1665,6 +1671,7 @@
- #endif /* XML_GE == 1 */
+@@ -1331,6 +1343,8 @@ parserInit(XML_Parser parser, const XML_
+ #endif
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  /* moves list of bindings to m_freeBindingList */
  static void FASTCALL
  moveToFreeBindingList(XML_Parser parser, BINDING *bindings) {
-@@ -1773,6 +1780,7 @@
+@@ -1409,6 +1423,8 @@ XML_SetEncoding(XML_Parser parser, const
    }
    return XML_STATUS_OK;
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  XML_Parser XMLCALL
  XML_ExternalEntityParserCreate(XML_Parser oldParser, const XML_Char *context,
-@@ -2059,6 +2067,7 @@
+@@ -1665,6 +1681,8 @@ XML_UseParserAsHandlerArg(XML_Parser par
      parser->m_handlerArg = parser;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  enum XML_Error XMLCALL
  XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD) {
    if (parser == NULL)
-@@ -2072,8 +2081,9 @@
- #else
-   UNUSED_P(useDTD);
+@@ -1681,6 +1699,8 @@ XML_UseForeignDTD(XML_Parser parser, XML
    return XML_ERROR_FEATURE_REQUIRES_XML_DTD;
--#endif
-+#endif /* XML_DTD */
+ #endif
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  void XMLCALL
  XML_SetReturnNSTriplet(XML_Parser parser, int do_nst) {
-@@ -2148,6 +2158,7 @@
+@@ -1756,6 +1776,8 @@ XML_SetElementHandler(XML_Parser parser,
    parser->m_endElementHandler = end;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  void XMLCALL
  XML_SetStartElementHandler(XML_Parser parser, XML_StartElementHandler start) {
    if (parser != NULL)
-@@ -2159,6 +2170,7 @@
+@@ -1767,6 +1789,8 @@ XML_SetEndElementHandler(XML_Parser pars
    if (parser != NULL)
      parser->m_endElementHandler = end;
  }
 +#endif
++/* END MOZILLA CHANGE */
 
  void XMLCALL
  XML_SetCharacterDataHandler(XML_Parser parser,
-@@ -2190,6 +2202,7 @@
+@@ -1798,6 +1822,8 @@ XML_SetCdataSectionHandler(XML_Parser pa
    parser->m_endCdataSectionHandler = end;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  void XMLCALL
  XML_SetStartCdataSectionHandler(XML_Parser parser,
                                  XML_StartCdataSectionHandler start) {
-@@ -2211,6 +2224,7 @@
+@@ -1819,6 +1845,8 @@ XML_SetDefaultHandler(XML_Parser parser,
    parser->m_defaultHandler = handler;
    parser->m_defaultExpandInternalEntities = XML_FALSE;
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  void XMLCALL
  XML_SetDefaultHandlerExpand(XML_Parser parser, XML_DefaultHandler handler) {
-@@ -2229,6 +2243,7 @@
+@@ -1837,6 +1865,8 @@ XML_SetDoctypeDeclHandler(XML_Parser par
    parser->m_endDoctypeDeclHandler = end;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  void XMLCALL
  XML_SetStartDoctypeDeclHandler(XML_Parser parser,
                                 XML_StartDoctypeDeclHandler start) {
-@@ -2241,6 +2256,7 @@
+@@ -1849,6 +1879,8 @@ XML_SetEndDoctypeDeclHandler(XML_Parser 
    if (parser != NULL)
      parser->m_endDoctypeDeclHandler = end;
  }
 +#endif
++/* END MOZILLA CHANGE */
 
  void XMLCALL
  XML_SetUnparsedEntityDeclHandler(XML_Parser parser,
-@@ -2265,6 +2281,7 @@
+@@ -1873,6 +1905,8 @@ XML_SetNamespaceDeclHandler(XML_Parser p
    parser->m_endNamespaceDeclHandler = end;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  void XMLCALL
  XML_SetStartNamespaceDeclHandler(XML_Parser parser,
                                   XML_StartNamespaceDeclHandler start) {
-@@ -2285,6 +2302,7 @@
+@@ -1893,6 +1927,8 @@ XML_SetNotStandaloneHandler(XML_Parser p
    if (parser != NULL)
      parser->m_notStandaloneHandler = handler;
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  void XMLCALL
  XML_SetExternalEntityRefHandler(XML_Parser parser,
-@@ -2303,6 +2321,7 @@
+@@ -1911,6 +1947,8 @@ XML_SetExternalEntityRefHandlerArg(XML_P
      parser->m_externalEntityRefHandlerArg = parser;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  void XMLCALL
  XML_SetSkippedEntityHandler(XML_Parser parser,
                              XML_SkippedEntityHandler handler) {
-@@ -2336,6 +2355,7 @@
+@@ -1944,6 +1982,8 @@ XML_SetEntityDeclHandler(XML_Parser pars
    if (parser != NULL)
      parser->m_entityDeclHandler = handler;
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  void XMLCALL
  XML_SetXmlDeclHandler(XML_Parser parser, XML_XmlDeclHandler handler) {
-@@ -2804,6 +2824,7 @@
- #endif
+@@ -2401,6 +2441,8 @@ XML_GetCurrentByteIndex(XML_Parser parse
+ /* END MOZILLA CHANGE */
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  int XMLCALL
  XML_GetCurrentByteCount(XML_Parser parser) {
    if (parser == NULL)
-@@ -2832,6 +2853,7 @@
+@@ -2429,6 +2471,8 @@ XML_GetInputContext(XML_Parser parser, i
  #endif /* XML_CONTEXT_BYTES > 0 */
    return (const char *)0;
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  XML_Size XMLCALL
  XML_GetCurrentLineNumber(XML_Parser parser) {
-@@ -2857,6 +2879,7 @@
+@@ -2454,6 +2498,8 @@ XML_GetCurrentColumnNumber(XML_Parser pa
    return parser->m_position.columnNumber;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  void XMLCALL
  XML_FreeContentModel(XML_Parser parser, XML_Content *model) {
-   if (parser == NULL)
-@@ -3102,11 +3125,12 @@
-       {XML_FEATURE_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT,
-        XML_L("XML_AT_ACT_THRES"),
-        (long int)EXPAT_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT},
--#endif
-+#endif /* XML_GE == 1 */
-       {XML_FEATURE_END, NULL, 0}};
+   if (parser != NULL)
+@@ -2682,6 +2728,8 @@ XML_GetFeatureList(void) {
 
    return features;
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  #if XML_GE == 1
  XML_Bool XMLCALL
-@@ -7727,6 +7751,7 @@
+@@ -7146,6 +7194,8 @@ dtdCreate(const XML_Memory_Handling_Suit
    return p;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  static void
- dtdReset(DTD *p, XML_Parser parser) {
+ dtdReset(DTD *p, const XML_Memory_Handling_Suite *ms) {
    HASH_TABLE_ITER iter;
-@@ -7767,6 +7792,7 @@
+@@ -7186,6 +7236,8 @@ dtdReset(DTD *p, const XML_Memory_Handli
    p->hasParamEntityRefs = XML_FALSE;
    p->standalone = XML_FALSE;
  }
-+#endif /* MOZILLA_CLIENT */
++#endif
++/* END MOZILLA CHANGE */
 
  static void
- dtdDestroy(DTD *p, XML_Bool isDocEntity, XML_Parser parser) {
-@@ -8121,6 +8147,7 @@
+ dtdDestroy(DTD *p, XML_Bool isDocEntity, const XML_Memory_Handling_Suite *ms) {
+@@ -7540,6 +7592,8 @@ lookup(XML_Parser parser, HASH_TABLE *ta
    return table->v[i];
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  static void FASTCALL
  hashTableClear(HASH_TABLE *table) {
    size_t i;
-@@ -8130,6 +8157,7 @@
+@@ -7549,6 +7603,8 @@ hashTableClear(HASH_TABLE *table) {
    }
    table->used = 0;
  }
 +#endif
++/* END MOZILLA CHANGE */
 
  static void FASTCALL
  hashTableDestroy(HASH_TABLE *table) {
-@@ -8804,6 +8832,7 @@
+@@ -8223,6 +8279,8 @@ accountingDiffTolerated(XML_Parser origi
    return tolerated;
  }
 
-+#ifndef MOZILLA_CLIENT /* unused API */
++/* BEGIN MOZILLA CHANGE (unused API) */
++#if 0
  unsigned long long
  testingAccountingGetCountBytesDirect(XML_Parser parser) {
    if (! parser)
-@@ -8817,6 +8846,7 @@
+@@ -8236,6 +8294,8 @@ testingAccountingGetCountBytesIndirect(X
      return 0;
    return parser->m_accounting.countBytesIndirect;
  }
 +#endif
++/* END MOZILLA CHANGE */
 
- #ifndef MOZILLA_CLIENT /* don't report debug information */
- static void
+ /* BEGIN MOZILLA CHANGE (don't report debug information) */
+ #if 0
