@@ -971,9 +971,6 @@ LIRGeneratorARM::visitRandom(MRandom* ins)
                                         temp(),
                                         temp(),
                                         temp(),
-                                        temp(),
-                                        temp(),
-                                        temp(),
                                         temp());
     defineFixed(lir, ins, LFloatReg(ReturnDoubleReg));
 }
