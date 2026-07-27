@@ -54,8 +54,6 @@ class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
     // activation (if any) comes around.
     void* savedPrevJitTop_;
 
-    JS::AutoCheckCannotGC nogc_;
-
     static const unsigned StorageSpace = 8 * sizeof(void*);
 
     alignas(void*) unsigned char storage_[StorageSpace];
@@ -144,7 +142,7 @@ class MOZ_NON_PARAM JS_PUBLIC_API(ProfilingFrameIterator)
     void iteratorConstruct();
     void iteratorDestroy();
     bool iteratorDone();
-};
+} JS_HAZ_GC_INVALIDATED;
 
 JS_FRIEND_API(bool)
 IsProfilingEnabledForContext(JSContext* cx);
