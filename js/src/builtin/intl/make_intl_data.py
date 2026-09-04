@@ -1235,7 +1235,7 @@ def writeCLDRLanguageTagLikelySubtagsTest(println, data, url):
 
         # Step 2: Lookup.
         searches = ((language, script, region),
-+                   (language, script, None),
+                    (language, script, None),
                     (language, None, region),
                     (language, None, None))
         search = next(search for search in searches if search in likely_subtags)
