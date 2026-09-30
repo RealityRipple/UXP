@@ -56,8 +56,7 @@ nsMIMEHeaderParamImpl::GetParameter(const nsACString& aHeaderVal,
                                     const char *aParamName,
                                     const nsACString& aFallbackCharset, 
                                     bool aTryLocaleCharset, 
-                                    char **aLang, nsAString& aResult)
-{
+                                    char **aLang, nsAString& aResult) {
   return DoGetParameter(aHeaderVal, aParamName, MIME_FIELD_ENCODING,
                         aFallbackCharset, aTryLocaleCharset, aLang, aResult);
 }
@@ -67,8 +66,7 @@ nsMIMEHeaderParamImpl::GetParameterHTTP(const nsACString& aHeaderVal,
                                         const char *aParamName,
                                         const nsACString& aFallbackCharset, 
                                         bool aTryLocaleCharset, 
-                                        char **aLang, nsAString& aResult)
-{
+                                        char **aLang, nsAString& aResult) {
   return DoGetParameter(aHeaderVal, aParamName, HTTP_FIELD_ENCODING,
                         aFallbackCharset, aTryLocaleCharset, aLang, aResult);
 }
@@ -102,58 +100,59 @@ nsMIMEHeaderParamImpl::DoGetParameter(const nsACString& aHeaderVal,
                                       ParamDecoding aDecoding,
                                       const nsACString& aFallbackCharset, 
                                       bool aTryLocaleCharset, 
-                                      char **aLang, nsAString& aResult)
-{
-    aResult.Truncate();
-    nsresult rv;
+                                      char **aLang, nsAString& aResult) {
+  aResult.Truncate();
+  nsresult rv;
 
-    // get parameter (decode RFC 2231/5987 when applicable, as specified by
-    // aDecoding (5987 being a subset of 2231) and return charset.)
-    nsXPIDLCString med;
-    nsXPIDLCString charset;
-    rv = DoParameterInternal(aHeaderVal, aParamName, aDecoding,
-                             getter_Copies(charset), aLang, getter_Copies(med));
-    if (NS_FAILED(rv))
-        return rv; 
+  // get parameter (decode RFC 2231/5987 when applicable, as specified by
+  // aDecoding (5987 being a subset of 2231) and return charset.)
+  nsXPIDLCString med;
+  nsXPIDLCString charset;
+  rv = DoParameterInternal(aHeaderVal, aParamName, aDecoding,
+                           getter_Copies(charset), aLang, getter_Copies(med));
+  if (NS_FAILED(rv)) {
+    return rv; 
+  }
 
-    // convert to UTF-8 after charset conversion and RFC 2047 decoding 
-    // if necessary.
+  // convert to UTF-8 after charset conversion and RFC 2047 decoding 
+  // if necessary.
     
-    nsAutoCString str1;
-    rv = internalDecodeParameter(med, charset.get(), nullptr, false,
-                                 // was aDecoding == MIME_FIELD_ENCODING
-                                 // see bug 875615
-                                 true,
-                                 str1);
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsAutoCString str1;
+  rv = internalDecodeParameter(med, charset.get(), nullptr, false,
+                               // was aDecoding == MIME_FIELD_ENCODING
+                               // see bug 875615
+                               true,
+                               str1);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    if (!aFallbackCharset.IsEmpty())
-    {
-        nsAutoCString charset;
-        EncodingUtils::FindEncodingForLabel(aFallbackCharset, charset);
-        nsAutoCString str2;
-        nsCOMPtr<nsIUTF8ConverterService> 
-          cvtUTF8(do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID));
-        if (cvtUTF8 &&
-            NS_SUCCEEDED(cvtUTF8->ConvertStringToUTF8(str1, 
-                PromiseFlatCString(aFallbackCharset).get(), false,
-                                   !charset.EqualsLiteral("UTF-8"),
-                                   1, str2))) {
-          CopyUTF8toUTF16(str2, aResult);
-          return NS_OK;
-        }
-    }
-
-    if (IsUTF8(str1)) {
-      CopyUTF8toUTF16(str1, aResult);
+  if (!aFallbackCharset.IsEmpty()) {
+    nsAutoCString charset;
+    EncodingUtils::FindEncodingForLabel(aFallbackCharset, charset);
+    nsAutoCString str2;
+    nsCOMPtr<nsIUTF8ConverterService> cvtUTF8(do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID));
+    if (cvtUTF8 &&
+        NS_SUCCEEDED(cvtUTF8->ConvertStringToUTF8(str1, 
+                                                  PromiseFlatCString(aFallbackCharset).get(),
+                                                  false,
+                                                  !charset.EqualsLiteral("UTF-8"),
+                                                  1,
+                                                  str2))) {
+      CopyUTF8toUTF16(str2, aResult);
       return NS_OK;
     }
+  }
 
-    if (aTryLocaleCharset && !NS_IsNativeUTF8()) 
-      return NS_CopyNativeToUnicode(str1, aResult);
-
-    CopyASCIItoUTF16(str1, aResult);
+  if (IsUTF8(str1)) {
+    CopyUTF8toUTF16(str1, aResult);
     return NS_OK;
+  }
+
+  if (aTryLocaleCharset && !NS_IsNativeUTF8()) {
+    return NS_CopyNativeToUnicode(str1, aResult);
+  }
+
+  CopyASCIItoUTF16(str1, aResult);
+  return NS_OK;
 }
 
 // remove backslash-encoded sequences from quoted-strings
@@ -186,7 +185,8 @@ bool IsHexDigit(char aChar)
 bool IsValidPercentEscaped(const nsACString& aValue) {
   for (uint32_t i = 0; i < aValue.Length(); i++) {
     if (aValue[i] == '%') {
-      if (i + 2 >= aValue.Length() || !IsHexDigit(aValue[i + 1]) ||
+      if (i + 2 >= aValue.Length() ||
+          !IsHexDigit(aValue[i + 1]) ||
           !IsHexDigit(aValue[i + 2])) {
         return false;
       }
@@ -275,8 +275,7 @@ Maybe<nsCString> combineContinuations(const nsTArray<Continuation>& aArray,
 // add a continuation, return false on error if segment already has been seen
 bool addContinuation(nsTArray<Continuation>& aArray, uint32_t aIndex,
                      const char *aValue, uint32_t aLength,
-                     bool aNeedsPercentDecoding, bool aWasQuotedString)
-{
+                     bool aNeedsPercentDecoding, bool aWasQuotedString) {
   if (aIndex < aArray.Length() && aArray[aIndex].value) {
     NS_WARNING("duplicate RC2231 continuation segment #\n");
     return false;
@@ -303,8 +302,7 @@ bool addContinuation(nsTArray<Continuation>& aArray, uint32_t aIndex,
 }
 
 // parse a segment number; return -1 on error
-int32_t parseSegmentNumber(const char *aValue, int32_t aLen)
-{
+int32_t parseSegmentNumber(const char *aValue, int32_t aLen) {
   if (aLen < 1) {
     NS_WARNING("segment number missing\n");
     return -1;
@@ -337,8 +335,7 @@ int32_t parseSegmentNumber(const char *aValue, int32_t aLen)
 // validate a given octet sequence for compliance with the specified
 // encoding
 bool IsValidOctetSequenceForCharset(nsACString& aCharset, const nsACString& aOctets) {
-  nsCOMPtr<nsIUTF8ConverterService> cvtUTF8(do_GetService
-    (NS_UTF8CONVERTERSERVICE_CONTRACTID));
+  nsCOMPtr<nsIUTF8ConverterService> cvtUTF8(do_GetService(NS_UTF8CONVERTERSERVICE_CONTRACTID));
   if (!cvtUTF8) {
     NS_WARNING("Can't get UTF8ConverterService\n");
     return false;
@@ -372,8 +369,7 @@ nsMIMEHeaderParamImpl::GetParameterInternal(const nsACString& aHeaderValue,
                                             const char* aParamName,
                                             char** aCharset,
                                             char** aLang,
-                                            char** aResult)
-{
+                                            char** aResult) {
   return DoParameterInternal(aHeaderValue, aParamName, MIME_FIELD_ENCODING,
                              aCharset, aLang, aResult);
 }
@@ -385,9 +381,7 @@ nsMIMEHeaderParamImpl::DoParameterInternal(const nsACString& aHeaderValue,
                                            ParamDecoding aDecoding,
                                            char** aCharset,
                                            char** aLang,
-                                           char** aResult)
-{
-
+                                           char** aResult) {
   if (aHeaderValue.IsEmpty() || !aResult) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -406,8 +400,12 @@ nsMIMEHeaderParamImpl::DoParameterInternal(const nsACString& aHeaderValue,
 
   *aResult = nullptr;
 
-  if (aCharset) *aCharset = nullptr;
-  if (aLang) *aLang = nullptr;
+  if (aCharset) {
+    *aCharset = nullptr;
+  }
+  if (aLang) {
+    *aLang = nullptr;
+  }
 
   nsAutoCString charset;
 
@@ -416,8 +414,8 @@ nsMIMEHeaderParamImpl::DoParameterInternal(const nsACString& aHeaderValue,
   bool acceptContinuations = true;
 
   // skip leading white space.
-  for (; *str &&  nsCRT::IsAsciiSpace(*str); ++str)
-    ;
+  for (; *str &&  nsCRT::IsAsciiSpace(*str); ++str) { }
+
   const char *start = str;
   
   // aParamName is empty. return the first (possibly) _unnamed_ 'parameter'
