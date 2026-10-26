@@ -1373,16 +1373,18 @@ intrinsic_MoveTypedArrayElements(JSContext* cx, unsigned argc, Value* vp)
     MOZ_ASSERT((UINT32_MAX >> ElementShift) >= count);
     uint32_t byteSize = count << ElementShift;
 
-#ifdef DEBUG
     {
         uint32_t viewByteLength = tarray->byteLength();
-        MOZ_ASSERT(byteSize <= viewByteLength);
-        MOZ_ASSERT(byteDest < viewByteLength);
-        MOZ_ASSERT(byteSrc < viewByteLength);
-        MOZ_ASSERT(byteDest <= viewByteLength - byteSize);
-        MOZ_ASSERT(byteSrc <= viewByteLength - byteSize);
+        if (byteSize > viewByteLength ||
+            byteDest >= viewByteLength ||
+            byteSrc >= viewByteLength ||
+            byteDest > viewByteLength - byteSize ||
+            byteSrc > viewByteLength - byteSize) {
+            JS_ReportErrorNumberASCII(
+              cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_OUT_OF_BOUNDS);
+          return false;
+        }
     }
-#endif
 
     SharedMem<uint8_t*> data = tarray->viewDataEither().cast<uint8_t*>();
     jit::AtomicOperations::memmoveSafeWhenRacy(data + byteDest, data + byteSrc, byteSize);
